@@ -1,20 +1,17 @@
-// Cash & Index tab: your cash, the index fund, deposit and withdraw with MAX, the auto-invest switch.
+// Cash & Index tab: your cash, the index fund, deposit and withdraw with MAX.
 import {
   sim, esc, int, money, moneyFull, safe, setText, setHTML, tween, actionForm, ensure, plateHTML, snapOf, stamp, gateHTML,
 } from './kit.js';
 
 function build(k, c) {
   c.innerHTML = `<div class="tool cash">
-    ${plateHTML('Cash & Index', 'Cash earns the one-month Treasury rate. The index fund tracks the S&P 500 with dividends reinvested.', '<span class="chip" data-v="chip"></span>')}
+    ${plateHTML('Cash & Index', 'Cash earns the one-month Treasury rate. The index fund tracks the S&P 500 with dividends reinvested.')}
     <div class="bigs two-up">
       <div class="big"><span class="k">Cash</span><span class="v num" data-v="cash">—</span><span class="sub num" data-s="cash"></span></div>
       <div class="big"><span class="k">Index fund</span><span class="v num" data-v="index">—</span><span class="sub num" data-s="index"></span></div>
     </div>
     <section class="box" data-v="od" hidden role="status"></section>
     <section class="box" aria-labelledby="ca-h"><h3 id="ca-h">Move money</h3><div data-v="form"></div></section>
-    <section class="box auto"><div class="sw-row"><div><h3 id="ai-h">Auto-invest</h3>
-      <p class="t-hint" id="ai-d">When on, cash from sales goes straight into the index fund, and on the first trading day of each month any cash above $2,000,000 moves in too. Borrowed money is never swept. When off, it stays in cash.</p></div>
-      <button type="button" class="sw" role="switch" aria-checked="true" aria-labelledby="ai-h" aria-describedby="ai-d"><span class="sw-on">On</span><span class="sw-off">Off</span><i></i></button></div></section>
     <p class="taxnote">Tax on withdrawals: gains in the index fund are taxed at 23.8% when you withdraw, on the gain over your average cost. The tax is paid at quarter end. Dividends on your shares are paid into cash and taxed at 23.8% the same way.</p>
   </div>`;
   k.form = actionForm(c.querySelector('[data-v=form]'), {
@@ -34,12 +31,6 @@ function build(k, c) {
     },
     onDone: () => safe('cash', () => draw(c, snapOf(c._api) || c._snap, c._api)),
   });
-  const sw = c.querySelector('.sw');
-  sw.addEventListener('click', () => {
-    const api = c._api;
-    const r = api.act({ type: 'setAutoInvest', on: sw.getAttribute('aria-checked') !== 'true' });
-    if (r.ok) draw(c, snapOf(api) || c._snap, api);
-  });
 }
 
 function draw(c, snap, api) {
@@ -51,11 +42,6 @@ function draw(c, snap, api) {
   let r = null;
   try { const ctx = sim.getCtx(api.state()); r = ctx.dgs1mo[snap.i]; } catch { /* no data */ }
   setText(q('[data-s=cash]'), api.card().blind || r == null ? 'Earns the 1-month Treasury rate' : `Earns ${r.toFixed(2)}% a year`);
-  const sw = q('.sw');
-  sw.setAttribute('aria-checked', String(!!snap.autoInvest));
-  const chip = q('[data-v=chip]');
-  setText(chip, snap.autoInvest ? 'Auto-invest on' : 'Auto-invest off');
-  chip.className = 'chip ' + (snap.autoInvest ? 'open' : '');
   const od = q('[data-v=od]');
   od.hidden = !(snap.overdraft > 0.005);
   if (!od.hidden) setHTML(od, `<h3>Overdraft</h3><p class="call-line"><b class="num">${moneyFull(snap.overdraft)}</b> is overdrawn at SOFR + 4.00%. New cash pays it off first, before anything goes to the index fund.</p>`); else od._h = null;

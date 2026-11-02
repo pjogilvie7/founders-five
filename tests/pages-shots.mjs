@@ -1,8 +1,8 @@
 // Founder's Five: pages acceptance run (T11).
 //   node tests/pages-shots.mjs
 // Renders method | data | ai | glossary through tests/pages-harness.html (no shell needed), at 1280x800 and 375x812.
-// Screenshots go to tests/out/pages/. Exits 1 on any console error or failed check.
-// Uses a server on :8765 if one is up; otherwise starts `python3 -m http.server 8766` and kills it at the end.
+// Screenshots go to tests/out/pages/ (or $OUT, relative to the project root). Exits 1 on any console error or failed check.
+// Uses a server on :8765 if one is up (unless PORT is set); otherwise uses or starts `python3 -m http.server $PORT` (default 8766) and kills it at the end.
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -11,7 +11,7 @@ import { chromium } from "playwright";
 import { BLIND_NAMES } from "./pages-fixtures.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = join(ROOT, "tests", "out", "pages");
+const OUT = join(ROOT, process.env.OUT || join("tests", "out", "pages"));
 mkdirSync(OUT, { recursive: true });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -20,11 +20,14 @@ async function up(port) {
 }
 
 let server = null, base;
-if (await up(8765)) base = "http://localhost:8765";
+const PORT = Number(process.env.PORT || 8766);
+if (!process.env.PORT && await up(8765)) base = "http://localhost:8765";
 else {
-  server = spawn("python3", ["-m", "http.server", "8766"], { cwd: ROOT, stdio: "ignore" });
-  for (let i = 0; i < 50 && !(await up(8766)); i++) await sleep(100);
-  base = "http://localhost:8766";
+  if (!(await up(PORT))) {
+    server = spawn("python3", ["-m", "http.server", String(PORT)], { cwd: ROOT, stdio: "ignore" });
+    for (let i = 0; i < 50 && !(await up(PORT)); i++) await sleep(100);
+  }
+  base = `http://localhost:${PORT}`;
 }
 
 const failures = [];

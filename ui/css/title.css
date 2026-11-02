@@ -96,7 +96,7 @@
   .title .alt{justify-content:center}
   .title .strip,.title .disclaimer{margin-left:auto;margin-right:auto}
 }
-@media (max-width:420px){ .tc-sub{font-size:10px;letter-spacing:.02em} .tc-body{gap:4%} .tc-body{inset:10% 7%;gap:5%} .tc-kicker{letter-spacing:.2em} }
+@media (max-width:420px){ .title .tc-sub{font-size:9.5px;letter-spacing:.01em;padding-right:2px} .title .tc-text{min-width:0} .title .tc-body{gap:4%} .title .tc-body{inset:10% 10% 10% 8%;gap:5%} .tc-kicker{letter-spacing:.2em} }
 @media (prefers-reduced-motion:reduce){
   .title .tc{transition:none;transform:rotate(-1.4deg)}
   .title .tc::after,.title .tc-trace circle{animation:none}

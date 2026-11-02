@@ -2,7 +2,7 @@
 // segmented choices, one generic action form, number tweens and success stamps.
 // The UI never computes money: every figure comes from the engine (canDo, act on a cloned state, snapshot, collarQuote).
 import * as sim from '../../engine/sim.js';
-import { esc, int, money, moneyFull, price, pct, dateLabel, shortDate, daysBetween, addDays } from '../format.js';
+import { esc, int, money, moneyFull, price, pct, dateLabel, shortDate, longDate, daysBetween, addDays } from '../format.js';
 
 export { sim, esc, int, money, moneyFull, price, pct, shortDate, daysBetween, addDays };
 
@@ -21,6 +21,14 @@ export function dctx(api) {
   return x;
 }
 export const dl = (api, d) => (d ? dateLabel(dctx(api), d) : '');
+/** Like dl, but a calendar date more than about 300 days after the game date carries its year ("Aug 16, 2027"). Blind cards keep day numbers. */
+export function dlFar(api, d) {
+  if (!d) return '';
+  const c = dctx(api);
+  if (c.blind) return dateLabel(c, d);
+  let now = null; try { now = api.state().d; } catch { /* no state */ }
+  return now && daysBetween(now, d) > 300 ? longDate(d) : shortDate(d);
+}
 
 /** First trading day of the next calendar month, from the card's dates (or the next weekday past the data). */
 export function nextMonthStart(api, d) {
@@ -119,6 +127,14 @@ export function stamp(root, word, tone = '') {
   s.textContent = word;
   s.setAttribute('aria-hidden', 'true');
   plate.appendChild(s);
+  // The stamp must never sit on the status chip: if its box (laid out, before the thump animation) would reach the chip, it moves left of the chip.
+  const chip = plate.querySelector('.chip:not(:empty)');
+  if (chip) {
+    const pr = plate.getBoundingClientRect(), cr = chip.getBoundingClientRect();
+    const bottom = parseFloat(getComputedStyle(s).bottom) || 0;
+    const top = pr.bottom - bottom - s.offsetHeight - 6;
+    if (cr.width && cr.bottom + 4 > top) s.style.right = Math.max(8, Math.round(pr.right - cr.left + 12)) + 'px';
+  }
   const wrap = root.closest('.panel-wrap');
   if (wrap && wrap.scrollTop > 0) wrap.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
   setTimeout(() => s.remove(), 2800);
@@ -205,10 +221,10 @@ export function actionForm(host, cfg) {
   host.classList.add('aform');
   host.innerHTML = `${(cfg.segs || []).map((s) => segHTML(id, s)).join('')}
     <div class="t-head"></div>
-    ${hasIn ? `<div class="fld"><label for="${id}-in" class="fld-l"></label><div class="fld-row"><input id="${id}-in" class="fld-in num" inputmode="${money$ ? 'decimal' : 'numeric'}" autocomplete="off" spellcheck="false" placeholder="${money$ ? '$0' : '0'}"><button type="button" class="btn sm max" data-max>MAX</button></div><p class="fld-max num"></p></div>` : ''}
-    <div class="t-prev" aria-live="polite"></div>
-    <div class="t-gate"></div>
-    <button type="button" class="btn primary t-go" aria-disabled="true"></button>
+    ${hasIn ? `<div class="fld"><label for="${id}-in" class="fld-l"></label><div class="fld-row"><input id="${id}-in" class="fld-in num" aria-describedby="${id}-gate ${id}-prev" inputmode="${money$ ? 'decimal' : 'numeric'}" autocomplete="off" spellcheck="false" placeholder="${money$ ? '$0' : '0'}"><button type="button" class="btn sm max" data-max aria-describedby="${id}-gate">MAX</button></div><p class="fld-max num"></p></div>` : ''}
+    <div class="t-prev" id="${id}-prev"></div>
+    <div class="t-gate" id="${id}-gate"></div>
+    <button type="button" class="btn primary t-go" aria-disabled="true" aria-describedby="${id}-gate"></button>
     <p class="t-res" aria-live="polite"></p>`;
   const q = (s) => host.querySelector(s);
   const input = q('.fld-in'), goBtn = q('.t-go'), resEl = q('.t-res');
@@ -238,7 +254,7 @@ export function actionForm(host, cfg) {
       setText(q('.fld-l'), typeof cfg.label === 'function' ? cfg.label(v) : cfg.label);
       const max = g0.max;
       const mx = q('.fld-max');
-      const maxTxt = g0.allowed && max > 0 ? `Up to ${money$ ? moneyFull(max) : int(max)}` : '';
+      const maxTxt = g0.allowed && max > 0 ? `Up to ${money$ ? moneyFull(Math.floor(max)) : int(max)}` : '';
       setText(mx, maxTxt);
       const mb = q('[data-max]');
       mb.setAttribute('aria-disabled', String(!(max > 0)));
@@ -288,7 +304,7 @@ export function actionForm(host, cfg) {
     q('[data-max]').addEventListener('click', (e) => {
       const b = e.currentTarget;
       if (b.getAttribute('aria-disabled') === 'true' || !(b._max > 0)) { const gt = q('.t-gate'); gt.classList.remove('nudge'); void gt.offsetWidth; gt.classList.add('nudge'); return; }
-      input.value = fmtField(money$ ? String(Math.round(b._max * 100) / 100) : String(Math.floor(b._max)), money$);
+      input.value = fmtField(String(Math.floor(b._max)), money$); // whole units, rounded down, never above the engine's max
       update(); goBtn.focus({ preventScroll: true });
     });
   }

@@ -158,7 +158,7 @@ function certHTML(ctx) {
       <p class="sc-live">Live card: ${esc(int(days))} trading days so far. Not comparable with five-year cards.</p></div></div></div>`;
   }
   const label = entry.label || 'Sealed card';
-  return `<div class="sc-cert blind" id="sc-cert" data-state="front" tabindex="0" role="group" aria-label="Certificate. Select to turn it over.">
+  return `<div class="sc-cert blind" id="sc-cert" data-state="front" tabindex="0" role="button" aria-pressed="false" aria-label="Certificate. Select to turn it over.">
     <div class="sc-flip">
       <div class="sc-face front" data-face="front"><span class="sc-border" aria-hidden="true">${border}</span>
         <div class="sc-face-in"><p class="sc-cert-head">Certificate of shares</p>${vig(card.vignette || entry.vignette, 'An engraved allegory')}
@@ -575,6 +575,9 @@ export async function renderScoreboard(el, ctx) {
       cert.dataset.state = flipped ? 'back' : 'front';
       cert.classList.toggle('flipped', flipped);
       front.setAttribute('aria-hidden', String(flipped)); back.setAttribute('aria-hidden', String(!flipped));
+      cert.setAttribute('aria-pressed', String(flipped));
+      const who = [back.querySelector('.sc-co'), back.querySelector('.sc-tick')].map((n) => (n && n.textContent || '').trim()).filter(Boolean).join(', ');
+      cert.setAttribute('aria-label', flipped ? `Certificate, turned over${who ? ': ' + who : ''}. Select to turn it back.` : 'Certificate. Select to turn it over.');
     };
     if (reduced()) { cert.classList.add('instant'); set(true); }
     else setTimeout(() => { if (cert.isConnected) set(true); }, 650);
@@ -582,6 +585,9 @@ export async function renderScoreboard(el, ctx) {
     cert.addEventListener('click', toggle);
     cert.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
   }
+  // On arrival, focus goes to the page heading (not a control), so a keyboard or screen-reader player starts at the top of the result.
+  const h1 = el.querySelector('.sc-head h1');
+  if (h1) { h1.tabIndex = -1; try { h1.focus({ preventScroll: true }); } catch { /* no focus */ } }
   return () => {};
 }
 

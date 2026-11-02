@@ -30,6 +30,7 @@ const T = (x, y, txt, cls = 'si-num', anchor = 'start', fill = INK, size = 11) =
    Each plate has a "hold" state that already looks mid-action, so a screenshot or a reduced-motion reader still sees it alive;
    the motion itself is CSS (see seat-intro.css), except the rivals race which is a small rAF loop. */
 const VIEW = { wide: '0 0 440 340', phone: '24 -50 392 440' };
+const coarse = () => window.matchMedia('(pointer: coarse)').matches;
 const isPhone = () => window.matchMedia('(max-width:899px)').matches;
 const still = () => window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 const pt = (r, a) => `${(r * Math.sin(a * Math.PI / 180)).toFixed(1)} ${(-r * Math.cos(a * Math.PI / 180)).toFixed(1)}`;
@@ -40,9 +41,10 @@ const CLOCK = { speed: 1, playing: true, touched: false, day: 7, frac: 138 / 360
 const resetClock = () => Object.assign(CLOCK, { speed: 1, playing: !still(), touched: false, day: 7, frac: 138 / 360 });
 const DAYS_ON_TRACK = 20;
 
-/* A chunky key: a dark base, a face that sinks when pressed, a dashed focus ring. */
+/* A chunky key: a dark base, a face that sinks when pressed, a dashed focus ring. The whole illustration is aria-hidden and the keys are
+   pointer-only (tabindex -1, no button role), so a screen reader or Tab does not meet three fake buttons; Space still runs the demo clock. */
 const keyBtn = (id, x, y, w, h, label, inner, extra = '') => `
-  <g class="si-kb" data-k="${id}" role="button" tabindex="0" aria-label="${label}" transform="translate(${x} ${y})">
+  <g class="si-kb" data-k="${id}" tabindex="-1" transform="translate(${x} ${y})">
     <rect x="0" y="5" width="${w}" height="${h}" rx="6" fill="${INK}"/>
     <g class="si-kface"><rect class="si-kbg" width="${w}" height="${h}" rx="6" fill="${extra || PAPER}" stroke="${INK}" stroke-width="1.6"/>${inner}</g>
     <rect class="si-kfocus" x="-4" y="-4" width="${w + 8}" height="${h + 13}" rx="9" fill="none" stroke="${GOLD}" stroke-width="2.2" stroke-dasharray="4 3"/>
@@ -85,8 +87,7 @@ const clock = (phone) => {
     <g class="si-flag" transform="translate(${(TW * .32).toFixed(1)} 0)"><path d="M0 52V22" stroke="${SEAL}" stroke-width="2.2"/><path d="M0 22h16l-4.500 5 4.500 5H0Z" fill="${SEAL}"/><circle cy="52" r="4.500" fill="${SEAL}"/></g>
   </g>
   <line x1="44" y1="${L.line}" x2="396" y2="${L.line}" stroke="${GOLD}" stroke-width="1"/>
-  ${keyBtn('space', L.spc[0], L.spc[1], 100, 32, 'Pause or resume the clock', T(50, 21.500, 'SPACE', 'si-num', 'middle', INK, 13))}
-  <g transform="translate(${L.spc[0] + 114} ${L.spc[1]})"><g class="si-hint-run">${T(0, 21.500, 'PAUSES THE CLOCK', 'si-disp', 'start', MUTED, 13)}</g><g class="si-hint-paused">${T(0, 21.500, 'RESUMES THE CLOCK', 'si-disp', 'start', MUTED, 13)}</g></g>`;
+  ${coarse() ? '' : `${keyBtn('space', L.spc[0], L.spc[1], 100, 32, 'Pause or resume the clock', T(50, 21.500, 'SPACE', 'si-num', 'middle', INK, 13))}   <g transform="translate(${L.spc[0] + 114} ${L.spc[1]})"><g class="si-hint-run">${T(0, 21.500, 'PAUSES THE CLOCK', 'si-disp', 'start', MUTED, 13)}</g><g class="si-hint-paused">${T(0, 21.500, 'RESUMES THE CLOCK', 'si-disp', 'start', MUTED, 13)}</g></g>`}`;
 };
 
 /* Drives the plate: the needle sweeps one trading day per turn at 1x, and every key changes the sweep. */
@@ -254,7 +255,7 @@ function race(svg, loop) {
     const xs = RACE.map((r) => RAIL.x0 + 7 + racePos(r, t) * (RAIL.len - 14));
     xs.forEach((x, i) => { dots[i].setAttribute('cx', x.toFixed(1)); trails[i].setAttribute('x2', x.toFixed(1)); });
     const top = xs.indexOf(Math.max(...xs));
-    const other = top === 0 ? xs.indexOf(Math.max(...xs.slice(1))) + 1 : 0;
+    const rest = xs.slice(1), other = top === 0 ? 1 + rest.indexOf(Math.max(...rest)) : 0; // best rival's lane (1 to 3); xs.indexOf(...) + 1 ran off the end and made NaN
     const a = Math.min(xs[0], xs[top === 0 ? other : top]), b = Math.max(xs[0], xs[top === 0 ? other : top]);
     const yb = rowY(0) + 50;
     gl.setAttribute('x1', a.toFixed(1)); gl.setAttribute('x2', b.toFixed(1)); gl.setAttribute('y1', yb); gl.setAttribute('y2', yb);
@@ -275,7 +276,7 @@ const SLIDES = [() => clock(isPhone()), certificate, windowSlide, family, rivals
 const stage = (i, onTouch) => {
   const wrap = document.createElement('div');
   const phone = isPhone(), live1 = i === 0;
-  const a11y = live1 ? 'role="group" aria-label="Clock controls"' : 'role="presentation" aria-hidden="true"';
+  const a11y = 'role="presentation" aria-hidden="true"';
   wrap.innerHTML = `<svg class="si-svg" data-s="${i}" data-tw="${phone ? 352 : 176}" viewBox="${phone ? VIEW.phone : VIEW.wide}" ${a11y} focusable="false"><g transform="translate(220 170) scale(.94) translate(-220 -170)">${SLIDES[i]()}</g></svg>`;
   const svg = wrap.firstElementChild;
   if (live1) clockLive(svg, onTouch);
@@ -283,8 +284,9 @@ const stage = (i, onTouch) => {
   return svg;
 };
 
-const CAP_HINT = 'Tap a speed or play. Space pauses.';
-const CAP_DONE = 'That is the clock. Space pauses it any time.';
+// Touch devices have no Space key: say what pauses the clock there.
+const capHint = () => (coarse() ? 'Tap a speed or play. Tap the play button to pause.' : 'Tap a speed or play. Space pauses.');
+const capDone = () => (coarse() ? 'That is the clock. Tap the play button to pause it any time.' : 'That is the clock. Space pauses it any time.');
 
 function enhance(node) {
   node.classList.add('intro');
@@ -307,7 +309,7 @@ function enhance(node) {
   let shown = -1, capEl = null;
   // Next is dimmed (never disabled) until the student has touched one clock control; one touch, no gate on later slides.
   const gate = () => { node.dataset.gate = shown === 0 && !CLOCK.touched ? '1' : '0'; };
-  const setCap = () => { if (capEl) capEl.textContent = CLOCK.touched ? CAP_DONE : CAP_HINT; };
+  const setCap = () => { if (capEl) capEl.textContent = CLOCK.touched ? capDone() : capHint(); };
   const onTouch = () => {
     gate(); setCap();
     if (still()) return;
@@ -342,7 +344,7 @@ function enhance(node) {
     if (e.key !== ' ' || shown !== 0 || !live || !live.svg.isConnected || e.target.closest?.('.si-kb')) return;
     e.preventDefault(); e.stopPropagation(); swallow = true;
     live.space();
-    live.spaceKey.classList.add('is-down');
+    live.spaceKey?.classList.add('is-down');
   };
   const up = (e) => {
     if (e.key !== ' ' || !swallow) return;

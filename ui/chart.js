@@ -223,7 +223,20 @@ export function createPriceChart(host, api, getEvents = () => []) {
           x: { type: 'linear', min: 0, max: m.lastX, grid: { color: rgba(c.line, 0.45), drawTicks: false }, border: { color: c.ink },
             ticks: { color: c.muted, maxTicksLimit: 6, padding: 6, autoSkipPadding: 14, maxRotation: 0, font: { family: css('--f-num', 'monospace'), size: 11 }, callback: (v) => R.lab(v) },
             // the last tick sits on the axis end: drop the one before it when the two labels would touch
-            afterBuildTicks: (sc) => { const t = sc.ticks; if (t.length > 3 && t[t.length - 1].value - t[t.length - 2].value < R.lastX * 0.15) t.splice(t.length - 2, 1); } },
+            // the last tick sits on the axis end: drop the one before it when the two labels would touch; then thin the ticks to the
+            // width the axis really has (measured label width plus a gap), so labels such as "Day 151" never run into each other
+            afterBuildTicks: (sc) => {
+              const t = sc.ticks;
+              if (t.length > 3 && t[t.length - 1].value - t[t.length - 2].value < R.lastX * 0.15) t.splice(t.length - 2, 1);
+              const g = sc.ctx, room = sc.width || (sc.chart && sc.chart.width) || 0;
+              if (!g || !room || t.length < 3) return;
+              g.save(); g.font = `11px ${css('--f-num', 'monospace')}`;
+              const w = Math.max(...t.map((k) => g.measureText(String(R.lab(k.value))).width)); g.restore();
+              const fit = Math.max(2, Math.floor((room - 12) / (w + 20)));
+              if (t.length <= fit) return;
+              const keep = new Set(Array.from({ length: fit }, (_, i) => Math.round((i * (t.length - 1)) / (fit - 1))));
+              for (let i = t.length - 1; i >= 0; i--) if (!keep.has(i)) t.splice(i, 1);
+            } },
           y: { grid: { color: rgba(c.line, 0.6) }, border: { color: c.ink },
             ticks: { color: c.muted, maxTicksLimit: 5, font: { family: css('--f-num', 'monospace'), size: 11 }, callback: (v) => (R.blind ? Number(v).toFixed(0) : '$' + Number(v).toFixed(0)) } },
         },

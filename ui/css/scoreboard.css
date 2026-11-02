@@ -294,3 +294,6 @@
   .sc-new{transform:rotate(-6deg)}
   .sc-acc-x{transition:none}
 }
+
+/* the page heading takes focus on arrival; it is not a control, so no ring on it */
+.sc-head h1:focus{outline:none}

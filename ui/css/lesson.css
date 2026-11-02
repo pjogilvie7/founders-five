@@ -1,1 +1,4 @@
 /* Gauntlet overrides for the lesson piece; loaded after the base stylesheets. */
+
+/* the decision heading takes the first focus (programmatically, not a control): no ring on it */
+.dialog.event .dlg-title:focus{outline:none}

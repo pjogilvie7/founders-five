@@ -1,7 +1,7 @@
 /* Collar piece, loaded after the base stylesheets.
    One raised "instrument" card holds the whole move: tenor and floor pickers, the share input and confirm plate, and one
    result strip (floor, cap and the band between them) under them. While the engine blocks the move the card is just the lock card. Soft layered shadow and a 1px ink edge (no offset shadows). Confirm is a raised engraved plate that
-   presses 2px; success thumps a COLLARED stamp onto the card with the engine's receipt line. */
+   presses 2px; success shows the plate stamp and a receipt slip under the card. */
 
 .collar{gap:14px;
   --cd-edge:color-mix(in srgb,var(--ink) 55%,var(--paper-line));--cd-r:4px;--cd-bg:#fbf9f1;
@@ -10,10 +10,9 @@
 .collar .quote,.collar .row-item{border:1px solid var(--cd-edge);border-radius:var(--cd-r);background:var(--cd-bg);box-shadow:var(--cd-sh)}
 
 /* header plate: single rule, teal top edge and an engraved scale, no double frame */
-.collar .plate{box-shadow:0 1px 2px rgba(24,38,47,.14),0 8px 18px -12px rgba(24,38,47,.3);border-top:3px solid var(--collar);padding:10px 18px 14px;overflow:hidden;position:sticky;top:0;z-index:7}
+.collar .plate{box-shadow:0 1px 2px rgba(24,38,47,.14),0 8px 18px -12px rgba(24,38,47,.3);border-top:3px solid var(--collar);padding:10px 18px 14px;overflow:hidden;position:relative}
 .collar .plate .t-lede{padding-right:0}
-/* the in-panel stamp below replaces the header one; the header one stays in the DOM, unseen */
-.collar .plate .t-stamp{top:auto;bottom:16px;right:24px;margin:0;font-size:17px;padding:1px 8px 0;opacity:0!important;animation:none!important}
+/* the word stamp is the shared plate stamp (tabs.css), placed clear of the status chip */
 .collar .plate::before{inset:auto 0 0 0;height:6px;border:0;background:repeating-linear-gradient(90deg,var(--paper-line) 0 1px,transparent 1px 8px);opacity:.9}
 .collar .plate .tool-h h2{font:650 26px/1.15 var(--f-body);font-variant-caps:normal;text-transform:none;letter-spacing:-.012em}
 .collar .plate .tool-h h2::after{content:"";display:inline-block;width:22px;height:3px;margin-left:12px;vertical-align:.28em;background:var(--gold)}
@@ -28,8 +27,6 @@
 .collar .box.instr{--px:20px;--pt:16px;position:relative;padding:var(--pt) var(--px) 16px;border:1px solid var(--ink);border-radius:3px;
   background:linear-gradient(180deg,#faf6ea 0,var(--paper) 46%,color-mix(in srgb,var(--paper) 82%,var(--paper-2)) 100%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 1px 1px rgba(24,38,47,.2),0 4px 8px -2px rgba(24,38,47,.16),0 18px 30px -14px rgba(24,38,47,.4)}
-.collar .instr.stamped{animation:coJolt .4s var(--ease-out) both}
-@keyframes coJolt{0%,50%{transform:none}58%{transform:translateY(2px)}100%{transform:none}}
 
 /* form grid: tenor and floor share a row on desktop, everything else spans */
 .collar .aform{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;position:relative}
@@ -181,19 +178,9 @@
 .collar .co-go:active{transform:translateY(2px);filter:brightness(.95);box-shadow:inset 0 3px 8px rgba(0,0,0,.5),0 1px 1px rgba(24,38,47,.3)}
 .collar .co-go:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 
-/* ---- the stamp: COLLARED thumps onto the card, a receipt slip prints beneath it ---------------------------------- */
-.collar .co-stamp{position:absolute;inset:0;z-index:6;display:grid;place-content:center;justify-items:center;gap:18px;border-radius:inherit;cursor:pointer;
-  background:color-mix(in srgb,var(--paper) 86%,transparent);-webkit-backdrop-filter:blur(1.5px);backdrop-filter:blur(1.5px);animation:coVeil .16s ease-out both;transition:opacity .25s}
-.collar .co-stamp.out{opacity:0}
-.collar .co-word{position:relative;font:700 clamp(34px,5.4vw,54px)/1 var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:var(--collar);
-  padding:8px 18px 4px 28px;border:4px solid var(--collar);border-radius:2px;background:color-mix(in srgb,var(--paper) 55%,transparent);
-  transform:rotate(-6deg);animation:coThump .4s cubic-bezier(.2,.8,.2,1) both}
-.collar .co-word::after{content:"";position:absolute;inset:-8px;border:2px solid var(--collar);border-radius:3px;opacity:0;animation:coRing .5s .2s ease-out both}
-.collar .co-slip{max-width:min(460px,88%);padding:10px 16px 11px;background:#fffdf6;border:1px solid var(--paper-line);border-bottom:2px dashed color-mix(in srgb,var(--ink) 35%,var(--paper-line));
-  font-size:13.5px;line-height:1.4;text-align:center;color:var(--ink);box-shadow:0 8px 14px -10px rgba(24,38,47,.5);animation:coPrint .38s .22s var(--ease-out) both}
-@keyframes coVeil{from{opacity:0}}
-@keyframes coThump{0%{transform:scale(2.5) rotate(-15deg);opacity:0}55%{transform:scale(.95) rotate(-6deg);opacity:1}100%{transform:scale(1) rotate(-6deg);opacity:1}}
-@keyframes coRing{0%{opacity:.7;transform:scale(.96)}100%{opacity:0;transform:scale(1.28)}}
+/* ---- the receipt: the engine's result line as a slip at the top of "Your collars", in flow, never over the form ------------------- */
+.collar .co-receipt{margin:0 0 10px;padding:10px 14px 11px;background:#fffdf6;border:1px solid var(--paper-line);border-bottom:2px dashed color-mix(in srgb,var(--ink) 35%,var(--paper-line));
+  font-size:13.5px;line-height:1.4;color:var(--ink);box-shadow:0 8px 14px -10px rgba(24,38,47,.5);animation:coPrint .38s var(--ease-out) both}
 @keyframes coPrint{from{clip-path:inset(0 0 100% 0);transform:translateY(-8px);opacity:0}to{clip-path:inset(0 0 -8px 0);transform:none;opacity:1}}
 
 /* your collars: stamped cards */
@@ -222,7 +209,7 @@
 /* ---- phone: one column; the dock sticks to the bottom of the panel while the card is in view so confirm never scrolls away -- */
 @media (max-width:899px){
   .collar{gap:12px;padding:4px 0 8px}
-  .panel .collar .plate{padding:8px 12px 10px;border-top:3px solid var(--collar);border-radius:2px;overflow:visible;position:sticky;top:0}
+  .panel .collar .plate{padding:8px 12px 10px;border-top:3px solid var(--collar);border-radius:2px;overflow:visible;position:relative}
   .panel .collar .plate::before{display:none}
   .collar .plate .tool-h h2{font-size:22px;line-height:1.15}
   .collar .plate .t-lede{display:none}
@@ -247,17 +234,23 @@
   .collar .street .q-grid{grid-template-columns:minmax(0,1fr);gap:10px}
   .collar .street .q-grid>div{padding:0;border-left:0}
   .collar .street .q-grid .v{font-size:26px}
-  /* phone: the dock is part of the page flow right under the pickers: input, three chips, result strip, confirm */
-  .collar .dock{grid-template-columns:minmax(0,1fr);grid-template-areas:"f" "q" "go";gap:12px;align-items:stretch;margin:4px calc(var(--px) * -1) 2px;padding:12px var(--px) 14px}
+  /* phone: the dock is a column (input, three chips, result strip, confirm). The confirm row sticks to the bottom of the panel while the
+     dock is in view, so it is on the first screen and never scrolls away; the result strip sits above it, not under it. A flex column
+     (not the grid) so the sticky row is bounded by the whole dock. */
+  .collar .dock{display:flex;flex-direction:column;gap:12px;margin:4px calc(var(--px) * -1) 2px;padding:12px var(--px) 0}
+  .collar .dock .fld{order:0}
+  .collar .dock .quote{order:1}
+  .collar .co-act{order:2;align-self:stretch;position:sticky;bottom:0;z-index:5;gap:6px;margin:0 calc(var(--px) * -1);padding:8px var(--px) 12px;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--paper-2) 92%,var(--paper)),color-mix(in srgb,var(--paper-2) 78%,var(--paper)));
+    border-top:1px solid color-mix(in srgb,var(--ink) 30%,var(--paper-line));box-shadow:0 -6px 10px -8px rgba(24,38,47,.35)}
   .collar .dock .fld{gap:4px 10px}
   .collar .dock .fld-row{flex-wrap:wrap;gap:8px}
   .collar .dock .fld-in{flex:1 1 100%;font-size:24px;min-height:48px}
   .collar .co-chips{flex:1 1 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
   .collar .co-chips .co-chip{min-width:0;min-height:44px;font-size:14px;padding:0 6px}
   .collar .dock .fld-max{font-size:13px;line-height:1.25}
-  .collar .dock .t-go{min-height:56px;font-size:16px;align-self:stretch}
-  .collar .co-act{align-self:stretch}
-  .collar .co-line{order:-1;font-size:14px}
+  .collar .dock .t-go{min-height:52px;font-size:16px;align-self:stretch}
+  .collar .co-line{order:-1;font-size:13.5px;line-height:1.3}
   .collar .box.instr.is-locked{--px:16px;--pt:18px;padding-bottom:18px}
   .collar .co-lock{grid-template-columns:auto minmax(0,1fr);gap:14px 14px}
   .collar .co-medal{width:52px;height:52px}
@@ -265,8 +258,6 @@
   .collar .co-why{font-size:18px}
   .collar .co-sub{font-size:13.5px}
   .collar .co-go{grid-column:1/-1;width:100%;min-height:52px;font-size:16px}
-  .collar .co-word{font-size:28px;letter-spacing:.12em;padding:6px 10px 3px 16px}
-  .collar .co-slip{font-size:13px;max-width:92%}
   .collar .sc-figs{margin-left:0;gap:2px 16px}
   .collar .sc-figs b{font-size:18px}
   .collar .r-side .t-hint{font-size:12.5px}
@@ -276,10 +267,10 @@
 
 @media (prefers-reduced-motion:reduce){
   .q-strip.bump .b-fill,.q-strip.bump .b-f,.q-strip.bump .b-c{animation:none}
-  .collar .dock .fld-in.tick,.collar .dock .t-go.ready,.collar .dock .t-go.nudge,.collar .instr.stamped,.collar .row-item.fresh{animation:none}
+  .collar .dock .fld-in.tick,.collar .dock .t-go.ready,.collar .dock .t-go.nudge,.collar .row-item.fresh,.collar .co-receipt{animation:none}
   .collar .dock .t-go,.collar .co-chip,.collar .co-go,.collar .seg2 button,.collar .quote{transition:none}
-  .collar .co-stamp,.collar .co-word,.collar .co-slip{animation:none}
-  .collar .co-word::after{display:none}
-  .collar .co-stamp{transition:none}
   .q-band .b-fill,.q-band .b-pin{transition:none}
 }
+
+/* one factual line under the Street check card */
+.collar .st-why{margin:8px 2px 0;font-size:13px;line-height:1.4;color:var(--muted)}

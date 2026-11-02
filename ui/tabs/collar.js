@@ -1,6 +1,6 @@
 // Collar tab: set a zero-cost collar on free shares, see open collars, unwind them, and (SpaceX) check the Street.
 import {
-  sim, esc, int, money, moneyFull, price, pct, dl, dry, evOf, safe, setText, setHTML, actionForm, ensure, plateHTML, stamp, snapOf, gateHTML, shortDate, tween, reasonText,
+  sim, esc, int, money, moneyFull, price, pct, dl, dlFar, dry, evOf, safe, setText, setHTML, actionForm, ensure, plateHTML, stamp, snapOf, gateHTML, shortDate, tween, reasonText,
 } from './kit.js';
 
 let streetP = null;
@@ -38,8 +38,8 @@ function paintQuote(el, v, api, n, lineEl) {
   const blind = api.card().blind;
   const fmt = (x) => (blind ? x.toFixed(2) : price(x));
   const live = n > 0 && !q.error && q.floorValue != null && q.capValue != null;
-  const until = esc(dl(api, q.expiry));
-  setText(Q('meta'), `Held until ${dl(api, q.expiry)} \u00b7 ${v.tenor} months \u00b7 $0\u00a0up\u00a0front`);
+  const until = esc(dlFar(api, q.expiry));
+  setText(Q('meta'), `Held until ${dlFar(api, q.expiry)} \u00b7 ${v.tenor} months \u00b7 $0\u00a0up\u00a0front`);
   // Band: display positions only (ratios the engine already returned), scaled so floor and cap sit near the two ends.
   const lo = q.putPct - 0.06, hi = q.capPct + 0.06;
   const at = (r) => `${Math.max(2, Math.min(98, ((r - lo) / (hi - lo)) * 100)).toFixed(1)}%`;
@@ -69,23 +69,20 @@ function paintQuote(el, v, api, n, lineEl) {
   }
 }
 
-// In-panel stamp: the word thumps onto the instrument card with the engine's own result line as the receipt.
-// Reduced motion: no thump, it simply appears. Any key or click, or the next change to the form, clears it.
+// The word stamp rides the plate (kit.js stamp), clear of the status chip. The receipt line the engine returns is shown as a slip at the
+// top of "Your collars", in the flow of the page, so nothing is ever laid over the form or its controls. Any change to the form clears it.
 function dropStamp(c) {
-  const s = c.querySelector('.co-stamp'); if (!s) return;
-  clearTimeout(s._t); s.remove();
-  const b = c.querySelector('.instr'); if (b) b.classList.remove('stamped');
+  clearTimeout(c._rt);
+  if (!c._receipt) return;
+  c._receipt = '';
+  const r = c.querySelector('.co-receipt'); if (r) r.remove();
 }
 function showStamp(c, word, line) {
-  const box = c.querySelector('.instr'); if (!box) return;
   dropStamp(c);
-  const s = document.createElement('div');
-  s.className = 'co-stamp'; s.setAttribute('aria-hidden', 'true');
-  s.innerHTML = `<span class="co-word">${esc(word)}</span>${line ? `<span class="co-slip num">${esc(line)}</span>` : ''}`;
-  box.appendChild(s); box.classList.add('stamped');
-  const out = () => { s.classList.add('out'); s._t = setTimeout(() => dropStamp(c), 260); };
-  s._t = setTimeout(out, 3400);
-  s.addEventListener('click', () => { clearTimeout(s._t); dropStamp(c); });
+  if (!line) return;
+  c._receipt = line;
+  safe('collar', () => draw(c, snapOf(c._api) || c._snap, c._api));
+  c._rt = setTimeout(() => dropStamp(c), 8000);
 }
 
 function build(k, c) {
@@ -113,7 +110,7 @@ function build(k, c) {
     preview: (v, n, d, snap, api) => {
       const c0 = d.after.collars.find((x) => !d.before.collars.some((y) => y.id === x.id)); if (!c0) return '';
       return `<ul class="terms">
-        <li class="t-hold">Held until <b class="num">${esc(dl(api, c0.expiry))}</b></li>
+        <li class="t-hold">Held until <b class="num">${esc(dlFar(api, c0.expiry))}</b></li>
         <li class="t-low">Under <b class="num">${price(c0.Kp)}</b>, the put pays you</li>
         <li class="t-high">Over <b class="num">${price(c0.Kc)}</b>, you pay the call</li>
         <li class="t-tax">Taxed at settlement. Unwinding early costs 1%.</li></ul>`;
@@ -240,7 +237,7 @@ function build(k, c) {
     if (blocked) dropStamp(c);
     if (!blocked) return;
     const t = reasonText(c._api, g);
-    tabId = /10b5-1/.test(t) ? 'plan' : /^Locked by the lockup/.test(t) ? 'stock' : '';
+    tabId = /10b5-1/.test(t) ? 'plan' : /^Locked by the lockup|^No free shares/.test(t) ? 'stock' : '';
     const line = tabId === 'plan' ? 'Locked by your 10b5-1 plan.' : plain(t);
     if (why.textContent !== line) why.textContent = line;
     goTab.hidden = !tabId;
@@ -262,15 +259,16 @@ function build(k, c) {
   });
 }
 
-function listHTML(snap, api, msg, fresh) {
+function listHTML(snap, api, msg, fresh, receipt) {
   const res = `<p class="t-res pop" aria-live="polite">${esc(msg || '')}</p>`;
-  if (!snap.collars.length) return '<p class="empty">No open collars.</p>' + res;
-  return `<ul class="rows">${snap.collars.map((o) => {
+  const slip = receipt ? `<p class="co-receipt num">${esc(receipt)}</p>` : '';
+  if (!snap.collars.length) return slip + '<p class="empty">No open collars.</p>' + res;
+  return slip + `<ul class="rows">${snap.collars.map((o) => {
     const d = dry(api, { type: 'unwindCollar', id: o.id });
     const w = d.ok ? evOf(d, 'note') : null;
     const net = w && w.data ? w.data.net : null;
     return `<li class="row-item${fresh && fresh.has(o.id) ? ' fresh' : ''}"><div class="r-main"><b class="num">${int(o.shares)} shares</b><span class="num">floor ${price(o.Kp)} · cap ${price(o.Kc)}</span>
-      <span class="num">${o.tenorMonths} months · ends ${esc(dl(api, o.expiry))} · ${o.daysLeft} days left</span></div>
+      <span class="num">${o.tenorMonths} months · ends ${esc(dlFar(api, o.expiry))} · ${o.daysLeft} days left</span></div>
       <div class="r-side"><span class="k">Model value</span><b class="num ${o.mark < 0 ? 'neg' : ''}">${money(o.mark)}</b>
       <button type="button" class="btn sm" data-unwind="${esc(o.id)}">${net == null ? 'Unwind' : `Unwind: ${net >= 0 ? 'receive' : 'pay'} ${moneyFull(Math.abs(net))}`}</button>
       <span class="t-hint">Model value less 1% of notional</span></div></li>`;
@@ -295,7 +293,8 @@ async function streetBox(c, api) {
     <p class="t-hint">Model (flat ${vol}% vol): one-year 85% floor ${price(s.floor)}, zero-cost cap ${price(s.modelCap)}. Listed SPCX options on ${esc(shortDate(s.asOf))} imply a cap near ${price(s.marketCap)}. A dealer quoting a $100M block would charge a spread, so the real cap is lower.</p>
     ${api.state().d !== s.asOf ? `<p class="t-hint"><b>These are the listed quotes from ${esc(shortDate(s.asOf))}, the latest day in the data.</b> Your game date is ${esc(dl(api, api.state().d))}, so the collar quote above can differ.</p>` : ''}
     <p class="t-hint">${esc(s.method)}${s.rate ? ` Rate used: 1-year Treasury ${s.rate}%${s.rateAsOf ? ` (${esc(shortDate(s.rateAsOf))})` : ''}.` : ''}</p>
-  </details>`;
+  </details>
+  <p class="t-hint st-why">The model uses one volatility for every strike; listed options price each strike on its own, so the two caps differ.</p>`;
   box.querySelector('details').addEventListener('toggle', (e) => {
     if (e.currentTarget.open && !box._flagged && !api.watch) { box._flagged = true; c._api.act({ type: 'flag', name: 'streetCheck' }); }
   });
@@ -311,7 +310,7 @@ function draw(c, snap, api) {
   const fresh = (c._fresh ||= new Set());
   if (c._seen) for (const o of snap.collars) if (!c._seen.has(o.id)) { fresh.add(o.id); setTimeout(() => fresh.delete(o.id), 1800); }
   c._seen = new Set(snap.collars.map((o) => o.id));
-  setHTML(list, listHTML(snap, api, c._unwMsg, fresh));
+  setHTML(list, listHTML(snap, api, c._unwMsg, fresh, c._receipt));
   streetBox(c, api);
   k.form.update(snap, api);
   if (c._refresh) c._refresh();

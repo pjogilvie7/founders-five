@@ -3,13 +3,14 @@ import { esc, } from './format.js';
 import { art } from './data.js';
 
 let open = 0;
+let modalSeq = 0;
 export const overlayOpen = () => open > 0;
 
 export const DEFAULT_LESSONS = {
   stock: [
     { title: 'Your shares', body: 'Every share on your certificate is locked until a seal breaks. Released shares become free to use.' },
     { title: 'Selling', body: 'You can sell free shares only while the trading window is open. Each sale costs 0.25% and the gain is taxed at 23.8%.' },
-    { title: 'Where the money goes', body: 'Sale proceeds go to cash, then into the index fund if auto-invest is on. Index fund gains are taxed when you withdraw.' },
+    { title: 'Where the money goes', body: 'Sale proceeds land in cash. Moving money into the index fund is your own choice, made in the Cash tab. Index fund gains are taxed when you withdraw.' },
   ],
   plan: [
     { title: 'A plan sells for you', body: 'A 10b5-1 plan sells a fixed percentage of your free shares each month. It keeps selling while the window is closed.' },
@@ -33,8 +34,9 @@ export const DEFAULT_LESSONS = {
   ],
 };
 
+// a[href], not [href]: the engraved art has <textPath href> nodes that match [href] but can never take focus, which broke the Tab wrap.
 function focusables(root) {
-  return [...root.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])')].filter((e) => e.offsetParent !== null || e === document.activeElement);
+  return [...root.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])')].filter((e) => !e.closest('svg') && (e.offsetParent !== null || e === document.activeElement));
 }
 
 function mount(node, { onEscape } = {}) {
@@ -50,7 +52,7 @@ function mount(node, { onEscape } = {}) {
     else if (e.key === 'Tab') {
       const f = focusables(node); if (!f.length) return;
       const first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      if (e.shiftKey && (document.activeElement === first || document.activeElement.getAttribute('tabindex') === '-1')) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       else if (!node.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
     }
@@ -131,15 +133,19 @@ export function showModal({ kicker, title, text, choices, tone }) {
     node.innerHTML = `
       <div class="dlg-art">${art('sealRing', { size: 120, color: '#8c6d31' })}</div>
       <p class="kicker">${esc(kicker || 'Your move')}</p>
-      <h2 class="dlg-title">${esc(title || '')}</h2>
-      <p>${esc(text || '')}</p>
+      <h2 class="dlg-title" tabindex="-1">${esc(title || '')}</h2>
+      <p class="dlg-text">${esc(text || '')}</p>
       <div class="choices">${choices.map((c) => `<div class="choice"><button class="btn${c.primary ? ' primary' : ''}" data-id="${esc(c.id)}"${c.disabled ? ' aria-disabled="true"' : ''}>${esc(c.label)}</button>${c.reason ? `<span class="why">${esc(c.reason)}</span>` : ''}</div>`).join('')}</div>`;
+    // The heading takes the first focus, not a choice: a player pressing Enter through notices cannot commit a decision by reflex.
+    const head = node.querySelector('.dlg-title'), txt = node.querySelector('.dlg-text');
+    txt.id = 'dlg-txt-' + (++modalSeq);
+    node.setAttribute('aria-describedby', txt.id);
     let close;
     node.addEventListener('click', (e) => {
       const b = e.target.closest('button[data-id]'); if (!b || b.getAttribute('aria-disabled') === 'true') return;
       close(); resolve(b.dataset.id);
     });
     close = mount(node);
-    (node.querySelector('button.primary:not([aria-disabled])') || node.querySelector('button:not([aria-disabled])') || node.querySelector('button'))?.focus();
+    head.focus();
   });
 }
