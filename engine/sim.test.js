@@ -156,7 +156,7 @@ test("6d: releases happen on the ladder dates, free shares match, and the lockup
     for (const e of t.events) if (e.type === "release" && e.data.shares) got.push([e.d, e.data.shares, e.text]);
   }
   assert.deepEqual(got.map((x) => x[0]), ["2026-08-06", "2026-08-20", "2026-09-09", "2026-09-24", "2026-10-09", "2026-10-22", "2026-10-26"]);
-  assert.equal(got[0][2], "20% of your shares are free. New: Sell, Collar, Credit Line.");
+  assert.equal(got[0][2], "20% of your shares are free. New: Sell, 10b5-1 plan, Collar, Credit Line, Put, Exchange Fund.");
   assert.equal(got[1][2], "7% of your shares are free.");
   assert.equal(s.shares.locked, 125926);
   assert.equal(s.shares.free, 740741 - 125926);

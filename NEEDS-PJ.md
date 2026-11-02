@@ -12,3 +12,8 @@ The classifier refused the keep-awake request at 00:21 ET, so the build relied o
 
 ## Monday checks
 See the checklist at the end of `REPORT.md`.
+
+## Play pass, 2026-11-02 afternoon
+- Push the play pass (deploys the live site): `cd /Users/pjogilvie/fmrksAiExtraCredit/founders-five && git pull --ff-only && git push`
+- After tonight's 23:30 UTC data run, check its log: the Street check's listed cap should read the close (about $182.59 on Friday's data), not $202.42.
+- Phone check of the new paused state ("Paused. Press play.") and the collar confirm docked at the panel bottom.

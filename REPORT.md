@@ -1,3 +1,77 @@
+# Founder's Five: play pass (2026-11-02, afternoon)
+
+**Bottom line.** The game is slower, stops after every popup, and the index fund is the player's own call. Every suite passes on the integrated build. Committed locally on `main`, not pushed. The plan, pacing reasons and every change by file are in `PLAN-PLAY.md`; decisions are in `../prd/DECISIONS.md` under "Calls made during the play pass".
+
+## What changed
+- **Clock.** Play mode now runs 1,200 ms per trading day on SpaceX and 360 ms on blind cards at 1x (old: 250 and 95). Watch mode is unchanged.
+- **Pause after popups.** The game starts paused after the intro, and every popup (release, notice, lesson, house, collar expiry, margin call) leaves the clock paused. The key reads Play, a line says "Paused. Press play or Space.", and a polite live region announces Paused and Running. Watch never pauses.
+- **Fewer interrupts.** The release card comes first, then one lesson dialog for every tool it unlocked (one card per tool plus a pointer to the full lessons), not three dialogs before it. A window-open card appears only after new shares were released; otherwise it is a toast.
+- **No auto-invest.** No switch, no monthly sweep, no routing of proceeds. Sale proceeds land in cash. Share codes with the old action are rejected as "from an earlier version". The debrief states idle cash as a fact.
+- **After-tax rail.** Net worth on the rail, and the rival ranking, are now after the tax embedded in unsold shares. A sale no longer looks like a loss, and the in-game order matches the scoreboard.
+- **Known defects fixed:** collar header clipping, collar pill over the border, phone collar confirm below the fold, SOLD stamp over the window pill, interrupts queued as separate cards, the Seller's day-0 plan with every share locked. The Playbook already waited for a release.
+- **Data job.** CBOE quotes are used only when they are the close of the last price session (from 15:55 ET that day, or pre-market the next weekday). An intraday run keeps the previous options file and logs a warning.
+- **Playtester fixes:** Space presses a focused button instead of toggling the clock; no focus steal while typing; focus returns after popups; decision dialogs focus their text, not "Pay from cash"; disabled controls announce their reason; Put and Exchange unlock with the first release as their seal says; "No free shares to pledge. The next release is Aug 20." replaces a misleading lockup message; MAX fills whole dollars; far collar dates show the year; phone margin banner, lock card and tab-bar overlaps; intro NaN console errors; blind chart axis labels.
+
+## Pacing (clock time, pauses extra)
+
+| Card | 1x | 2x | 4x |
+|---|---|---|---|
+| SpaceX, 98 trading days, 1,200 ms a day at 1x | 1 min 58 s | 59 s | 29 s |
+| Blind, about 1,261 days, 360 ms a day at 1x | 7 min 34 s | 3 min 47 s | 1 min 53 s |
+
+Measured headless at 1x: 8 trading days in 10 s on SpaceX, 27 on c1. Watch reaches the scoreboard in 4.5 s.
+
+## Bots, after-tax wealth before and after
+
+| Run | Holder | Seller | Playbook |
+|---|---|---|---|
+| SpaceX, engineer | $79,317,950 to $79,318,681 (0.0%) | $79,610,222 to $80,287,942 (+0.9%) | $79,261,607 to $79,505,654 (+0.3%) |
+| c1, engineer | $154,915,502 to $155,562,848 (+0.4%) | $266,915,527 to $264,661,130 (-0.8%) | $235,593,934 to $234,486,697 (-0.5%) |
+| c1, founder | $154,915,502 to $155,562,848 (+0.4%) | $226,447,944 to $223,965,706 (-1.1%) | $205,984,560 to $204,652,280 (-0.6%) |
+
+No bot moved more than 1.1%. The Seller and the Playbook deposit cash above a year of spending on each month start; the Holder never deposits. The SpaceX founder seat is locked until 2027, so it has no bot run. The Seller's plan on c1 engineer on day 0 is legitimate: that seat gets 15% on 2020-12-10.
+
+## Tests on the integrated build
+
+| Suite | Result |
+|---|---|
+| `node --test` | 185 of 185 (was 175) |
+| `tests/e2e.mjs` | 18 of 18, zero console errors, Watch 4.5 to 4.6 s at both sizes |
+| `tests/tabs-e2e.mjs` | 122 checks, zero console errors |
+| `tests/shell-shots.mjs`, `pages-shots.mjs`, `score-shots.mjs`, `should-s1.mjs` | all pass, zero console errors |
+| `check-golden-xlsx.mjs --verify`, `check-headlines.mjs` | all rows PASS, all cards pass |
+
+Run six browser suites in parallel on this Mac and they time out: one network blip (ERR_NETWORK_CHANGED on the font and Chart.js CDNs) and one stall under load. Each suite passed when rerun on its own.
+
+## Final fresh playtest
+A fresh Sonnet playtester who saw none of this work played SpaceX and a blind card (Airbnb) at 1280x800 and 375x812. It found zero console errors.
+- **Pace.** SpaceX took about 105 s at 1x, 59 s at 2x and 29 s at 4x.
+- **Seeing a release coming.** At 1x the Stock tab's "Next release in 20 days" gave about 14 s of warning. On other tabs there is no countdown.
+- **Pause.** After every popup the clock stayed paused, and the tester called "Paused. Press play or Space." clear.
+
+Fixed after the playtest:
+- The lesson dialog had no visible close on touch. It now has a Close button.
+- The release card listed three new tools while the lesson said five. The engine's text now lists all six.
+
+Logged, not fixed (time box):
+- **Spending drains cash.** On a blind card, a player who never sells sees cash run down by spending, so the house forces a sale. This is correct mechanics, but no line says why cash fell.
+- **Desktop Sell at 800 px.** The Sell form and its result line sit below the fold.
+- **Countdown units.** The countdown shows only on the Stock tab, in calendar days, while the clock counts trading days.
+- **Two starting figures.** The title's "$100 million" (at the offer price) differs from the day-1 after-tax $94.1M, with no on-screen note.
+- **Phone stamp.** The DEPOSITED stamp touches the Cash header on phone.
+- **10b5-1 wording.** "5% a month" is 5% of free shares, and the plan-live card does not say how many shares it sold.
+- **Scoreboard wording.** "The Playbook: 3 of 4 measures beaten" is ambiguous about who beat whom.
+- **Blind card rotation.** The rotation is per browser, so a fresh browser always deals Card 1 first.
+
+## Left and Needs PJ
+- **Push** (deploys the live site): `cd /Users/pjogilvie/fmrksAiExtraCredit/founders-five && git pull --ff-only && git push`
+- **Options data.** `data/spcx-options.json` still holds the $202.42 listed cap from the 10:50 ET manual run. Tonight's scheduled run (23:30 UTC) replaces it with the close. Check that run's log for a "SPCX options not updated" warning: if CBOE stamps the close oddly, the guard skips and says why.
+- **Real phone check** of the new paused state and the docked collar confirm.
+- **Not changed:** on desktop at 1280x800 the Stock tab's Sell form sits below the chart and needs a scroll (fitting it would shrink the chart to about 156 px). Jargon (lockup, 10b5-1, Rule 144) stays explained in lessons and the Glossary only.
+
+
+---
+
 # Founder's Five: overnight build report (2026-11-02)
 
 **Bottom line.** The game is live and passes the grader path on the live site. The repo was created at 10:49 ET Monday on PJ's go-ahead, after the overnight session's permission system refused it. Pages is deployed, and the nightly data workflow has passed once on GitHub (run 41475753259), committing data and redeploying.

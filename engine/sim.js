@@ -1251,7 +1251,7 @@ function advance(s, ctx, ev) {
     const pct = Math.round((relShares / s.total) * 100);
     ev.push({
       type: "release", d, pause: true,
-      text: `${pct}% of your shares are free.${firstEver ? " New: Sell, Collar, Credit Line." : ""}`,
+      text: `${pct}% of your shares are free.${firstEver ? " New: Sell, 10b5-1 plan, Collar, Credit Line, Put, Exchange Fund." : ""}`,
       data: { tranches: relIds, shares: relShares, pct, locked: s.shares.locked, first: firstEver },
     });
     if (firstEver) {

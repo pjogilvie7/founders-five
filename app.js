@@ -422,7 +422,7 @@ async function runLessons() {
   const names = ids.map((id) => g.paper.label(id));
   await showLesson(cards, {
     kicker: ids.length > 1 ? `${ids.length} tools unlocked` : `${names[0]} unlocked`,
-    label: ids.length > 1 ? `${names.join(', ')} lessons` : `${names[0]} lesson`, doneLabel: 'Got it',
+    label: ids.length > 1 ? `${names.join(', ')} lessons` : `${names[0]} lesson`, doneLabel: 'Got it', skipLabel: 'Close',
   });
   if (g.dead) return;
   g.holds.delete('lesson'); g.lessonBusy = false; pauseAfterPopup(g); refresh(); restoreFocus(prev);

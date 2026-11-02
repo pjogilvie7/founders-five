@@ -181,7 +181,7 @@ export function tick(state0) {
   }
   const win = windowAt(card, s.d);
   if (freed) {
-    ev.push({ type: 'release', d: s.d, pause: true, text: `${pctFreed}% of your shares are free. New: Sell, Collar, Credit Line.`, data: { shares: freed, pct: pctFreed } });
+    ev.push({ type: 'release', d: s.d, pause: true, text: `${pctFreed}% of your shares are free. New: Sell, 10b5-1 plan, Collar, Credit Line, Put, Exchange Fund.`, data: { shares: freed, pct: pctFreed } });
     unlock(s, ev, 'collar', 'Collar unlocked'); unlock(s, ev, 'credit', 'Credit Line unlocked');
     if (win.open) unlock(s, ev, 'plan', '10b5-1 Plan unlocked');
   }
