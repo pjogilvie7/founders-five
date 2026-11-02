@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeRows, appendSeries } from './lib/merge.mjs';
 import { bsPrice, zeroCostCall } from './lib/bs.mjs';
+import { checkChainSession, chainQuoteTime } from './lib/cboe.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...p) => JSON.parse(fs.readFileSync(path.join(ROOT, ...p), 'utf8'));
@@ -140,4 +141,45 @@ test('appendSeries skips old dates', () => {
 test('Black-Scholes golden values (PRD 4.7)', () => {
   assert.ok(Math.abs(bsPrice({ type: 'put', S: 134.72, K: 114.512, T: 1, r: 0.04, vol: 0.537 }) - 15.325) < 0.01);
   assert.ok(Math.abs(zeroCostCall({ S: 134.72, Kp: 114.512, T: 1, r: 0.04, vol: 0.537 }).Kc - 186.99) < 0.05);
+});
+
+test('chain session guard: only end-of-day quotes for the asOf session pass (2026-10-30 is a Friday)', () => {
+  const F = '2026-10-30';
+  const ok = (q, asOf = F) => checkChainSession(q, asOf).ok;
+  assert.equal(ok('2026-11-02T10:50:00'), false, '10:50 ET on a newer session (the 2026-11-02 bug)');
+  assert.equal(ok('2026-11-02T10:50:00', '2026-11-02'), false, '10:50 ET, same session still trading');
+  assert.equal(ok('2026-10-30T18:30:00'), true, '18:30 ET on the asOf date');
+  assert.equal(ok('2026-10-30T16:00:00'), true, '16:00 ET exactly');
+  assert.equal(ok('2026-10-30T15:59:58'), true, 'closing trade stamped just before 16:00');
+  assert.equal(ok('2026-10-30T15:50:00'), false, 'ten minutes before the close');
+  assert.equal(ok('2026-10-30T13:00:00'), false, '13:00 ET on the asOf date');
+  assert.equal(ok('2026-11-03T08:00:00', '2026-11-02'), true, '08:00 ET next weekday');
+  assert.equal(ok('2026-11-02T08:00:00'), true, 'Monday 08:00 ET after a Friday asOf');
+  assert.equal(ok('2026-10-31T12:00:00'), true, 'Saturday after a Friday asOf');
+  assert.equal(ok('2026-11-02T09:29:00'), true, 'last minute before the open');
+  assert.equal(ok('2026-11-02T09:30:00'), false, 'the open of the next session');
+  assert.equal(ok('2026-11-02T18:30:00'), false, 'close of a newer session than asOf');
+  assert.equal(ok('2026-10-29T18:30:00'), false, 'older than the last close');
+  assert.equal(ok(null), false, 'missing quote time');
+  assert.equal(ok(undefined), false);
+  assert.equal(ok(''), false);
+  assert.equal(ok('not a time'), false, 'unparseable');
+  assert.equal(ok('2026-11-02T25:00:00'), false, 'impossible hour');
+  assert.equal(ok('2026-10-30T18:30:00', 'bad'), false, 'bad asOf');
+  assert.equal(chainQuoteTime({ timestamp: '2026-10-30 22:30:00', data: {} }), null, 'the UTC file timestamp is not a quote time');
+  assert.equal(chainQuoteTime({ data: { last_trade_time: '2026-10-30T16:00:00' } }), '2026-10-30T16:00:00');
+  assert.match(checkChainSession(null, F).reason, /no usable quote time/);
+});
+
+test('chain session guard converts zoned times with America/New_York (daylight saving)', () => {
+  // 2026-10-30 is EDT (UTC-4): 20:30Z = 16:30 ET (end of day), 19:30Z = 15:30 ET (intraday).
+  assert.equal(checkChainSession('2026-10-30T20:30:00Z', '2026-10-30').ok, true);
+  assert.equal(checkChainSession('2026-10-30T19:30:00Z', '2026-10-30').ok, false);
+  // 2026-11-02 is EST (UTC-5; clocks went back on 11-01): 13:00Z = 08:00 ET (pre-market), 15:50Z = 10:50 ET (intraday).
+  assert.equal(checkChainSession(new Date('2026-11-02T13:00:00Z'), '2026-10-30').ok, true);
+  assert.equal(checkChainSession(new Date('2026-11-02T15:50:00Z'), '2026-10-30').ok, false);
+  // 2026-11-02 14:45Z is 09:45 EST (after the open) but would be 10:45 under a stale EDT offset.
+  assert.equal(checkChainSession('2026-11-02T14:25:00Z', '2026-10-30').ok, true, '09:25 EST, pre-market');
+  assert.equal(checkChainSession('2026-11-02T14:35:00-00:00', '2026-10-30').ok, false, '09:35 EST, after the open');
+  assert.equal(checkChainSession(new Date('nope'), '2026-10-30').ok, false);
 });

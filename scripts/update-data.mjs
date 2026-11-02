@@ -8,7 +8,7 @@ import { P, readJson, writeJson, addDays, isoDate } from './lib/io.mjs';
 import { SourceError } from './lib/http.mjs';
 import { fetchBars } from './lib/yahoo.mjs';
 import { fetchSeries } from './lib/fred.mjs';
-import { fetchChain } from './lib/cboe.mjs';
+import { fetchChain, chainQuoteTime, checkChainSession } from './lib/cboe.mjs';
 import { fetchFilings, fetchOfferFacts, URL_424B4 } from './lib/sec.mjs';
 import { mergeRows, appendSeries } from './lib/merge.mjs';
 import { deriveOptions } from './lib/options.mjs';
@@ -28,7 +28,7 @@ const FILES = {
 const OFFER_FALLBACK = { proceedsUSD: 74999999925, sharesOutPost: 7380196910 };
 const SANITY = { firstClose: 160.95, peakClose: 211.39, peakDate: '2026-06-16', lowClose: 108.27, lowDate: '2026-08-05', closeOct30: 134.72 };
 
-const changed = [], errors = [], bugs = [];
+const changed = [], errors = [], warnings = [], bugs = [];
 const say = (...a) => console.log(...a);
 
 // Run one step. SourceError = a data source failed (logged, last good data kept). Anything else is a bug (exit 1).
@@ -161,6 +161,15 @@ async function updateOptions(base, market) {
     const chain = await fetchChain('SPCX');
     const last = base.prices[base.prices.length - 1];
     const spot = last[1], asOf = last[0];
+    // Never mix intraday option quotes with the prior close: only an end-of-day chain for the asOf session is used.
+    // Otherwise keep the existing spcx-options.json and carry on (a warning, not an error: prices still commit).
+    const session = checkChainSession(chainQuoteTime(chain), asOf);
+    if (!session.ok) {
+      const msg = `SPCX options not updated: ${session.reason}. Kept the existing data/spcx-options.json.`;
+      warnings.push(msg); say(`  WARNING: ${msg}`);
+      return;
+    }
+    say(`  cboe: ${session.reason}`);
     const ref = [chain.data.close, chain.data.current_price].filter((x) => x > 0);
     if (!ref.some((x) => Math.abs(x / spot - 1) < 0.1)) throw new SourceError('cboe', `chain underlying ${ref.join('/')} does not match last close ${spot}`);
     const rate = market.rates.dgs1[market.rates.dgs1.length - 1][1];
@@ -206,7 +215,7 @@ function runTests(run) {
 
 function writeLog(run) {
   const log = readJson(FILES.log, []);
-  log.unshift({ run, ok: errors.length === 0, changed, error: errors.length ? errors.join(' | ') : null });
+  log.unshift({ run, ok: errors.length === 0, changed, error: errors.length ? errors.join(' | ') : null, ...(warnings.length ? { warnings } : {}) });
   writeJson(FILES.log, log.slice(0, 60));
 }
 
@@ -228,6 +237,7 @@ async function main() {
   writeLog(run);
 
   say(`changed: ${changed.length ? changed.join(', ') : 'nothing'}`);
+  if (warnings.length) say(`warnings: ${warnings.join(' | ')}`);
   if (errors.length) say(`errors: ${errors.join(' | ')}`);
   if (bugs.length) { console.error('BUGS:\n' + bugs.join('\n')); process.exitCode = 1; }
 }
