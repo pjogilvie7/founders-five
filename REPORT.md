@@ -1,9 +1,22 @@
 # Founder's Five: overnight build report (2026-11-02)
 
-**Bottom line.** The game is built, tested and committed locally. It is not live yet: the session's permission system refused to create the public repo at 00:45 ET, and the build did not work around that refusal. Going live takes the three commands in `NEEDS-PJ.md` (about 3 minutes). Every check that does not need the live site passes on a local server.
+**Bottom line.** The game is live and passes the grader path on the live site. The repo was created at 10:49 ET Monday on PJ's go-ahead, after the overnight session's permission system refused it. Pages is deployed, and the nightly data workflow has passed once on GitHub (run 41475753259), committing data and redeploying.
 
 ## Live link
-https://pjogilvie7.github.io/founders-five/ (returns 404 until the repo is pushed; see `NEEDS-PJ.md` item 1)
+https://pjogilvie7.github.io/founders-five/ (repo: https://github.com/pjogilvie7/founders-five)
+
+`node tests/e2e.mjs https://pjogilvie7.github.io/founders-five/` gave 14 of 14, run 2026-11-02 at about 10:55 ET:
+- 375x812 and 1280x800
+- no login
+- no console errors
+- data current to the last trading day
+- Watch reaches the scoreboard in 4.9 s
+
+**Known data quirk.** The first GitHub data run was triggered by hand at about 10:50 ET. It read live option quotes against Friday's close, so the listed-option cap in the Street check reads $202.42, not Friday's $182.59. The scheduled 6:30 pm ET run (weekdays, 23:30 UTC) reads both after the close and realigns them.
+
+**Test fixes for GitHub.** Two tests failed on the first run there and were fixed:
+- The headline name-filter tests now skip when the private prospectus text in `research/` is absent.
+- The options test checks the rule (5 or more strikes per expiry, a sane cap), not one day's chain.
 
 ## What shipped against PRD section 10
 
@@ -77,10 +90,10 @@ Full table with reasons in `../prd/DECISIONS.md`. The ones that change the PRD:
 - **Lyft lockup:** ends 2019-08-19, from Lyft's own 8-K.
 
 ## Monday human checklist (PRD 11)
-1. **Go live** (`NEEDS-PJ.md` item 1, 3 min). Then open the link in a private window on a phone (15 min).
+1. **Phone check** (15 min): the site is live; open the link in a private window on a phone.
 2. **Sign off tranches** (2 h): `data/src/*/lockup.json` against `research/reconcile-*.md`. Flagged: SpaceX Dec 8 vs Dec 9, the Lyft 8-K date, the Pinterest employee date.
 3. **Read headlines and reveals** (1 h): all are marked `review: "pending"`. Decide whether Card 2 (Peloton) stays or swaps for c7 (Warner Music, ready).
-4. **Finalize the PDF** (1.5 h): fill in the team names, then rerun `node scripts/make-pdf.mjs` after going live.
+4. **Finalize the PDF** (1.5 h): fill in the team names on page 1, then rerun `node scripts/make-pdf.mjs --base https://pjogilvie7.github.io/founders-five/`. The link and QR already resolve.
 5. **Playtest** with a classmate (30 min).
 6. **Rehearse the interview** (45 min). Say "about $189 at today's 1-year rate" for the Street check, not the PRD's $187.
 
