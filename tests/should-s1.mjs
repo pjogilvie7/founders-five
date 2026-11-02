@@ -49,20 +49,22 @@ try {
   await page.goto(`${BASE}/#/watch`);
   await page.waitForSelector('.sc[data-watch="true"]', { timeout: 90000 });
   const t0 = Date.now();
-  await page.waitForSelector('#sc-pct-body[data-ready="true"]', { timeout: 10000 });
+  await page.waitForSelector('#sc-pct-body[data-ready="true"]', { state: 'attached', timeout: 10000 });
+  // the scoreboard keeps the report sections collapsed; open them all before reading or capturing
+  await page.evaluate(() => document.querySelectorAll('.sc-report details.sc-acc').forEach((d) => { d.open = true; }));
   const ms = Date.now() - t0;
   console.log(`  histogram ready ${ms} ms after the scoreboard appeared`);
   check(ms < 10000, `histogram rendered within 10 s (${ms} ms)`);
   await wait(1800); // entrance animations and the count-up
   const pct = await page.evaluate(() => ({
-    svgs: document.querySelectorAll('.sc-pct svg.hg').length,
-    bars: document.querySelectorAll('.sc-pct .hg-bar').length,
-    marks: [...document.querySelectorAll('.sc-pct svg.hg')].map((s) => s.querySelectorAll('.hg-mark').length),
+    svgs: document.querySelectorAll('#sc-p-h svg.hg').length,
+    bars: document.querySelectorAll('#sc-p-h .hg-bar').length,
+    marks: [...document.querySelectorAll('#sc-p-h svg.hg')].map((s) => s.querySelectorAll('.hg-mark').length),
     line: document.getElementById('sc-pct-line').textContent,
     line2: document.getElementById('sc-pct-line2').textContent,
     tag: (document.querySelector('.sc-pct-tag') || {}).textContent,
     keys: document.querySelectorAll('.sc-pct-key li').length,
-    text: document.querySelector('.sc-pct').textContent,
+    text: document.querySelector('#sc-p-h').textContent,
     big: document.getElementById('sc-big').textContent,
     overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
   }));
@@ -80,7 +82,7 @@ try {
   check(hooks.length === 2 && hooks.every((h) => !h.endsWith(':hidden')), `both buttons visible: ${hooks}`);
 
   console.log('Copy share code');
-  await page.click('[data-hook="copy-share-code"]');
+  await page.locator('[data-cta="copy-share-code"]:visible, [data-action="copy-share-code"]:visible').first().click();
   await page.waitForFunction(() => /copied|Select the link/.test(document.getElementById('sc-share-note').textContent));
   const link = await page.inputValue('#sc-share-link');
   const clip = await page.evaluate(() => navigator.clipboard.readText());
@@ -92,7 +94,9 @@ try {
   check(!/!/.test(note), 'no exclamation marks in the note');
 
   console.log('Compare runs (watch mode saves none)');
-  await page.click('[data-hook="compare-runs"]');
+  await page.evaluate(() => { for (const s of [document.getElementById('screen'), document.scrollingElement]) if (s) s.scrollTop = s.scrollHeight; });
+  await page.waitForTimeout(600);
+  await page.locator('[data-action="compare-runs"]:visible').first().click();
   await page.waitForSelector('#sc-compare:not([hidden])');
   check(/does not save it/.test(await page.textContent('#sc-compare')), 'watch mode compare says watching saves nothing');
   await shot(page, 'watch-1280.png');
@@ -120,9 +124,12 @@ try {
   check(/shared/i.test(await p2.textContent('.sc-head')), 'header says it is a shared run');
   const ls = await p2.evaluate(() => JSON.parse(localStorage.getItem('ff.runs') || '[]').length);
   check(ls === 2, 'opening a shared run does not save it to ff.runs');
-  await p2.waitForSelector('#sc-pct-body[data-ready="true"]', { timeout: 10000 });
+  await p2.waitForSelector('#sc-pct-body[data-ready="true"]', { state: 'attached', timeout: 10000 });
+  await p2.evaluate(() => document.querySelectorAll('.sc-report details.sc-acc').forEach((d) => { d.open = true; }));
   check(/^You finished ahead of \d+% of 500 random legal strategies on after-tax wealth\.$/.test(await p2.textContent('#sc-pct-line')), 'shared view percentile line');
-  await p2.click('[data-hook="compare-runs"]');
+  await p2.evaluate(() => { for (const s of [document.getElementById('screen'), document.scrollingElement]) if (s) s.scrollTop = s.scrollHeight; });
+  await p2.waitForTimeout(600);
+  await p2.locator('[data-action="compare-runs"]:visible').first().click();
   await p2.waitForSelector('#sc-compare:not([hidden]) .sc-cmp-table');
   const rows = await p2.evaluate(() => [...document.querySelectorAll('.sc-cmp-table tbody tr')].map((r) => ({ cur: r.classList.contains('current'), t: r.textContent.replace(/\s+/g, ' ').trim() })));
   console.log('  compare rows:', rows.map((r) => r.t).join(' | '));
@@ -142,11 +149,14 @@ try {
   console.log('Phone layout');
   await p2.goto(link);
   await p2.reload();
-  await p2.waitForSelector('#sc-pct-body[data-ready="true"]', { timeout: 15000 });
+  await p2.waitForSelector('#sc-pct-body[data-ready="true"]', { state: 'attached', timeout: 15000 });
+  await p2.evaluate(() => document.querySelectorAll('.sc-report details.sc-acc').forEach((d) => { d.open = true; }));
   await p2.setViewportSize({ width: 375, height: 812 });
   await wait(1500);
-  await p2.click('[data-hook="copy-share-code"]').catch(() => {});
-  await p2.click('[data-hook="compare-runs"]');
+  await p2.locator('[data-cta="copy-share-code"]:visible, [data-action="copy-share-code"]:visible').first().click().catch(() => {});
+  await p2.evaluate(() => { for (const s of [document.getElementById('screen'), document.scrollingElement]) if (s) s.scrollTop = s.scrollHeight; });
+  await p2.waitForTimeout(600);
+  await p2.locator('[data-action="compare-runs"]:visible').first().click();
   await wait(400);
   check(!(await p2.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)), 'no horizontal overflow at 375');
   const small = await p2.evaluate(() => {
@@ -157,7 +167,7 @@ try {
   console.log('  rendered axis text px at 375:', small.axisPx.toFixed(1), ' seal letter px:', small.letterPx.toFixed(1));
   check(small.axisPx >= 11.5, 'axis text at least 11.5px on a phone');
   await shot(p2, 'shared-375.png');
-  await p2.evaluate(() => document.querySelector('.sc-pct').scrollIntoView());
+  await p2.evaluate(() => document.querySelector('#sc-p-h').scrollIntoView());
   await p2.screenshot({ path: join(out, 'pct-375-fold.png') });
   await page.setViewportSize({ width: 375, height: 812 });
   await wait(500);
