@@ -39,7 +39,13 @@
 }
 
 /* ---------- clock */
-.rail .daylabel .dn { font-weight: inherit; }
+/* The play key carries a word, so a stopped clock reads as stopped. A line under the day says what it is doing and what to press. */
+.rail .btn.pause { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.rail .btn.pause .pl { font: 600 13px/1 var(--f-body); letter-spacing: .05em; }
+.rail .clock-note { display: block; min-height: 1.35em; font: 500 13px/1.35 var(--f-body); color: var(--rail-muted); }
+.rail .clock-note[data-k="user"] { color: var(--gold); font-weight: 600; }
+.rail.is-paused .daylabel .dn { color: var(--rail-muted); }
+.rail .daylabel .dn { font-weight: inherit; transition: color .2s; }
 .rail .daylabel .dn.bump { animation: dayBump .34s var(--ease-pop); }
 @keyframes dayBump { 0% { translate: 0 -4px; color: var(--gold); } 100% { } }
 
@@ -58,6 +64,8 @@
   .rail .daylabel .dr { display: none; }
   .rail .transport, .rail .speeds { gap: 4px; }
   .rail .btn.sm { min-width: 34px; padding: 5px 8px; min-height: 34px; }
+  .rail .btn.pause { min-width: 68px; padding: 5px 8px; gap: 5px; }
+  .rail .btn.pause .pl { font-size: 12.5px; letter-spacing: .03em; }
   .rail .yearbar { height: 12px; margin: 5px 0 0; background: var(--rail); border-color: var(--rail-line); }
   .rail .yearbar .fill { background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 70%, #000), var(--gold)); box-shadow: 2px 0 0 #f3d78f; }
   .rail .marks i { top: -3px; bottom: -3px; }
@@ -362,3 +370,6 @@
   .rail .sp-bar i, .rail ul.ach .medal, .rail .drawer summary, .rail .drawer summary::before, .rail .drawer .cnt, .rail .dp-close,
   .rail .rcert .cert-shares, .rail .cert-border svg .tint, .rail .cert-border svg .crack { transition: none; }
 }
+
+/* the since-start line has a long form (desktop) and a short form (phone, set in phone.css) */
+.rail .nw-delta .since .ss { display: none; }

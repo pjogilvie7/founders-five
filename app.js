@@ -16,6 +16,12 @@ const $foot = document.getElementById('foot-date');
 const TAB_IDS = TAB_DEFS.map((d) => d.id);
 const BOTS = [['holder', 'The Holder'], ['seller', 'The Seller'], ['playbook', 'The Playbook']];
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Clock pacing: milliseconds per trading day at 1x; the clock runs at base / speed.
+// Play, SpaceX (98 trading days): 1.2 s a day, so 1 min 58 s at 1x, 59 s at 2x, 29 s at 4x.
+// Play, blind cards (about 1,261 trading days): 0.36 s a day, so 7 min 34 s at 1x, 3 min 47 s at 2x, 1 min 53 s at 4x.
+const PLAY_MS = { live: 1200, blind: 360 };
+// Watch (always SpaceX): the older, quicker base; 250 ms / 8x puts the whole card on screen in about 3 s.
+const WATCH_MS = { live: 250, blind: 95 };
 const safeLS = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* private window */ } },
@@ -188,7 +194,10 @@ function toolId(x) {
   const s = String(x || '').toLowerCase();
   if (/stock|sell/.test(s)) return 'stock';
   if (/plan|10b5/.test(s)) return 'plan';
-  if (/collar|put|hedge/.test(s)) return 'collar';
+  if (/exchange/.test(s)) return 'exchange';
+  if (/collar/.test(s)) return 'collar';
+  if (/\bput\b|protective/.test(s)) return 'put';
+  if (/hedge/.test(s)) return 'collar';
   if (/credit|loan|pledge/.test(s)) return 'credit';
   if (/cash|index/.test(s)) return 'cash';
   return null;
@@ -218,7 +227,7 @@ async function startGame({ cardId, seat, watch }, my) {
       const key = `${cardId}|${seat}|${id}|${card.prices.length}`;
       let r = botCache.get(key);
       if (!r) { try { r = runBot(id, card, seat, data.market, data.spcxOptions); } catch (e) { console.warn('bot failed', id, e); r = null; } botCache.set(key, r); }
-      if (r) { series[id] = r.series; scores[id] = r.score; if (watch && id === 'playbook') replayList = (r.state && r.state.log) || []; }
+      if (r) { series[id] = r.seriesAfterTax || r.series; scores[id] = r.score; if (watch && id === 'playbook') replayList = (r.state && r.state.log) || []; }
     }
   }
   if (my !== gen) return null;
@@ -236,7 +245,7 @@ async function startGame({ cardId, seat, watch }, my) {
   const ach = new Set(); // this run only; the lifetime set lives in localStorage ff.ach
   G = {
     cardId, seat, watch, card, entry, engine, state, series, scores, replay: { list: replayList, ptr: 0 }, dctx, tr, span, first,
-    userPaused: false, holds: new Set(), speed: watch ? 8 : 1, speeds: watch ? [2, 4, 8] : [1, 2, 4], mode: 'wealth',
+    userPaused: !watch, holds: new Set(), speed: watch ? 8 : 1, speeds: watch ? [2, 4, 8] : [1, 2, 4], mode: 'wealth',
     unlocked: new Set(START_UNLOCKED), notices: [], achievements: ach, marginSynthetic: null, marginText: '', lessonQueue: [], lessonBusy: false, choiceQueue: [], choiceBusy: false,
     over: false, acc: 0, last: 0, snap: null, eventLog: [], gameKey: `${cardId}|${seat}|${watch}|${Date.now()}`,
   };
@@ -256,14 +265,16 @@ async function startGame({ cardId, seat, watch }, my) {
     api, mods, h: { onLesson: openLesson, onChoice: onMarginChoice, onContinue: continueNotices },
   });
 
+  // Space belongs to the clock (or to a shown notice) only when focus is on the page body or plain content. On a button, tab,
+  // link, summary or field it keeps its own job: activating that control, or typing a space.
   g.onKey = (e) => {
     if (!G || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target, typing = t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
     if (overlayOpen() || typing) return;
-    if (e.key === ' ') { e.preventDefault(); if (shownNotices().length) continueNotices(); else togglePause(); }
+    if (e.key === ' ') { if (onControl(t)) return; e.preventDefault(); if (shownNotices().length) continueNotices(); else togglePause(); }
     else if (/^[1-7]$/.test(e.key)) { const id = TAB_IDS[Number(e.key) - 1]; g.paper.select(id, true); }
   };
-  g.onKeyUp = (e) => { if (e.key === ' ' && !overlayOpen() && !(e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) e.preventDefault(); };
+  g.onKeyUp = (e) => { if (e.key === ' ' && !overlayOpen() && !onControl(e.target)) e.preventDefault(); };
   document.addEventListener('keydown', g.onKey); document.addEventListener('keyup', g.onKeyUp);
 
   g.holds.add('intro');
@@ -272,29 +283,59 @@ async function startGame({ cardId, seat, watch }, my) {
   window.__ff = Object.assign(window.__ff || {}, { G: g, inject: (ev) => { handleEvents([ev]); refresh(); }, step: (n = 1) => { for (let k = 0; k < n && !g.over; k++) stepOnce(); refresh(); }, refresh, doAct });
   g.raf = requestAnimationFrame(frame);
 
-  if (watch) { g.holds.delete('intro'); g.paper.toast('Watching The Playbook play SpaceX at 8x.', ''); }
+  if (watch) { g.holds.delete('intro'); refresh(); g.paper.toast('Watching The Playbook play SpaceX at 8x.', ''); }
   else {
+    const prevFocus = document.activeElement;
     await showIntro();
     if (g.dead) return null;
     g.holds.delete('intro');
+    refresh(); restoreFocus(prevFocus);
   }
   return () => stopGame();
 }
 
+const CONTROL = 'button, a[href], summary, input, select, textarea, [contenteditable]:not([contenteditable="false"]), [role="button"], [role="tab"], [role="switch"], [role="checkbox"], [role="link"]';
+const onControl = (t) => !!(t && t.closest && t.closest(CONTROL));
+// After a popup closes, focus goes back to what had it (if it is still on the page and visible), else to the rail's play key.
+function restoreFocus(prev) {
+  const ok = (e) => e && e !== document.body && e.isConnected && e.getClientRects().length > 0 && !e.closest('[inert]') && !e.disabled;
+  const t = ok(prev) ? prev : document.querySelector('.rail .pause');
+  if (t && t.focus) t.focus({ preventScroll: true });
+}
 const running = () => G && !G.userPaused && G.holds.size === 0 && !G.over;
-function togglePause() { if (!G) return; G.userPaused = !G.userPaused; refresh(); }
-// One interrupt at a time. A maintenance call outranks everything, then the lesson that opens with a tool, then a house or
-// collar-expiry decision (it cannot be put off), then the release / notice card. Whatever is waiting stays out of the DOM
-// until its turn, so no card is ever drawn behind another.
+// Play and Pause on the rail and Space. A card or call that holds the clock is answered first: the play key then
+// continues the card, or says what is open, instead of flipping the player's own pause.
+function togglePause() {
+  const g = G; if (!g || g.over) return;
+  if (!g.userPaused && g.holds.size) {
+    if (shownNotices().length) continueNotices();
+    else if (g.holds.has('margin')) g.paper.toast('The clock waits for you to answer the maintenance call.', '');
+    return;
+  }
+  g.userPaused = !g.userPaused; refresh();
+}
+// Why the clock is stopped, for the rail: '' while it runs, then 'margin', 'card', 'user' or 'over'.
+function pauseKind(g) {
+  if (running()) return '';
+  if (g.over) return 'over';
+  if (g.holds.has('margin')) return 'margin';
+  if (g.holds.size) return 'card';
+  return 'user';
+}
+// A popup closed: in Play the clock stays paused so the player can look at what changed. Watch keeps running.
+function pauseAfterPopup(g) { if (g && !g.watch) g.userPaused = true; }
+// One interrupt at a time. A maintenance call outranks everything, then a house or collar-expiry decision (it cannot be put
+// off), then the release / notice card, then ONE lesson for every tool that card unlocked (the release is the cause, the
+// lesson the consequence). Whatever is waiting stays out of the DOM until its turn, so no card is ever drawn behind another.
 function interruptBlocked(g) {
-  return g.holds.has('margin') || g.holds.has('lesson') || g.holds.has('lesson-ref') || g.choiceBusy || g.choiceQueue.length > 0 || overlayOpen();
+  return g.holds.has('margin') || g.holds.has('lesson-ref') || g.choiceBusy || g.choiceQueue.length > 0 || overlayOpen();
 }
 function shownNotices() { return G && !interruptBlocked(G) ? G.notices : []; }
-function continueNotices() { if (!G || !shownNotices().length) return; G.notices = []; G.holds.delete('notice'); refresh(); }
+function continueNotices() { if (!G || !shownNotices().length) return; G.notices = []; G.holds.delete('notice'); pauseAfterPopup(G); refresh(); }
 function pumpChoices() {
   const g = G;
   if (!g || g.dead || g.choiceBusy || !g.choiceQueue.length) return;
-  if (g.holds.has('margin') || g.holds.has('lesson') || g.holds.has('lesson-ref') || overlayOpen()) return;
+  if (g.holds.has('intro') || g.holds.has('margin') || g.holds.has('lesson-ref') || g.lessonBusy || overlayOpen()) return;
   g.choiceBusy = true;
   const ev = g.choiceQueue.shift();
   queueMicrotask(() => openChoice(ev));
@@ -306,7 +347,8 @@ function frame(t) {
   g.raf = requestAnimationFrame(frame);
   const dt = Math.min(t - (g.last || t), 250); g.last = t;
   if (!running()) { g.acc = 0; return; }
-  const interval = (g.card.live ? 250 : 95) / g.speed;
+  const base = g.watch ? WATCH_MS : PLAY_MS;
+  const interval = (g.card.live ? base.live : base.blind) / g.speed;
   g.acc += dt;
   let n = 0;
   while (g.acc >= interval && n < 14 && running()) { g.acc -= interval; stepOnce(); n++; }
@@ -352,34 +394,54 @@ function doAct(action) {
 
 async function onMarginChoice(choice) {
   const g = G; if (!g) return;
-  if (g.marginSynthetic && !g.state.loan.call) { g.marginSynthetic = null; g.holds.delete('margin'); g.paper.toast(`Test banner: "${choice}" chosen.`, ''); refresh(); return; }
+  const prev = document.activeElement; setTimeout(() => restoreFocus(prev), 0);
+  if (g.marginSynthetic && !g.state.loan.call) { g.marginSynthetic = null; g.holds.delete('margin'); pauseAfterPopup(g); g.paper.toast(`Test banner: "${choice}" chosen.`, ''); refresh(); return; }
   const r = doAct({ type: 'marginCall', choice });
-  if (r.ok) { g.holds.delete('margin'); refresh(); }
+  if (r.ok) { g.holds.delete('margin'); pauseAfterPopup(g); refresh(); }
 }
 
 function openLesson(id) {
   const g = G; if (!g) return;
   const cards = g.paper.lesson(id); if (!cards) return;
   g.holds.add('lesson-ref');
-  showLesson(cards, { kicker: g.paper.label(id), label: g.paper.label(id) + ' lesson' }).then(() => { g.holds.delete('lesson-ref'); refresh(); });
+  const prev = document.activeElement;
+  showLesson(cards, { kicker: g.paper.label(id), label: g.paper.label(id) + ' lesson' }).then(() => { g.holds.delete('lesson-ref'); pauseAfterPopup(g); refresh(); restoreFocus(prev); });
 }
+// Every tool unlocked together (the first release opens three) is walked through in ONE dialog, each card titled with its tool.
 async function runLessons() {
-  const g = G; if (g.lessonBusy) return; g.lessonBusy = true;
-  while (g.lessonQueue.length && !g.dead) {
-    const id = g.lessonQueue.shift(), cards = g.paper.lesson(id); if (!cards) continue;
-    g.holds.add('lesson');
-    await showLesson(cards, { kicker: `${g.paper.label(id)} unlocked`, label: g.paper.label(id) + ' lesson', doneLabel: 'Got it' });
-  }
-  g.holds.delete('lesson'); g.lessonBusy = false; if (!g.dead) refresh();
+  const g = G; if (!g || g.lessonBusy || g.dead || g.holds.has('intro') || overlayOpen()) return;
+  const ids = [...new Set(g.lessonQueue.splice(0))].filter((id) => g.paper.lesson(id));
+  if (!ids.length) { g.holds.delete('lesson'); refresh(); return; }
+  g.lessonBusy = true; g.holds.add('lesson');
+  const prev = document.activeElement;
+  // Several tools at once: the first card of each, then a pointer to the full lessons (15 cards in a row was a wall).
+  const cards = ids.length > 1
+    ? [...ids.map((id) => { const c = g.paper.lesson(id)[0]; return { ...c, title: `${g.paper.label(id)}: ${c.title}` }; }),
+      { title: 'The full lessons', body: 'Each tool’s full lesson opens from the ? button beside the tabs.' }]
+    : g.paper.lesson(ids[0]);
+  const names = ids.map((id) => g.paper.label(id));
+  await showLesson(cards, {
+    kicker: ids.length > 1 ? `${ids.length} tools unlocked` : `${names[0]} unlocked`,
+    label: ids.length > 1 ? `${names.join(', ')} lessons` : `${names[0]} lesson`, doneLabel: 'Got it',
+  });
+  if (g.dead) return;
+  g.holds.delete('lesson'); g.lessonBusy = false; pauseAfterPopup(g); refresh(); restoreFocus(prev);
+}
+// A lesson waits until nothing else is open; the release card that caused it comes first.
+function pumpLessons() {
+  const g = G;
+  if (!g || g.dead || g.lessonBusy || !g.lessonQueue.length) return;
+  if (g.holds.has('intro') || g.holds.has('margin') || g.holds.has('lesson-ref') || g.holds.has('notice') || g.notices.length || g.choiceBusy || g.choiceQueue.length || overlayOpen()) return;
+  queueMicrotask(runLessons);
 }
 function unlockTool(id, lesson = true) {
   const g = G; if (!id || g.unlocked.has(id)) return;
   g.unlocked = new Set([...g.unlocked, id]);
-  if (lesson && !g.watch) { g.lessonQueue.push(id); g.holds.add('lesson'); queueMicrotask(runLessons); }
+  if (lesson && !g.watch) { g.lessonQueue.push(id); g.holds.add('lesson'); }
 }
 
 const CHOICES = {
-  house: { kicker: 'Decision', title: 'The house', list: [['cash', 'Pay from cash and the index fund', true], ['credit', 'Draw the credit line'], ['sell', 'Sell shares']] },
+  house: { kicker: 'Decision', title: 'The house', list: [['cash', 'Pay from cash and the index fund'], ['credit', 'Draw the credit line'], ['sell', 'Sell shares']] },   // no choice is primary: the detail lines say what each covers
   collarExpiry: { kicker: 'Decision', title: 'Your collar has expired', list: [['roll', 'Roll at today’s prices', true], ['end', 'Let it end']] },
 };
 // The cost, in large type, between the copy and the choices (the amount is the engine's own).
@@ -413,8 +475,9 @@ async function openChoice(ev) {
   const given = ev.data && Array.isArray(ev.data.choices) ? ev.data.choices : null;
   // The engine may send choices as plain ids ("cash") or as objects; labels come from CHOICES when missing.
   const labelOf = (id) => { const hit = def.list.find((x) => x[0] === id); return hit ? hit : [id, id, false]; };
-  const list = given ? given.map((c) => (typeof c === 'string' ? labelOf(c) : [c.choice || c.id, c.label || labelOf(c.choice || c.id)[1], c.primary != null ? c.primary : labelOf(c.choice || c.id)[2]])) : def.list;
+  const list = given ? given.map((c) => (typeof c === 'string' ? labelOf(c) : [c.choice || c.id, c.label || labelOf(c.choice || c.id)[1], ev.type === 'house' ? false : (c.primary != null ? c.primary : labelOf(c.choice || c.id)[2])])) : def.list;
   let note = '';
+  const prevFocus = document.activeElement;
   for (;;) {
     const choices = list.map(([id, label, primary]) => {
       let c = { allowed: true };
@@ -431,7 +494,8 @@ async function openChoice(ev) {
   }
   g.choiceBusy = false;
   if (!g.choiceQueue.length) g.holds.delete('choice');
-  refresh();
+  pauseAfterPopup(g);
+  refresh(); restoreFocus(prevFocus);
 }
 
 function saveAch() {
@@ -471,10 +535,17 @@ function handleEvents(events, quiet) {
         (ids.length ? ids : [toolId(ev.text)]).forEach((id) => unlockTool(id));
         break;
       }
-      case 'release': case 'windowOpen': case 'planLive':
+      case 'release': case 'planLive':
         if (watch) g.paper.toast(ev.text, 'info');
         else { g.notices = [...g.notices, momentFor(ev)]; g.holds.add('notice'); }
         break;
+      case 'windowOpen': {
+        // A card (and a pause) only when shares have been released since the last window card; otherwise a toast. The rail lamp always shows the window.
+        const sh = g.engine.snapshot(g.state).shares, rel = (sh.total || 0) - (sh.locked || 0);
+        if (watch || rel <= (g.winSeen || 0)) g.paper.toast(ev.text, 'info');
+        else { g.winSeen = rel; g.notices = [...g.notices, momentFor(ev)]; g.holds.add('notice'); }
+        break;
+      }
       case 'windowClose': case 'planSale': g.paper.toast(ev.text, 'info'); break;
       case 'dividend': if (!quiet) g.paper.toast(ev.text, 'info'); break;   // the engine's own text, no arithmetic here
       case 'taxPaid': g.paper.toast(ev.text, 'warn'); break;
@@ -517,10 +588,11 @@ function refresh() {
   const snap = g.engine.snapshot(g.state);
   // inference: a tool unlocks as soon as the shares it needs are free, even if the engine sent no event
   const freed = (snap.shares.free || 0) + (snap.shares.sold || 0) + (snap.shares.collared || 0) + (snap.shares.pledged || 0) > 0;
-  if (freed) for (const id of ['plan', 'collar', 'credit']) unlockTool(id);
+  // every tab whose seal says "Unlocks with your first release" (paper.js TAB_DEFS) opens with it
+  if (freed) for (const id of ['plan', 'collar', 'credit', 'put', 'exchange']) unlockTool(id);
   g.snap = snap;
   const i = Math.min(snap.i, 1e9);
-  const rivals = [{ id: 'you', name: g.watch ? 'The Playbook' : 'You', W: snap.W, you: true }];
+  const rivals = [{ id: 'you', name: g.watch ? 'The Playbook' : 'You', W: snap.Wat ?? snap.W, you: true }];
   for (const [id, name] of BOTS) {
     if (g.watch && id === 'playbook') continue;
     const s = g.series[id]; if (s) rivals.push({ id, name, W: s[Math.min(i, s.length - 1)] });
@@ -533,11 +605,11 @@ function refresh() {
     vignette: g.card.vignette || null,
     tranches: g.tr.map((t) => ({ ...t, released: !!t.date && t.date <= snap.d })), rivals, mode: g.mode,
     progress: Math.min(1, Math.max(0, daysBetween(g.first, snap.d) / g.span)), speeds: g.speeds, speed: g.speed,
-    running: !!running(), watch: g.watch, dctx: g.dctx, achievements: [...g.achievements], unlocked: g.unlocked, notices: shownNotices().map((m) => liveMoment(m, snap)),
+    running: !!running(), pause: pauseKind(g), watch: g.watch, dctx: g.dctx, achievements: [...g.achievements], unlocked: g.unlocked, notices: shownNotices().map((m) => liveMoment(m, snap)),
     marginText: g.marginText, seat: g.seat, cardId: g.cardId,
   };
   g.rail.update(view); g.paper.update(view);
-  pumpChoices();
+  pumpChoices(); pumpLessons();
 }
 
 // ------------------------------------------------------------------ start

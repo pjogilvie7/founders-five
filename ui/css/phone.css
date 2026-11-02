@@ -74,6 +74,8 @@
   .rail-host .nw-delta{grid-area:3/1/4/-1;min-height:0;min-width:0;max-width:calc(100% - 118px);flex-wrap:nowrap;white-space:nowrap;overflow:hidden;gap:6px;
     font:500 14px/1.2 var(--f-body);align-self:center}
   .rail-host .nw-delta .dv{font:600 14px/1.2 var(--f-num)}
+  .rail-host .nw-delta .since .sf{display:none}
+  .rail-host .nw-delta .since .ss{display:inline}
   .rail-host .rivals-toggle{grid-area:3/1/4/-1;justify-self:end;align-self:center;position:relative;flex-direction:row;align-items:center;gap:6px;
     min-height:30px;padding:0 10px 0 11px;background:color-mix(in srgb,var(--rail-2) 80%,var(--rail));border:1px solid color-mix(in srgb,var(--gold) 60%,var(--rail-line));border-radius:999px;
     color:var(--rail-text);font:600 14px/1 var(--f-body);letter-spacing:0;text-transform:none;transition:background .15s,border-color .15s}
@@ -87,9 +89,9 @@
 
   /* inside the sheet: the Wealth / Profit switch and the certificate strip appear only while it is open */
   .rail-host .seg,.rail-host .rail .rcert{display:none}
-  .rail-host .rail.more-open .seg{display:inline-flex;grid-area:4/1/5/-1;justify-self:start;margin-top:6px;border-radius:6px;overflow:hidden}
+  .rail-host .rail.more-open .seg{display:inline-flex;grid-area:5/1/6/-1;justify-self:start;margin-top:6px;border-radius:6px;overflow:hidden}
   .rail-host .seg button{min-height:34px;padding:0 14px;font:600 14px/1 var(--f-body);letter-spacing:.02em;text-transform:none}
-  .rail-host .rail.more-open .rcert{display:block;grid-area:5/1/6/-1;order:0;margin:6px 0 0;padding:6px 10px;clip-path:none;filter:none;box-shadow:inset 0 0 0 1px var(--paper-line);border-radius:3px;text-align:left}
+  .rail-host .rail.more-open .rcert{display:block;grid-area:6/1/7/-1;order:0;margin:6px 0 0;padding:6px 10px;clip-path:none;filter:none;box-shadow:inset 0 0 0 1px var(--paper-line);border-radius:3px;text-align:left}
   .rail-host .rail .rcert .cert-in{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap;min-height:26px;overflow:hidden}
   .rail-host .rail .rcert .cert-head,.rail-host .rail .rcert .cert-vig,.rail-host .rail .rcert .cert-name,.rail-host .rail .rcert .cert-sub,.rail-host .rail .rcert .cert-border{display:none}
   .rail-host .rail .rcert .cert-shares{display:flex;align-items:baseline;gap:5px;flex:none;margin:0}
@@ -101,6 +103,11 @@
 
   /* progress: a plain gold fuse along the foot of the header; a small diamond rides its head (no hatching, no ticks) */
   .rail-host .rail .rail-top::after{content:none}
+  /* clock state: the play key stays an icon here (the row is full); one quiet line under the figures says what the clock is doing and what to press */
+  .rail-host .btn.pause .pl{display:none}
+  .rail-host .btn.pause{min-width:34px;padding:0 6px}
+  .rail-host .clock-note{grid-area:4/1/5/-1;font:500 14px/1.2 var(--f-body);min-height:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .rail-host .clock-note .kbd-hint{display:none}
   .rail-host .yearbar{position:absolute;left:14px;right:14px;bottom:6px;height:3px;margin:0;border:0;border-radius:2px;
     background:color-mix(in srgb,var(--rail-line) 80%,transparent);z-index:1;pointer-events:none}
   .rail-host .yearbar .fill{position:relative;height:100%;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 55%,#000),var(--gold));transition:width .12s linear}
@@ -130,6 +137,9 @@
   /* the board: the wrap scrolls; the toast slot is carved out of its bottom edge instead of floating over it */
   .paper .panel-wrap{order:1;flex:1 1 0;min-height:0;position:static;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
   .paper .panel{max-width:none;padding:10px 12px 22px;scroll-padding-bottom:22px}
+  /* the last control of a tool can always scroll fully clear of the bottom bar and the fade over it: a bar's height of room under the content.
+     (The Stock tab's Sell bar is sticky and already rests on the bar, so it is left out.) */
+  .paper .panel .tool:not(.stock){padding-bottom:calc(var(--nav-h) + var(--safe))}
   /* no headline yet: the news row gives its space back; the ? then floats over the board's corner, so the board keeps room for it */
   .paper .ticker.empty{display:none}
   /* ...and the toast slot and scroll room stop reserving its height */
@@ -196,7 +206,9 @@
   /* maintenance call: same words and buttons, in less height, so the chart stays in view */
   .paper .banner-slot .margin{grid-template-columns:minmax(0,1fr);grid-template-areas:"main" "stakes" "btns";gap:6px;padding:9px 12px 12px}
   .paper .margin .m-h{font-size:19px;margin-bottom:1px}
-  .paper .margin p{font-size:13px;line-height:1.38;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+  .paper .margin p{font-size:13px;line-height:1.38;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .paper .margin.open p{display:block;-webkit-line-clamp:unset;overflow:visible}
+  .paper .margin .m-more{display:inline-block;margin:2px 0 0;padding:6px 0;min-height:32px;background:none;border:0;color:var(--paper);font:600 13px/1 var(--f-body);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
   .paper .m-stakes{grid-template-columns:auto 1fr 1fr;align-items:end;gap:0 14px;padding:6px 0 0;border-left:0;border-top:1px solid rgb(241 236 223 / .35)}
   .paper .m-stakes .big{grid-column:1;grid-row:1}
   .paper .m-stakes .big dd{font-size:22px}
@@ -360,8 +372,9 @@
     position:relative;margin:0 0 4px;padding:14px 16px 14px;border:1px solid var(--ink);border-radius:4px;overflow:hidden;
     background:linear-gradient(180deg,color-mix(in srgb,var(--paper) 55%,#fff),color-mix(in srgb,var(--paper) 88%,var(--paper-2)));
     box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--paper-line),0 4px 0 -1px color-mix(in srgb,var(--ink) 55%,var(--paper-line)),0 16px 22px -12px rgb(24 38 47/.55)}
-  .lc-art{grid-area:art;width:88px;height:62px;display:grid;place-items:center}
-  .lc-art img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;opacity:.92}
+  .lc-art{grid-area:art;width:88px;height:62px;position:relative;overflow:hidden;align-self:start}
+  /* a tall vignette (the statue on the blind cards) must stay inside its 88 x 62 box, never run down under the release line */
+  .lc-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;opacity:.92}
   .lc-h{grid-area:h;margin:0;font:600 19px/1.2 var(--f-body);color:var(--ink);text-wrap:balance}
   .lc-h b{font:600 19px/1.2 var(--f-num);color:var(--seal);white-space:nowrap}
   .lc-s{grid-area:s;margin:0;font:500 15px/1.35 var(--f-body);color:var(--ink);min-width:0}

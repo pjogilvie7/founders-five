@@ -122,12 +122,14 @@ export function createRail(el, h) {
           <output class="daylabel">—</output>
         </div>
         <div class="transport" role="group" aria-label="Clock">
-          <button class="btn sm pause" data-a="pause" aria-label="Pause"><svg viewBox="0 0 16 16" aria-hidden="true"><g class="ic-pause"><rect x="3.5" y="2.5" width="3" height="11"/><rect x="9.5" y="2.5" width="3" height="11"/></g><path class="ic-play" d="M4 2.5L13 8 4 13.5Z"/></svg></button>
+          <button class="btn sm pause" data-a="pause" aria-label="Pause"><svg viewBox="0 0 16 16" aria-hidden="true"><g class="ic-pause"><rect x="3.5" y="2.5" width="3" height="11"/><rect x="9.5" y="2.5" width="3" height="11"/></g><path class="ic-play" d="M4 2.5L13 8 4 13.5Z"/></svg><span class="pl" aria-hidden="true">Pause</span></button>
           <span class="speeds"></span>
         </div>
       </div>
+      <span class="clock-note" data-k="">&nbsp;</span>
       <div class="yearbar" role="progressbar" aria-label="Progress through the card" aria-valuemin="0" aria-valuemax="100"><i class="fill"></i><span class="marks"></span></div>
       <div class="lamp-row"><span class="lamp" aria-hidden="true"></span><span class="lamp-text">Window</span></div>
+      <span class="vh clock-live" role="status" aria-live="polite"></span>
     </div>
     <div class="rcert" data-dd="0">
       <div class="cert-border" aria-hidden="true">${platesvg()}</div>
@@ -145,7 +147,7 @@ export function createRail(el, h) {
       <div class="nw-head"><span class="lbl">Net worth</span>
         <span class="seg" role="group" aria-label="Show"><button data-mode="wealth" aria-pressed="true">Wealth</button><button data-mode="profit" aria-pressed="false">Profit</button></span></div>
       <span class="val num nwv">—</span>
-      <div class="nw-delta"><i class="nw-arr" aria-hidden="true"></i><span class="num dv">—</span><span class="since">since the start</span></div>
+      <div class="nw-delta"><i class="nw-arr" aria-hidden="true"></i><span class="num dv">—</span> <span class="since">since the start</span></div>
       <div class="cashrow"><span class="lbl">Cash</span><span class="val num cash">—</span></div>
     </div>
     <div class="money">
@@ -162,7 +164,7 @@ export function createRail(el, h) {
   </aside>`;
   const $ = (s) => el.querySelector(s);
   const q = {
-    root: $('.rail'), card: $('.clock-card'), day: $('.daylabel'), pause: $('.pause'), speeds: $('.speeds'),
+    root: $('.rail'), card: $('.clock-card'), day: $('.daylabel'), pause: $('.pause'), pl: $('.pause .pl'), note: $('.clock-note'), live: $('.clock-live'), speeds: $('.speeds'),
     bar: $('.yearbar'), fill: $('.yearbar .fill'), marks: $('.marks'), lamp: $('.lamp'), lampText: $('.lamp-text'),
     cert: $('.rcert'), vig: $('.cert-vig'), name: $('.cert-name'), count: $('.rcert .count'), sub: $('.cert-sub'), seals: $('.seals'), stamps: $('.stamps'),
     cash: $('.cash'), nw: $('.nwv'), nwLbl: $('.nw .lbl'), dv: $('.nw-delta .dv'), since: $('.nw-delta .since'), arr: $('.nw-arr'), delta: $('.nw-delta'), rivals: $('.rivals ol'), flag: $('.rank-flag'), rk: $('.rivals-toggle .rk'),
@@ -249,6 +251,33 @@ export function createRail(el, h) {
     stampEls.clear(); q.stamps.innerHTML = '';
   }
 
+  // The clock's state in words, so a stopped game never looks frozen: the key reads Pause while it runs and Play while it
+  // is stopped, a line under the day says why and what to press, and a polite live region announces each change.
+  const PAUSE_NOTE = {
+    user: 'Paused. Press play<span class="kbd-hint"> or Space</span>.',
+    card: 'Paused while a card is open.',
+    margin: 'Paused. A maintenance call needs an answer.',
+    over: 'The card has ended.',
+  };
+  const PAUSE_SAY = { user: 'Paused', card: 'Paused while a card is open', margin: 'Paused for a maintenance call', over: 'The card has ended' };
+  const SAY_OVER_WATCH = 'The run is finished';
+  function clockState(v) {
+    const kind = v.running ? 'run' : (v.pause || 'user');
+    const key = kind + '|' + v.speed + '|' + (v.watch ? 'w' : 'p');
+    q.pause.classList.toggle('paused', !v.running);
+    q.root.classList.toggle('is-paused', !v.running);
+    q.root.dataset.clock = kind;
+    if (q.pause._k === key) return;
+    q.pause._k = key;
+    q.pause.setAttribute('aria-label', v.running ? 'Pause' : 'Play');
+    q.pl.textContent = v.running ? 'Pause' : 'Play';
+    if (kind === 'margin') { q.pause.setAttribute('aria-disabled', 'true'); q.pause.title = 'The clock waits for you to answer the maintenance call.'; }
+    else { q.pause.removeAttribute('aria-disabled'); q.pause.removeAttribute('title'); }
+    q.note.dataset.k = kind;
+    q.note.innerHTML = v.running ? `${v.watch ? 'Watching' : 'Running'} at ${v.speed}x` : PAUSE_NOTE[kind];
+    q.live.textContent = v.running ? `Running at ${v.speed}x` : (kind === 'over' && v.watch ? SAY_OVER_WATCH : PAUSE_SAY[kind]);
+  }
+
   function update(v) {
     build(v);
     const s = v.snap;
@@ -261,9 +290,7 @@ export function createRail(el, h) {
         : esc(s.dayLabel);
       if (!firstUpdate && !reduced()) q.day.querySelector('.dn')?.classList.add('bump');
     }
-    q.pause.setAttribute('aria-label', v.running ? 'Pause' : 'Resume');
-    q.pause.classList.toggle('paused', !v.running);
-    q.root.classList.toggle('is-paused', !v.running);
+    clockState(v);
     q.speeds.querySelectorAll('.speed').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === v.speed)));
     const pct = Math.round(v.progress * 1000) / 10;
     q.fill.style.width = pct + '%'; q.bar.setAttribute('aria-valuenow', Math.round(pct));
@@ -283,8 +310,10 @@ export function createRail(el, h) {
     q.count.textContent = int(heldN);
     q.sub.textContent = `${int(free)} free · ${int(locked)} locked`;
     // drawdown tint and crack: a display state only, read off the engine's own since-start profit
-    const startW = s.W - s.profit;
-    const dd = s.profit < -0.5 ? (startW > 0 && s.profit < -0.1 * startW ? 2 : 1) : 0;
+    // the rail shows after-tax figures (the engine's Wat and profitAt); a sale then never reads as a loss. Fallbacks keep an older engine working.
+    const Wn = s.Wat ?? s.W, pn = s.profitAt ?? s.profit;
+    const startW = Wn - pn;
+    const dd = pn < -0.5 ? (startW > 0 && pn < -0.1 * startW ? 2 : 1) : 0;
     q.cert.dataset.dd = String(dd);
     const broken = new Set(v.tranches.filter((t) => t.released).map((t) => t.id));
     const nextT = v.tranches.find((t) => !t.released && !t.void);
@@ -310,9 +339,9 @@ export function createRail(el, h) {
     }
     // money
     tween(q.cash, s.cash, moneyFull);
-    const nwv = v.mode === 'profit' ? s.profit : s.W;
+    const nwv = v.mode === 'profit' ? pn : Wn;
     if (prevMode !== v.mode) { prevNW = null; prevDelta = null; prevMode = v.mode; }
-    q.nwLbl.textContent = v.mode === 'profit' ? 'Profit' : 'Net worth';
+    q.nwLbl.textContent = v.mode === 'profit' ? 'Profit after tax' : 'Net worth after tax';
     el.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === v.mode)));
     tween(q.nw, nwv, v.mode === 'profit' ? signedFull : moneyFull);
     q.nw.classList.toggle('pos', v.mode === 'profit' && nwv > 0.5);
@@ -320,10 +349,11 @@ export function createRail(el, h) {
     if (prevNW != null && Math.abs(nwv - prevNW) > Math.abs(prevNW) * 0.0004) flash(q.nw, nwv - prevNW);
     prevNW = nwv;
     // since-start delta (the engine's own profit figure); in profit mode the line gives the wealth instead
-    const dlt = v.mode === 'profit' ? s.W : s.profit;
+    const dlt = v.mode === 'profit' ? Wn : pn;
     tween(q.dv, dlt, v.mode === 'profit' ? moneyFull : signedFull);
-    q.since.textContent = v.mode === 'profit' ? 'net worth' : 'since the start';
-    const dir = v.mode === 'profit' ? 0 : (s.profit > 0.5 ? 1 : s.profit < -0.5 ? -1 : 0);
+    const sinceKey = v.mode;
+    if (q.since._k !== sinceKey) { q.since._k = sinceKey; q.since.innerHTML = v.mode === 'profit' ? '<span class="sf">net worth after tax</span><span class="ss">net worth</span>' : '<span class="sf">since the start</span><span class="ss">after tax</span>'; }   // the phone row is narrow: it keeps the short form
+    const dir = v.mode === 'profit' ? 0 : (pn > 0.5 ? 1 : pn < -0.5 ? -1 : 0);
     q.delta.dataset.dir = String(dir);
     if (prevDelta != null && dir !== 0 && Math.abs(dlt - prevDelta) > 0.5) flash(q.delta, dlt - prevDelta, 'tick');
     prevDelta = dlt;
@@ -388,7 +418,7 @@ export function createRail(el, h) {
     const rows = [
       ['Share price', `$${s.close.toFixed(2)}`], ['Locked', int(locked)], ['Free', int(free)], ['Collared', int(sh.collared || 0)], ['Pledged', int(sh.pledged || 0)], ['Sold', int(sh.sold || 0)],
       ['Index fund', money(s.index.value)], ['Cash', money(s.cash)], ['Loan', s.loan.balance ? money(-s.loan.balance) : '$0'],
-      ['Tax owed, unpaid', s.taxOwed ? money(-s.taxOwed) : '$0'], ['Net worth', money(s.W)],
+      ['Tax owed, unpaid', s.taxOwed ? money(-s.taxOwed) : '$0'], ['Net worth before tax', money(s.W)], ['Net worth after tax', money(Wn)],
     ];
     const html = rows.map(([a, b]) => `<dt>${a}</dt><dd class="num">${b}</dd>`).join('');
     if (q.port._h !== html) { q.port._h = html; q.port.innerHTML = html; }

@@ -67,13 +67,18 @@ async function session(name, viewport, mobile) {
   for (let k = 1; k < introN; k++) await page.keyboard.press('Enter');
   check((await page.textContent('.dialog.lesson .lesson-body')).includes(`${introN} of ${introN}`), `intro reached card ${introN} with Enter`);
   await page.keyboard.press('Enter'); await page.waitForSelector('.dialog.lesson', { state: 'detached' });
-  // play: clock runs, Space pauses
-  await page.waitForSelector('.play .rail'); await wait(900); await shot('04-play-start');
+  // play: the board shows paused after the intro; Space (focus is on the play key) runs it, Space again pauses
+  await page.waitForSelector('.play .rail'); await wait(900); await shot('04-play-paused');
   await noOverflow('play');
-  await page.keyboard.press('Space'); await wait(200);
-  check(await page.getAttribute('.pause', 'aria-label') === 'Resume', 'Space pauses');
-  await page.keyboard.press('Space'); await wait(200);
+  check(await page.getAttribute('.pause', 'aria-label') === 'Play', 'the game starts paused after the intro');
+  check(/Paused\. Press play/.test(await page.textContent('.clock-note')), 'the paused line is shown');
+  const day0 = await page.textContent('.daylabel'); await wait(1500);
+  check(await page.textContent('.daylabel') === day0, 'the day does not run while paused');
+  await page.keyboard.press('Space'); await wait(250);
   check(await page.getAttribute('.pause', 'aria-label') === 'Pause', 'Space resumes');
+  await wait(1400); await shot('04-play-running-1x');
+  await page.keyboard.press('Space'); await wait(250);
+  check(await page.getAttribute('.pause', 'aria-label') === 'Play', 'Space pauses');
   await page.click('.speed[data-speed="4"]');
   // tabs by keyboard; sealed tab shows its reason
   await page.keyboard.press('3'); await wait(150);
@@ -83,13 +88,16 @@ async function session(name, viewport, mobile) {
   await page.keyboard.press('1');
   // run to the first release (day ~38 on SpaceX)
   await page.evaluate(() => { const ff = window.__ff; for (let k = 0; k < 120 && !ff.G.holds.has('notice'); k++) ff.step(1); }); await wait(300); // step to the release itself, not past it
-  await page.waitForSelector('.dialog.lesson', { timeout: 8000 }); await wait(500); await shot('06-lesson');
-  for (let k = 0; k < 6 && await page.locator('.dialog.lesson').count(); k++) { await page.keyboard.press('Escape'); await wait(250); }
-  await wait(900); await shot('07-play-release');
+  await page.waitForSelector('.notice .moment', { timeout: 8000 }); await wait(900); await shot('06-play-release');
   check(await page.locator('.seal.broken').count() >= 1, 'a seal is broken after the first release');
-  check(await page.locator('.notice').count() === 1, 'release notice visible');
-  await page.keyboard.press('Space'); await wait(200); // Space continues
-  check(!(await page.locator('.notice').allTextContents()).join().includes('20% of your shares are free'), 'Space dismisses the notice');
+  check(await page.locator('.notice').count() === 1 && await page.locator('.dialog.lesson').count() === 0, 'the release card comes first, with no lesson open behind it');
+  await page.keyboard.press('Space'); await wait(300); // Continue has focus, so Space presses it
+  check(await page.locator('.notice .moment').count() === 0, 'Space dismisses the notice');
+  await page.waitForSelector('.dialog.lesson', { timeout: 8000 }); await wait(500); await shot('07-lesson');
+  check(/\d tools unlocked/.test(await page.textContent('.dialog.lesson .kicker')), 'one lesson dialog for the tools the release unlocked');
+  for (let k = 0; k < 12 && await page.locator('.dialog.lesson').count(); k++) { await page.keyboard.press('Escape'); await wait(250); }
+  await wait(600); await shot('07-play-release-closed-paused');
+  check(await page.getAttribute('.pause', 'aria-label') === 'Play', 'the clock stays paused after the release card and lesson close');
   await page.keyboard.press('3'); await wait(200); await shot('08-play-collar-open');
   await page.keyboard.press('1');
   // margin call banner
@@ -117,7 +125,8 @@ async function session(name, viewport, mobile) {
   for (let k = 0; k < 8 && await page.locator('.dialog.lesson').count(); k++) { await page.keyboard.press('Escape'); await wait(300); }
   await page.waitForSelector('.dialog.event', { timeout: 5000 }); await wait(500); await shot('15-house-modal');
   check(await page.locator('.dialog.event .choice .btn').count() === 3, 'house modal has three choices (no skip; decision RUN-6)');
-  await page.click('.dialog.event .btn.primary'); await page.waitForSelector('.dialog.event', { state: 'detached' });
+  check(await page.locator('.dialog.event .btn.primary').count() === 0, 'no house choice is primary');
+  await page.click('.dialog.event .btn:not([aria-disabled])'); await page.waitForSelector('.dialog.event', { state: 'detached' });
   await wait(300); await shot('16-blind-play');
   check(/Year \d of 5/.test(await page.textContent('.daylabel')), 'five-year day label');
   await ctx.close();

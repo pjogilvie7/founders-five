@@ -1,14 +1,17 @@
 // End-to-end grader path (PRD 3 and 9): fresh browser context, no login, no console errors,
 // "Watch a finished run" reaches the scoreboard in under 60 s, data-as-of within 4 days of the last trading day.
-// Usage: node tests/e2e.mjs [baseUrl]   (default: serves the project root on :8790)
+// Usage: node tests/e2e.mjs [baseUrl]   (default: serves the project root on $PORT, else :8790; screenshots go to $OUT, else tests/out)
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 
-const base = process.argv[2] || 'http://127.0.0.1:8790/';
+const PORT = String(process.env.PORT || 8790);
+const OUT = process.env.OUT || 'tests/out';
+mkdirSync(OUT, { recursive: true });
+const base = process.argv[2] || `http://127.0.0.1:${PORT}/`;
 let server = null;
 if (!process.argv[2]) {
-  server = spawn('python3', ['-m', 'http.server', '8790', '--bind', '127.0.0.1'], { stdio: 'ignore' });
+  server = spawn('python3', ['-m', 'http.server', PORT, '--bind', '127.0.0.1'], { stdio: 'ignore' });
   await new Promise((r) => setTimeout(r, 800));
 }
 
@@ -47,11 +50,18 @@ try {
 
     const t0 = Date.now();
     await page.click('button[data-a="watch"]');
+    // Watch never stops for a card or a popup: sample the rail every 20 ms and count samples where it showed paused mid-run
+    await page.waitForSelector('.play.watching .rail');
+    await page.evaluate(() => { window.__stalls = 0; window.__watchSamples = 0; setInterval(() => { const g = window.__ff && window.__ff.G, r = document.querySelector('.rail'); if (g && r && !g.over) { window.__watchSamples++; if (r.classList.contains('is-paused') || document.querySelector('.moment-scrim, .overlay')) window.__stalls++; } }, 20); });
+    await page.waitForTimeout(500);
+    check(`${tag} Watch is running, not paused (label ${await page.getAttribute('.pause', 'aria-label')})`, (await page.getAttribute('.pause', 'aria-label')) === 'Pause' && /Watching at \d+x/.test(await page.textContent('.clock-note')));
     await page.waitForSelector('#sc-big', { state: 'visible', timeout: 60000 });
     const secs = (Date.now() - t0) / 1000;
+    const stalls = await page.evaluate(() => ({ n: window.__stalls, of: window.__watchSamples })).catch(() => ({ n: 0, of: 0 }));
+    check(`${tag} Watch never paused or opened a popup mid-run`, stalls.n === 0, `${stalls.n} of ${stalls.of} samples`);
     check(`${tag} Watch a finished run reaches the scoreboard in under 60 s`, secs < 60, `${secs.toFixed(1)} s`);
     await page.waitForTimeout(1500);
-    await page.screenshot({ path: `tests/out/e2e-score-${tag}.png` });
+    await page.screenshot({ path: `${OUT}/e2e-score-${tag}.png` });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     check(`${tag} no horizontal page scroll on the scoreboard`, !overflow);
     check(`${tag} no console errors`, errors.length === 0, errors.slice(0, 3).join(' | '));

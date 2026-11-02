@@ -67,7 +67,7 @@ function build(k, c) {
       return `<dl class="pv"><div><dt>You receive</dt><dd class="num">${moneyFull(s.net)}</dd></div>
         <div><dt>Cost, 0.25%</dt><dd class="num">${moneyFull(s.fee)}</dd></div>
         <div><dt>Tax on the gain</dt><dd class="num">${moneyFull(Math.max(0, tax))}</dd></div></dl>
-        <p class="t-hint">${int(n)} shares at ${price(s.price)}. Tax is paid at ${esc(qe)}. ${snap.autoInvest ? 'The proceeds go to the index fund.' : 'The proceeds stay in cash.'}</p>`;
+        <p class="t-hint">${int(n)} shares at ${price(s.price)}. Tax is paid at ${esc(qe)}. The proceeds go to cash.</p>`;
     },
     onDone: () => { fold(false); safe('stock', () => draw(c, c._snap, c._api)); },
   });
@@ -82,7 +82,8 @@ function draw(c, snap, api) {
   const blind = api.card().blind;
   setText(q('[data-s=close]'), snap.close >= snap.offerPrice ? `${((snap.close / snap.offerPrice - 1) * 100).toFixed(1)}% above the offer` : `${((1 - snap.close / snap.offerPrice) * 100).toFixed(1)}% below the offer`);
   setText(q('[data-s=offer]'), blind ? 'Indexed: the offer is 100' : 'What the underwriters sold it for');
-  setText(q('[data-s=free]'), `of ${int(snap.shares.total)} shares in all`);
+  const held = Math.max(0, snap.shares.total - (snap.shares.sold || 0) - (snap.shares.exchanged || 0));
+  setText(q('[data-s=free]'), `of ${int(held)} shares you still hold`);
   const w = snap.window;
   const win = q('[data-v=win]');
   win.className = 'chip win ' + (w.open ? 'open' : 'closed');
@@ -110,8 +111,9 @@ function draw(c, snap, api) {
 // The countdown card under the chart (phone): the next release, its share, the days to go. All of it comes from the engine snapshot.
 function drawLock(c, snap, api) {
   const box = c.querySelector('[data-v=lock]'), info = nextReleaseInfo(api, snap);
-  box.hidden = !info;
-  if (!info) return;
+  const over = !!(api.state && api.state().done);   // once the card has ended there is nothing left to run to
+  box.hidden = !info || over;
+  if (!info || over) return;
   const q = (n) => box.querySelector(`[data-lc=${n}]`);
   const art = q('art'), src = api.card().vignette || 'assets/vignettes/neutral-key.png';
   if (art.getAttribute('src') !== src) art.setAttribute('src', src);
@@ -146,7 +148,7 @@ export default {
   lesson: [
     { title: 'Your shares', body: 'Every share on your certificate is locked until a seal breaks. Released shares become free to use.' },
     { title: 'Selling', body: 'You can sell free shares only while the trading window is open. Each sale costs 0.25% and the gain is taxed at 23.8%.' },
-    { title: 'Where the money goes', body: 'Sale proceeds go to cash, then into the index fund if auto-invest is on. Tax on the sale is paid at quarter end.' },
+    { title: 'Where the money goes', body: 'Sale proceeds go to cash. Moving cash into the index fund is a separate choice, made in the Cash tab. Tax on the sale is paid at quarter end.' },
   ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;

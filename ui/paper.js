@@ -50,7 +50,7 @@ export function createPaper(el, ctx) {
   </section>`;
   const $ = (s) => el.querySelector(s);
   const tabsEl = $('.tabs'), panel = $('.panel'), banner = $('.banner-slot'), notices = $('.notice-slot'), toasts = $('.toasts'), tk = $('.tk-text');
-  let active = 'stock', unlocked = new Set(START_UNLOCKED), view = null, lastRender = 0, bannerKey = '', noticeKey = '';
+  let active = 'stock', unlocked = new Set(START_UNLOCKED), view = null, lastRender = 0, bannerKey = '', noticeKey = '', bannerMore = false;
   const conts = new Map();
   // The maintenance-call banner stays above any moment card; the card's scrim starts where the banner ends.
   const paperEl = $('.paper');
@@ -187,9 +187,13 @@ export function createPaper(el, ctx) {
     const text = v.marginText || `Maintenance call. Loan-to-value is ${(call.ltv * 100).toFixed(1)}%; the limit is 35%. It takes ${money(call.toPost)} posted by ${dateLabel(v.dctx, call.deadline)} to bring it back to 25%. If the loan is above 35% at the close of ${dateLabel(v.dctx, call.sellOn || call.deadline)}, the bank sells shares at that close. The sale is taxable.`;
     const stake = (label, val, cls = '') => `<div class="${cls}"><dt>${label}</dt><dd class="num">${esc(val)}</dd></div>`;
     banner.innerHTML = `<div class="margin" role="alert">
-      <div class="m-main"><b class="m-h">Maintenance call</b><p>${esc(text.replace(/^Maintenance call\.\s*/, ''))}</p></div>
+      <div class="m-main"><b class="m-h">Maintenance call</b><p id="m-text">${esc(text.replace(/^Maintenance call\.\s*/, ''))}</p><button type="button" class="m-more" aria-controls="m-text" aria-expanded="${bannerMore}">${bannerMore ? 'Less' : 'More'}</button></div>
       <dl class="m-stakes">${stake('To post', money(call.toPost), 'big')}${stake('Loan to value', (call.ltv * 100).toFixed(1) + '%')}${stake('Post by', dateLabel(v.dctx, call.deadline))}</dl>
       <div class="m-btns"><button class="btn" data-mc="post">Post ${esc(money(call.toPost))}</button><button class="btn" data-mc="sell">Sell shares now</button><button class="btn" data-mc="wait">Wait</button></div></div>`;
+    // phone: the text is clamped to two lines with a More key; the full sentence is one tap away and the buttons never move
+    const mEl = banner.querySelector('.margin'), mBtn = banner.querySelector('.m-more');
+    mEl.classList.toggle('open', bannerMore);
+    mBtn.addEventListener('click', () => { bannerMore = !bannerMore; mEl.classList.toggle('open', bannerMore); mBtn.setAttribute('aria-expanded', String(bannerMore)); mBtn.textContent = bannerMore ? 'Less' : 'More'; syncBannerH(); });
     banner.querySelectorAll('[data-mc]').forEach((b) => b.addEventListener('click', () => h.onChoice('marginCall', b.dataset.mc)));
     const ms = v.snap.gates?.marginSell;   // the engine's gate for the margin-call sale (free shares first, then pledged), not the plain sell gate
     if (ms && !ms.allowed) { const s = banner.querySelector('[data-mc=sell]'); s.setAttribute('aria-disabled', 'true'); s.title = ms.reason; }
@@ -235,7 +239,8 @@ export function createPaper(el, ctx) {
       if (extra) notes.push(extra);
       pips = `<div class="m-pips" aria-hidden="true">${(lead.pips || []).map((p, i) => `<span class="pip ${p.void ? 'void' : p.state}" style="--i:${i}"><span class="num">${p.void ? '' : esc(p.pct)}</span></span>`).join('')}</div>`;
       const lower = lead.free != null && lead.free < lead.shares;   // only when shares were sold on the release day itself
-      hero = `<div class="m-hero"><div class="m-free"><span class="num m-count" data-from="0" data-to="${lead.shares}">${int(lead.shares)}</span><span class="m-unit">shares released</span></div></div>
+      // the number counts up for the eye only (aria-hidden); a still sentence carries the final figure for a screen reader, once
+      hero = `<div class="m-hero"><div class="m-free" aria-hidden="true"><span class="num m-count" data-from="0" data-to="${lead.shares}">${int(lead.shares)}</span><span class="m-unit">shares released</span></div><p class="vh">${int(lead.shares)} shares released.</p></div>
         ${lead.free != null ? `<p class="m-left"><span class="num">${int(lead.free)}</span> free now${lower ? ', after a sale on the same day' : ''} · <span class="num">${int(lead.locked)}</span> still locked</p>` : ''}`;
     } else {
       const k = MOMENT_HEAD[lead.kind];
@@ -250,17 +255,27 @@ export function createPaper(el, ctx) {
       ${fine.length ? `<p class="m-fine">${fine.map(esc).join(' ')}</p>` : ''}` };
   }
 
+  // Focus: remember what had it when a card opens; when the card closes, give it back there (else to the rail's play key).
+  let noticePrev = null, noticeOpen = false;
+  const usable = (e) => e && e !== document.body && e.isConnected && e.getClientRects().length > 0 && !e.closest('[inert]') && !e.disabled;
   function setNotices(list) {
     const key = JSON.stringify(list.map((n) => [n.text, n.free, n.locked, n.idx]));
     if (key === noticeKey) return; noticeKey = key;
     cancelAnimationFrame(countRaf);
-    if (!list.length) { notices.innerHTML = ''; lockable().forEach((e) => e.removeAttribute('inert')); return; }
+    if (!list.length) {
+      const a = document.activeElement, lost = !a || a === document.body || notices.contains(a);
+      notices.innerHTML = ''; lockable().forEach((e) => e.removeAttribute('inert'));
+      if (noticeOpen && lost) { const t = usable(noticePrev) ? noticePrev : document.querySelector('.rail .pause'); t?.focus?.({ preventScroll: true }); }
+      noticeOpen = false; noticePrev = null; return;
+    }
+    if (!noticeOpen) { noticeOpen = true; const a = document.activeElement; noticePrev = a && !notices.contains(a) ? a : null; }
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '');
     const m = momentHtml(list);
     notices.innerHTML = `<div class="notice moment-scrim"><div class="moment" role="group" aria-label="${esc(m.kick + ': ' + m.head)}"><div class="m-body-wrap">${m.html}</div><button class="btn m-go" data-a="go">Continue</button></div></div>`;
     lockable().forEach((e) => e.setAttribute('inert', ''));
     const c = notices.querySelector('.m-count'); if (c) countUp(c, Number(c.dataset.from), Number(c.dataset.to));
     const b = notices.querySelector('.m-go'); b.addEventListener('click', () => h.onContinue());
-    if (!list.some((n) => n.noFocus)) b.focus({ preventScroll: true });
+    if (!typing && !list.some((n) => n.noFocus)) b.focus({ preventScroll: true });   // never pull focus out of a field the player is typing in
   }
 
   function toast(text, kind = '') {

@@ -39,8 +39,16 @@ const space = async () => { await page.evaluate(() => document.activeElement && 
 async function continueMoment() {
   for (let k = 0; k < 10 && await page.locator('.moment-scrim .m-go').count(); k++) { await page.locator('.moment-scrim .m-go').first().click({ timeout: 3000 }).catch(() => {}); await wait(250); }
 }
+// The play key reads "Play" while the clock is stopped and "Pause" while it runs.
+const pauseLabel = () => page.getAttribute('.pause', 'aria-label');
+// After any popup closes the game stays paused (Play mode), so a drive loop presses play whenever nothing is open.
+async function resumeIfIdle() {
+  if ((await pauseLabel()) !== 'Play') return;
+  if (await page.locator('.overlay, .notice .btn, .margin').count()) return;
+  await page.locator('.pause').click({ timeout: 3000 }).catch(() => {});
+}
 async function setPaused(want) {
-  const paused = (await page.getAttribute('.pause', 'aria-label')) === 'Resume';
+  const paused = (await pauseLabel()) === 'Play';
   if (paused !== want) { await page.locator('.pause').click({ timeout: 3000 }).catch(() => {}); await wait(150); }
 }
 async function clearOverlays() {
@@ -58,6 +66,7 @@ async function playUntil(pred, { timeout = 90000, cont = true } = {}) {
     await clearOverlays();
     if (await page.evaluate(pred)) return true;
     if (cont && await page.locator('.notice .btn').count()) await page.locator('.notice .btn').first().click({ timeout: 3000 }).catch(() => {});
+    if (cont) await resumeIfIdle();
     if (Date.now() - t0 > timeout) return false;
     await wait(100);
   }
@@ -79,25 +88,98 @@ async function mountExtra(name) {
 const unmountExtra = () => page.evaluate(() => document.getElementById('xh')?.remove());
 
 console.log('Tool tabs e2e: SpaceX, engineer, 4x');
+await page.addInitScript(() => { window.__lessonDialogs = 0; new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.querySelector && (n.matches?.('.dialog.lesson') || n.querySelector('.dialog.lesson'))) window.__lessonDialogs++; }).observe(document, { childList: true, subtree: true }); });
 await page.goto(`${BASE}/#/play/spcx/engineer`);
 await page.waitForSelector('.dialog.lesson');
 for (let k = 0; k < 12 && await page.locator('.dialog.lesson').count(); k++) { await page.locator('.dialog.lesson [data-a=next]').click(); await wait(250); }
 await page.waitForSelector('.play .rail');
-await page.locator('.speed[data-speed="4"]').click();
+await wait(200);
+const lessonsAtStart = await page.evaluate(() => window.__lessonDialogs);
 
-// ---- 1. first release pauses the clock
-const gotRelease = await playUntil(() => { const g = window.__ff.G; return g.state.shares.free > 0 && g.holds.has('notice'); }, { cont: true });
+// ---- 0. the game starts paused after the intro; the player presses play
+ok((await pauseLabel()) === 'Play', 'after the intro the clock is paused and the key reads Play');
+ok(/Paused\. Press play/.test(await txt('.clock-note')), `paused line shown: "${await txt('.clock-note')}"`);
+ok(/Paused/.test(await txt('.clock-live')), 'the polite live region says Paused');
+const day0 = await txt('.daylabel');
+await wait(2000);
+ok((await txt('.daylabel')) === day0, 'the day does not advance while paused (2 s)');
+ok(await page.evaluate(() => document.activeElement === document.querySelector('.rail .pause')), 'focus lands on the play key after the intro');
+await page.locator('.speed[data-speed="4"]').click();
+await page.locator('.pause').click();
+ok((await pauseLabel()) === 'Pause' && /Running at 4x/.test(await txt('.clock-note')), 'play runs the clock; the key reads Pause and the line says Running at 4x');
+ok(/Running at 4x/.test(await txt('.clock-live')), 'the live region announces Running at 4x');
+
+// ---- 1. first release pauses the clock: the release card first, then ONE lesson for every tool it unlocked
+const gotRelease = await playUntil(() => { const g = window.__ff.G; return g.state.shares.free > 0 && g.holds.has('notice'); }, { cont: false });
 ok(gotRelease, 'clock reached the first release');
-await clearOverlays();
+await wait(400);
 let s = await st();
 ok(s.holds.includes('notice') && s.shares.free > 0, `first release paused the clock on ${s.d} with ${s.shares.free} free shares`);
 ok(/of your shares are now free/.test(await txt('.notice')), 'release moment text shown');
-ok((await page.getAttribute('.pause', 'aria-label')) === 'Resume', 'rail shows the clock paused');
+ok((await page.locator('.moment-scrim').count()) === 1, 'one release card, not several');
+ok((await page.locator('.dialog.lesson').count()) === 0 && (await page.evaluate(() => window.__lessonDialogs)) === lessonsAtStart, 'no lesson opens before the release card');
+ok((await pauseLabel()) === 'Play' && /card is open/.test(await txt('.clock-note')), 'rail shows the clock paused for the card');
 ok(s.win.open, `trading window open on ${s.d}`);
 await shot('00-release-moment');
-await continueMoment();
-await setPaused(true);
+await page.locator('.notice .m-go').click();
+await page.waitForSelector('.dialog.lesson');
+const lk = await txt('.dialog.lesson .kicker'), lsteps = await txt('.dialog.lesson .step');
+ok(/5 tools unlocked/.test(lk), `one lesson dialog for the unlocked tools: "${lk}", ${lsteps}`);
+ok(/10b5-1 Plan: /.test(await txt('.dialog.lesson .dlg-title')), 'lesson cards are titled with their tool');
+await shot('00-release-lesson');
+const nSteps = Number(lsteps.match(/of (\d+)/)[1]);
+for (let k = 1; k < nSteps; k++) await page.locator('.dialog.lesson [data-a=next]').click();
+const names = [];
+for (let k = 0; k < nSteps; k++) { names.push(await txt('.dialog.lesson .dlg-title')); if (k < nSteps - 1) await page.locator('.dialog.lesson [data-a=back]').click(); }
+ok(['10b5-1 Plan', 'Collar', 'Credit Line', 'Protective Put', 'Exchange Fund'].every((n) => names.some((t) => t.startsWith(n + ':'))), 'the one dialog walks through the plan, collar, credit, put and exchange lessons');
+for (let k = 0; k < nSteps; k++) { if (await page.locator('.dialog.lesson [data-a=next]').count()) await page.locator('.dialog.lesson [data-a=next]').click(); await wait(80); }
+await page.waitForSelector('.dialog.lesson', { state: 'detached' });
+ok((await page.evaluate(() => window.__lessonDialogs)) - lessonsAtStart === 1, 'exactly one lesson dialog opened for the whole release');
+await wait(300);
+// every tab whose seal promised "your first release" is open now
+ok(await page.evaluate(() => ['plan', 'collar', 'credit', 'put', 'exchange'].every((id) => !document.getElementById('tab-' + id).classList.contains('locked'))), 'Plan, Collar, Credit, Put and Exchange tabs are all unsealed by the first release');
+// the popup closed: the clock stays paused
+ok((await pauseLabel()) === 'Play', 'after the release card and its lesson close, the key reads Play');
+ok(/Paused\. Press play/.test(await txt('.clock-note')), 'the paused line is back after the popups');
+ok(await page.evaluate(() => document.activeElement === document.querySelector('.rail .pause')), 'focus returns to the play key after the popups');
+const dayP = await txt('.daylabel'); await wait(2000);
+ok((await txt('.daylabel')) === dayP, 'the day does not advance for 2 s after the popups close');
 await shot('00-release-paused');
+// Space on the play key resumes (and on the body, too)
+await page.keyboard.press('Space'); await wait(300);
+ok((await pauseLabel()) === 'Pause', 'Space resumes the clock');
+await wait(1000);
+ok((await txt('.daylabel')) !== dayP, 'the day advances after Space');
+await shot('00-release-running');
+// Space dismisses a shown notice first (one press), the second press resumes
+await page.evaluate(() => { document.activeElement && document.activeElement.blur(); window.__ff.inject({ type: 'planLive', d: window.__ff.G.state.d, pause: true, text: 'Your plan is live. Test card.' }); });
+await wait(300);
+ok((await page.locator('.notice .moment').count()) === 1 && (await pauseLabel()) === 'Play', 'a notice pauses the clock');
+await page.evaluate(() => document.activeElement && document.activeElement.blur());
+await page.keyboard.press('Space'); await wait(250);
+ok((await page.locator('.notice .moment').count()) === 0 && (await pauseLabel()) === 'Play', 'first Space dismisses the notice and leaves the clock paused');
+await page.evaluate(() => document.activeElement && document.activeElement.blur());
+await page.keyboard.press('Space'); await wait(250);
+ok((await pauseLabel()) === 'Pause', 'second Space resumes');
+// two notice-producing events on one tick show as ONE card
+await page.evaluate(() => { const g = window.__ff.G, d = g.state.d; window.__ff.inject({ type: 'forcedSale', d, pause: true, text: 'The bank sold shares. Test card.' }); window.__ff.inject({ type: 'planLive', d, pause: true, text: 'Your plan is live. Test card.' }); });
+await wait(300);
+ok((await page.locator('.notice .moment').count()) === 1 && (await page.locator('.notice .m-notes li, .notice .m-body').count()) >= 1, 'two notices landing together make one card');
+await page.locator('.notice .m-go').click(); await wait(300);
+// a window-open event pauses with a card only when shares were released since the last window card; otherwise a toast
+await page.evaluate(() => { const d = window.__ff.G.state.d; window.__ff.inject({ type: 'windowOpen', d, pause: true, text: 'The window is open. Test one.' }); });
+await wait(200);
+if (await page.locator('.notice .m-go').count()) { await page.locator('.notice .m-go').click(); await wait(300); }
+await page.evaluate(() => { const d = window.__ff.G.state.d; window.__ff.inject({ type: 'windowOpen', d, pause: true, text: 'The window is open. Test two.' }); });
+await wait(200);
+ok((await page.locator('.notice .moment').count()) === 0 && /Test two/.test(await txt('.toasts')), 'a second window-open with no new release is a toast, not a card');
+// Space is not hijacked from a focused control: on the 2x key it presses 2x, it does not toggle the clock
+await setPaused(true);
+await page.locator('.speed[data-speed="2"]').focus();
+await page.keyboard.press('Space'); await wait(250);
+ok((await page.getAttribute('.speed[data-speed="2"]', 'aria-pressed')) === 'true' && (await pauseLabel()) === 'Play', 'Space on a focused speed key presses that key and leaves the clock alone');
+await page.locator('.speed[data-speed="4"]').click();
+s = await st();
 const free0 = s.shares.free;
 
 // ---- 2. Stock: sell in an open window
@@ -228,21 +310,21 @@ await shot('05-credit-drawn');
 
 // ---- 6. Cash tab
 await tab('cash');
+// Sale proceeds land in cash (no auto-invest): put money in the index fund through the form, then preview a withdrawal
+await page.locator('.cash [data-seg=mode] [data-v="deposit"]').click(); await wait(150);
+await page.locator('.cash [data-max]').click(); await wait(200);
+await page.locator('.cash .t-go').click();
+await page.waitForSelector('.cash .t-stamp');
+ok((await txt('.cash .t-stamp')) === 'DEPOSITED', 'DEPOSITED stamp');
+await wait(400);
+ok(await page.evaluate(() => window.__ff.G.snap.index.value > 0), 'the deposit put money in the index fund through the Cash tab form');
+ok(await page.locator('.cash .sw').count() === 0, 'no auto-invest switch on the Cash tab');
 await page.locator('.cash [data-seg=mode] [data-v="withdraw"]').click(); await wait(150);
 await page.locator('.cash [data-max]').click(); await wait(200);
 ok(/Withdraw \$[\d,]+ from the index fund/.test(await txt('.cash .t-go')), 'withdraw confirm button');
 ok(/Tax on the gain/.test(await txt('.cash .t-prev')), 'withdraw preview shows the tax');
 ok(/23\.8%/.test(await txt('.cash .taxnote')), 'tax note on withdrawals');
 await fill('.cash .fld-in', '');
-await page.locator('.cash [data-seg=mode] [data-v="deposit"]').click();
-await page.locator('.cash [data-max]').click(); await wait(200);
-await page.locator('.cash .t-go').click();
-await page.waitForSelector('.cash .t-stamp');
-ok((await txt('.cash .t-stamp')) === 'DEPOSITED', 'DEPOSITED stamp');
-await wait(400);
-await page.locator('.cash .sw').click(); await wait(250);
-ok((await page.getAttribute('.cash .sw', 'aria-checked')) === 'false', 'auto-invest switch turns off');
-await page.locator('.cash .sw').click(); await wait(250);
 
 // ---- 7. Put and Exchange (not in the shell's tab list yet): mount them directly on the same game
 await mountExtra('exchange');
@@ -259,7 +341,7 @@ await unmountExtra();
 await tab('stock');
 await setPaused(false);
 await playUntil(() => { const g = window.__ff.G; return g.snap && !g.snap.window.open; });
-await space(); await wait(300);
+await setPaused(true); await wait(300);
 s = await st();
 ok(!s.win.open, `window closed on ${s.d}`);
 await tab('stock'); await fill('.stock .fld-in', 100); await wait(250);
@@ -272,22 +354,21 @@ ok(/Window closed until/.test(await txt('.stock .chip.win')), 'window chip shows
 
 // ---- 9. Drive on to late October; look for a margin call
 let sawCall = false;
-await space();
+await setPaused(false);
 const t0 = Date.now();
 for (;;) {
   await clearOverlays();
   if (await page.locator('.margin').count()) { sawCall = true; break; }
   if (await page.evaluate(() => window.__ff.G.state.d >= '2026-10-28' || window.__ff.G.state.done)) break;
   if (await page.locator('.notice .btn').count()) await page.locator('.notice .btn').first().click({ timeout: 3000 }).catch(() => {});
-  if (Date.now() - t0 > 90000) break;
+  await resumeIfIdle();
+  if (Date.now() - t0 > 120000) break;
   await wait(100);
 }
-await space();
-await wait(200);
-if (!(await page.getAttribute('.pause', 'aria-label') === 'Resume')) await space();
+await setPaused(true);
 await wait(300);
 s = await st();
-console.log('  state at end of drive:', JSON.stringify({ d: s.d, holds: s.holds, pending: await page.evaluate(() => window.__ff.G.state.pendingEvent && window.__ff.G.state.pendingEvent.type), paused: await page.getAttribute('.pause', 'aria-label') }));
+console.log('  state at end of drive:', JSON.stringify({ d: s.d, holds: s.holds, pending: await page.evaluate(() => window.__ff.G.state.pendingEvent && window.__ff.G.state.pendingEvent.type), paused: await pauseLabel() }));
 await tab('credit');
 const real = await page.locator('.credit .call:not([hidden])').count();
 if (sawCall) {
@@ -360,21 +441,27 @@ else {
   await wait(300);
   for (let k = 0; k < 12 && await page.locator('.overlay').count(); k++) { await page.keyboard.press('Escape'); await wait(250); }
   await page.locator('.speed[data-speed="4"]').click();
-  let house = false;
+  await page.locator('.pause').click();
+  let house = false, blindCards = 0;
   const tb = Date.now();
-  while (Date.now() - tb < 150000) {
+  while (Date.now() - tb < 240000) {
     if (await page.locator('.dialog.event').count()) { house = true; break; }
     await clearOverlays0();
-    if (await page.locator('.notice .btn').count()) await page.locator('.notice .btn').first().click({ timeout: 3000 }).catch(() => {});
+    if (await page.locator('.notice .btn').count()) { blindCards++; await page.locator('.notice .btn').first().click({ timeout: 3000 }).catch(() => {}); }
+    await resumeIfIdle();
     await wait(100);
   }
+  notes.push(`Blind card: ${blindCards} notice cards before the month-18 house event.`);
   ok(house, 'blind card reached month 18 and the house event paused the clock');
   await shot('10-blind-house-event');
   const labels = await page.locator('.dialog.event .btn').allTextContents();
   if (labels.every((l) => !l.trim())) {
     notes.push('SHELL BUG (app.js openChoice): the house modal renders four empty buttons because the engine sends data.choices as strings (["cash","credit","sell","skip"]) and app.js reads c.choice / c.label. The test resolved the house event through the engine instead.');
     await page.evaluate(() => { window.__ff.doAct({ type: 'house', choice: 'skip' }); document.querySelectorAll('.overlay').forEach((o) => o.remove()); document.getElementById('root')?.removeAttribute('inert'); });
-  } else await page.locator('.dialog.event .btn.primary').first().click();
+  } else {
+    ok((await page.locator('.dialog.event .btn.primary').count()) === 0, 'no house choice is styled primary (all three carry equal weight)');
+    await page.locator('.dialog.event .btn:not([aria-disabled])').first().click();
+  }
   await wait(500);
   s = await st();
   ok(await page.evaluate(() => window.__ff.G.state.flags.houseDone), 'house event resolved');
