@@ -18,7 +18,7 @@ const SEATS = {
     short: 'Officer and director. An affiliate.',
     chips: ['Rule 144 cap', 'No sales before day 91', '90-120 day cooling-off'],
     rules: [
-      'Same lockup and trading window, plus a longer 10b5-1 cooling-off: the later of 90 days or 2 business days after the next 10-Q or 10-K, up to 120.',
+      'Same lockup and trading window, plus a longer 10b5-1 cooling-off: the later of 90 days or 2 business days after the 10-Q or 10-K for the quarter you adopt in, up to 120.',
       'Rule 144 caps what you can sell in any three months.',
       'No sale before day 91 after the IPO.',
     ],

@@ -58,11 +58,95 @@ export function chartModel(api, snap, extra = {}) {
   const evs = extra.events || [];
   const tax = evs.filter((e) => e.type === 'taxPaid').map((e) => ({ x: Math.min(pos(e.d), today), y: closeAt(e.d) })).filter((p) => p.y != null);
   const calls = evs.filter((e) => (e.type === 'marginCall' && e.pause) || e.type === 'forcedSale').map((e) => ({ x: Math.min(pos(e.d), today), y: closeAt(e.d), forced: e.type === 'forcedSale' })).filter((p) => p.y != null);
-  const lastX = blind ? dates.length - 1 : Math.max(today + 6, ...tranches.map((t) => t.x + 3));
+  // The x axis runs from day 0 to a little past today, never to the end of the data: early on the line gets room to read,
+  // and the axis grows as days pass. Nothing after today is plotted (no look-ahead); only published release dates are marked.
+  const lastX = Math.max(today + 10, 30);
   let lo = Math.min(...pts.map((p) => p.y), snap.offerPrice, ...collars.map((c) => c.Kp));
   let hi = Math.max(...pts.map((p) => p.y), snap.offerPrice, ...collars.map((c) => c.Kc));
-  const padv = (hi - lo) * 0.08 || 1;
-  return { blind, pts, today, tranches, wins, collars, tax, calls, offer: snap.offerPrice, lastX, lo: Math.max(0, lo - padv), hi: hi + padv, pos, label: labelFn(dates, blind), n: dates.length };
+  // a flat line sits mid-plot: never squeeze the range under 14% of the price
+  const mid = (lo + hi) / 2, minSpan = Math.max(mid * 0.14, 1);
+  if (hi - lo < minSpan) { lo = mid - minSpan / 2; hi = mid + minSpan / 2; }
+  const padv = (hi - lo) * 0.08;
+  const inDomain = tranches.filter((t) => t.x <= lastX);
+  const nextRel = tranches.filter((t) => !t.released).sort((a, b) => a.x - b.x)[0] || null;
+  const daysTo = (t) => (blind ? Math.max(0, t.x - today) : Math.max(0, daysBetween(snap.d, t.date)));
+  return {
+    blind, pts, today, tranches, inDomain, nextRel, nextInDomain: !!(nextRel && nextRel.x <= lastX), nextDays: nextRel ? daysTo(nextRel) : null,
+    wins, collars, tax, calls, offer: snap.offerPrice, first: pts[0].y, lastX, lo: Math.max(0, lo - padv), hi: hi + padv, pos, label: labelFn(dates, blind), n: dates.length,
+  };
+}
+
+/** The next-release countdown the phone card shows: everything from the engine snapshot and the card's published dates. */
+export function nextReleaseInfo(api, snap) {
+  const nr = snap && snap.nextRelease; if (!nr) return null;
+  const card = api.card(), dates = card.prices.map((p) => p[0]), pos = posFn(dates), today = Math.max(0, api.history().length - 1);
+  const x = pos(nr.date), blind = !!card.blind;
+  const days = blind ? Math.max(0, x - today) : Math.max(0, daysBetween(snap.d, nr.date));
+  return { date: nr.date, pct: nr.pct, days, frac: x > 0 ? Math.min(1, today / x) : 0 };
+}
+
+// ---- release strip: short labelled ticks on the top axis. Labels never overlap: they take row 0, then row 1, and a label that
+// fits neither merges into its neighbour, which then lists both percentages ("28%+7%"), never their sum. Pixel positions come from the live scale when it exists.
+const ROW = 20, CH = 15, GAP = 7;
+const labW = (t) => t.length * 6.8 + 12;
+function layoutStrip(m, px, area, maxRows) {
+  const chipText = !m.nextInDomain && m.nextRel ? `Next release in ${m.nextDays} ${m.nextDays === 1 ? 'day' : 'days'}` : '';
+  const chip = chipText ? { text: chipText, w: chipText.length * 6.1 + 16 } : null;
+  if (chip) chip.left = area.right - chip.w;
+  const end = Array(maxRows).fill(-1e9), items = [];
+  for (const t of m.inDomain.slice().sort((a, b) => a.x - b.x)) {
+    const cx = px(t.x);
+    let placed = false;
+    const text = `${t.pct}%`, w = labW(text);
+    let left = Math.min(Math.max(cx - w / 2, area.left), area.right - w);
+    for (let r = 0; r < maxRows && !placed; r++) {
+      const l = r === 0 && chip ? Math.min(left, chip.left - 4 - w) : left;
+      if (l >= end[r] + 4 && l >= area.left - 1) { items.push({ t, pcts: [t.pct], label: text, ticks: [cx], left: l, w, row: r }); end[r] = l + w; placed = true; }
+    }
+    if (!placed && items.length) {
+      const prev = items[items.length - 1]; prev.pcts.push(t.pct); prev.label = prev.pcts.map((p) => `${p}%`).join('+'); prev.ticks.push(cx); prev.merged = true;
+      prev.w = labW(prev.label); end[prev.row] = Math.max(end[prev.row], prev.left + prev.w);
+    }
+  }
+  const rows = items.reduce((a, i) => Math.max(a, i.row + 1), chip ? 1 : 0);
+  return { items, chip, rows };
+}
+
+function stripPlugin(getCtx) {
+  return {
+    id: 'ffReleaseStrip',
+    afterDraw(chart) {
+      const S = getCtx(); if (!S || !S.m) return;
+      const { m, c, font } = S, area = chart.chartArea, xs = chart.scales.x, ctx = chart.ctx;
+      const L = layoutStrip(m, (x) => xs.getPixelForValue(x), area, S.rows);
+      ctx.save();
+      ctx.textBaseline = 'middle'; ctx.textAlign = 'center'; ctx.font = `500 11px ${font}`;
+      const next = m.nextInDomain ? m.nextRel : null;
+      for (const it of L.items) {
+        const yb = area.top - GAP - it.row * ROW, yt = yb - CH;
+        const released = it.t.released;
+        const isNext = next && it.t.id === next.id;
+        // ticks, up from the top axis to the label
+        ctx.strokeStyle = released ? c.seal : isNext ? c.seal : rgba(c.seal, 0.8); ctx.lineWidth = released ? 1.6 : 1.3;
+        for (const tx of it.ticks) { ctx.beginPath(); ctx.moveTo(tx, area.top); ctx.lineTo(tx, yb); ctx.stroke(); }
+        // label chip
+        ctx.beginPath(); (ctx.roundRect ? ctx.roundRect(it.left, yt, it.w, CH, 2) : ctx.rect(it.left, yt, it.w, CH));
+        if (released) { ctx.fillStyle = c.seal; ctx.fill(); ctx.fillStyle = c.paper; }
+        else { ctx.fillStyle = c.paperHi; ctx.fill(); ctx.strokeStyle = c.seal; ctx.lineWidth = isNext ? 2 : 1; ctx.stroke(); ctx.fillStyle = c.seal; }
+        if (isNext) ctx.font = `600 11px ${font}`;
+        ctx.fillText(it.label, it.left + it.w / 2, yt + CH / 2 + 0.5);
+        if (isNext) ctx.font = `500 11px ${font}`;
+      }
+      if (L.chip) {
+        const k = L.chip, yt = area.top - GAP - CH;
+        ctx.font = `500 11px ${css('--f-body', 'sans-serif')}`;
+        ctx.beginPath(); (ctx.roundRect ? ctx.roundRect(k.left, yt, k.w, CH, 2) : ctx.rect(k.left, yt, k.w, CH));
+        ctx.fillStyle = c.paper2; ctx.fill(); ctx.strokeStyle = c.line; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = c.ink; ctx.fillText(k.text, k.left + k.w / 2, yt + CH / 2 + 0.5);
+      }
+      ctx.restore();
+    },
+  };
 }
 
 export function createPriceChart(host, api, getEvents = () => []) {
@@ -70,9 +154,10 @@ export function createPriceChart(host, api, getEvents = () => []) {
   host.innerHTML = '<canvas role="img" aria-label="Price chart"></canvas><p class="pchart-sr" aria-live="off"></p>';
   const canvas = host.querySelector('canvas'), sr = host.querySelector('.pchart-sr');
   let chart = null, key = '', fallback = null;
+  const S = { m: null, c: null, font: 'monospace', rows: 1 };
   const R = { lab: (v) => String(v), blind: false };
   const Chart = window.Chart;
-  const C = () => ({ ink: css('--ink', '#18262F'), muted: css('--muted', '#5B6870'), gold: css('--gold', '#B08A3E'), seal: css('--seal', '#9C2A23'), collar: css('--collar', '#2E6E72'), line: css('--paper-line', '#D9CEB4') });
+  const C = () => ({ ink: css('--ink', '#18262F'), muted: css('--muted', '#5B6870'), gold: css('--gold', '#B08A3E'), seal: css('--seal', '#9C2A23'), collar: css('--collar', '#2E6E72'), line: css('--paper-line', '#D9CEB4'), paper: css('--paper', '#F1ECDF'), paper2: css('--paper-2', '#E8E0CC'), paperHi: '#FBF7EC' });
 
   function ensureChart(m) {
     if (chart || !Chart) return;
@@ -80,14 +165,15 @@ export function createPriceChart(host, api, getEvents = () => []) {
     try { const A = window['chartjs-plugin-annotation']; if (A && !Chart.registry.plugins.get('annotation')) Chart.register(A); } catch { /* already registered */ }
     chart = new Chart(canvas, {
       type: 'line',
+      plugins: [stripPlugin(() => S)],
       data: { datasets: [] },
       options: {
         responsive: true, maintainAspectRatio: false, animation: false, parsing: false, normalized: true,
         interaction: { mode: 'nearest', axis: 'x', intersect: false },
-        layout: { padding: { top: 6, right: 8, bottom: 0, left: 0 } },
+        layout: { padding: { top: 30, right: 8, bottom: 0, left: 0 } },
         scales: {
           x: { type: 'linear', min: 0, max: m.lastX, grid: { color: rgba(c.line, 0.45), drawTicks: false }, border: { color: c.ink },
-            ticks: { color: c.muted, maxTicksLimit: 6, padding: 6, font: { family: css('--f-num', 'monospace'), size: 11 }, callback: (v) => R.lab(v) } },
+            ticks: { color: c.muted, maxTicksLimit: 6, padding: 6, autoSkipPadding: 14, maxRotation: 0, font: { family: css('--f-num', 'monospace'), size: 11 }, callback: (v) => R.lab(v) } },
           y: { grid: { color: rgba(c.line, 0.6) }, border: { color: c.ink },
             ticks: { color: c.muted, maxTicksLimit: 5, font: { family: css('--f-num', 'monospace'), size: 11 }, callback: (v) => (R.blind ? Number(v).toFixed(0) : '$' + Number(v).toFixed(0)) } },
         },
@@ -118,34 +204,52 @@ export function createPriceChart(host, api, getEvents = () => []) {
     const k = [snap.d, snap.window.open, api.state().collars.map((c) => c.id).join(), evs.length, host.clientWidth].join('|');
     if (k === key) return; key = k;
     const m = chartModel(api, snap, { events: evs });
-    sr.textContent = `Close ${price(m.pts[m.pts.length - 1].y)}${m.blind ? ' (indexed)' : ''}. Offer ${price(m.offer)}. ${m.tranches.filter((t) => t.released).length} of ${m.tranches.length} releases so far.`;
+    const nxt = m.nextRel ? ` Next release ${m.nextDays === 0 ? 'today' : `in ${m.nextDays} ${m.nextDays === 1 ? 'day' : 'days'}`}, ${m.nextRel.pct}% of the shares.` : '';
+    sr.textContent = `Close ${price(m.pts[m.pts.length - 1].y)}${m.blind ? ' (indexed)' : ''}. Offer ${price(m.offer)}. ${m.tranches.filter((t) => t.released).length} of ${m.tranches.length} releases so far.${nxt}`;
     canvas.setAttribute('aria-label', `Price chart. ${sr.textContent}`);
     if (!Chart) { fallbackSvg(m); return; }
     ensureChart(m);
     const c = C();
     R.lab = m.label; R.blind = m.blind;
+    const phone = window.innerWidth < 900;
+    const last = m.pts[m.pts.length - 1];
     const ds = [
-      { type: 'line', data: m.pts, borderColor: c.ink, borderWidth: 1.6, pointRadius: 0, pointHoverRadius: 3, tension: 0, order: 2 },
-      { type: 'scatter', data: [m.pts[m.pts.length - 1]], pointRadius: 4, backgroundColor: c.ink, borderColor: '#F1ECDF', borderWidth: 2, order: 1 },
+      { type: 'line', data: m.pts, borderColor: c.ink, borderWidth: phone ? 2.4 : 2, borderCapStyle: 'round', borderJoinStyle: 'round', pointRadius: 0, pointHoverRadius: 3, tension: 0, order: 2,
+        fill: 'start', backgroundColor: rgba(c.ink, 0.035) },
+      // today, and the first close as a ring so the line always has a visible start
+      { type: 'scatter', data: [last], pointRadius: 4.5, backgroundColor: c.ink, borderColor: c.paperHi, borderWidth: 2, order: 1 },
     ];
+    if (m.pts.length > 1) ds.push({ type: 'scatter', data: [m.pts[0]], pointRadius: 3.5, backgroundColor: c.paperHi, borderColor: c.ink, borderWidth: 1.6, order: 1 });
     if (m.tax.length) ds.push({ type: 'scatter', data: m.tax, pointRadius: 6, pointStyle: 'rectRot', backgroundColor: c.gold, borderColor: c.ink, borderWidth: 1.2, order: 1 });
     if (m.calls.length) ds.push({ type: 'scatter', data: m.calls, pointRadius: 7, backgroundColor: c.seal, borderColor: '#F1ECDF', borderWidth: 2, order: 1 });
     chart.data.datasets = ds;
+    const numFont = css('--f-num', 'monospace');
     const ann = {
+      // the future is not drawn, only tinted: nothing here has happened yet
+      future: { type: 'box', xMin: m.today, xMax: m.lastX, backgroundColor: rgba(c.ink, 0.03), borderWidth: 0, drawTime: 'beforeDatasetsDraw' },
+      first: { type: 'line', yMin: m.first, yMax: m.first, xMin: 0, xMax: m.lastX, borderColor: rgba(c.ink, 0.38), borderWidth: 1, borderDash: [1.5, 3.5],
+        label: { display: m.pts.length < 40, content: m.blind ? `First ${m.first.toFixed(0)}` : `First close ${price(m.first)}`, position: 'end', backgroundColor: 'transparent', color: c.muted, font: { family: numFont, size: 10 }, padding: 2, yAdjust: -8 } },
       offer: { type: 'line', yMin: m.offer, yMax: m.offer, borderColor: c.gold, borderWidth: 1.2, borderDash: [5, 4],
-        label: { display: true, content: m.blind ? 'Offer 100' : `Offer ${price(m.offer)}`, position: 'start', backgroundColor: 'transparent', color: c.gold, font: { family: css('--f-num', 'monospace'), size: 10, weight: '500' }, padding: 2, yAdjust: -8 } },
+        label: { display: true, content: m.blind ? 'Offer 100' : `Offer ${price(m.offer)}`, position: 'start', backgroundColor: 'transparent', color: c.gold, font: { family: numFont, size: 10, weight: '500' }, padding: 2, yAdjust: -8 } },
     };
-    const nextRel = m.tranches.filter((t) => !t.released).sort((a, b) => a.x - b.x)[0];
+    // Release marks: every tranche keeps an entry, but only the next release inside the axis draws a full-height rule;
+    // the rest are the short labelled ticks the strip plugin draws above the plot.
     m.tranches.forEach((t, i) => {
-      const show = t.pct >= 15 || (nextRel && nextRel.id === t.id);
-      ann['t' + i] = { type: 'line', xMin: t.x, xMax: t.x, borderColor: t.released ? rgba(c.seal, 0.75) : c.seal, borderWidth: t.released ? 1.3 : 1.2, borderDash: t.released ? [] : [3, 3],
-        label: show ? { display: true, content: `${t.pct}%`, position: 'end', backgroundColor: c.seal, color: '#F1ECDF', font: { family: css('--f-num', 'monospace'), size: 10 }, padding: { x: 4, y: 1 }, borderRadius: 1, yAdjust: 0 } : { display: false } };
+      const isNext = m.nextInDomain && m.nextRel.id === t.id;
+      ann['t' + i] = { type: 'line', display: isNext, xMin: t.x, xMax: t.x, borderColor: c.seal, borderWidth: 1.4, borderDash: [4, 3] };
     });
     m.wins.forEach((w, i) => { ann['w' + i] = { type: 'box', xMin: w.x0, xMax: w.x1, backgroundColor: rgba(c.ink, w.now ? 0.1 : 0.055), borderWidth: 0, drawTime: 'beforeDatasetsDraw' }; });
     m.collars.forEach((b, i) => { ann['c' + i] = { type: 'box', xMin: b.x0, xMax: b.x1, yMin: b.Kp, yMax: b.Kc, backgroundColor: rgba(c.collar, 0.16), borderColor: c.collar, borderWidth: 1, borderDash: [4, 3], drawTime: 'beforeDatasetsDraw' }; });
     chart.options.plugins.annotation.annotations = ann;
     chart.options.scales.x.max = m.lastX;
     chart.options.scales.y.min = m.lo; chart.options.scales.y.max = m.hi;
+    // room above the plot for the strip: one row, or two when labels crowd
+    const area = chart.chartArea, w = host.clientWidth || 320;
+    const est = area && area.width > 40 ? { left: area.left, right: area.right } : { left: 46, right: w - 12 };
+    const pxEst = (x) => est.left + (x / m.lastX) * (est.right - est.left);
+    S.m = m; S.c = c; S.font = numFont;
+    S.rows = layoutStrip(m, pxEst, est, 2).rows;
+    chart.options.layout.padding.top = S.rows ? GAP + S.rows * ROW + 4 : 8;
     chart.update('none');
   }
   return { update, destroy() { if (chart) chart.destroy(); }, get chart() { return chart; } };

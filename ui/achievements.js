@@ -9,7 +9,7 @@ export const ACHIEVEMENT_META = [
   { id: 'through-the-blackout', name: 'Through the Blackout', condition: 'Have a plan sell while the window is closed.', lesson: 'A plan adopted in an open window can keep selling through a blackout.' },
   { id: 'floor-plan', name: 'Floor Plan', condition: 'Put on your first collar.', lesson: 'A collar sets a floor under released shares and gives up gains above a cap.' },
   { id: 'street-smart', name: 'Street Smart', condition: 'Open the Street check.', lesson: 'A model price for a hedge is not the price a dealer will quote you.' },
-  { id: 'cured', name: 'Cured', condition: 'Meet a margin call with cash.', lesson: 'Cash held back is what answers a maintenance call without a forced sale.' },
+  { id: 'cured', name: 'Cured', condition: 'Meet a margin call with cash.', lesson: 'You met a maintenance call by posting cash instead of letting the bank sell.' },
   { id: 'seal-breaker', name: 'Seal Breaker', condition: 'See every tranche release.', lesson: 'The lockup is a schedule of dates, and each date changes what you can do.' },
   { id: 'diversified', name: 'Diversified', condition: 'Hold under half of your wealth in the stock.', lesson: 'Concentration is a share of wealth, not a share count.' },
   { id: 'tax-aware', name: 'Tax Aware', condition: 'Pay less tax than The Seller and end wealthier.', lesson: 'Tax is a cost you can time, and less tax paid is not the goal by itself.' },

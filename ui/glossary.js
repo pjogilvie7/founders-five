@@ -55,7 +55,7 @@ export const GLOSSARY = {
   },
   "Implied volatility": {
     short: "The yearly volatility that makes an option-pricing model match an option's market price.",
-    long: "Implied volatility is read backwards from option prices rather than measured from past returns. On the SpaceX card the game reads it from listed options at each strike; on every other date it uses trailing realized volatility with a floor and a small skew."
+    long: "Implied volatility is read backwards from option prices rather than measured from past returns. On the SpaceX card, a new collar priced on the latest data day takes each leg's implied volatility from listed options at that leg's strike and expiry, and the collar keeps the gap from the model volatility when it is marked later. Every other price, on every card, uses trailing realized volatility with a floor and a small skew."
   },
   "Securities-based line of credit": {
     short: "A loan secured by your securities that you can draw on as needed, usually barred from buying more securities.",
@@ -83,7 +83,7 @@ export const GLOSSARY = {
   },
   "IRR": {
     short: "The yearly rate that makes the present value of all your cash flows equal zero.",
-    long: "The game uses XIRR on actual dates with a 365-day year. The flows are your starting wealth going in, each month's spending coming out, and your final wealth, less tax on unrealized gains, at the end. It measures return with timing, so spending early costs more than spending late."
+    long: "The game uses XIRR on actual dates with a 365-day year. The flows are your starting wealth less the tax already built into the stake going in, each month's spending coming out, and your final wealth less tax on unrealized gains at the end, so both ends are after tax. It measures return with timing, so spending early costs more than spending late."
   },
   "Basis": {
     short: "What your shares are treated as costing you for tax; your taxable gain is the sale price less basis.",

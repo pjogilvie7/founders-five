@@ -1,9 +1,12 @@
 /* Gauntlet overrides for the phone piece; loaded after the base stylesheets.
    Under 900px the play screen is a game board, not a page:
-     header   one compact sticky plate (clock, wealth, window, certificate) with a hairline progress rule
+     header   two rows: day + window + clock, then net worth with cash and one rank chip; a hairline progress rule
      board    the chart, as tall as the screen allows, with a ledger strip of three numbers above it
      base     toasts in their own slot, then the news bar, then a bottom nav that holds every tool
    Selectors use stable class names and a .rail-host / .paper prefix so they win over rail.css and moments.css. */
+
+/* the next-release countdown card is a phone piece; it is built into the Stock tab and hidden everywhere else */
+.lockcard{display:none}
 
 @media (max-width:899px){
 
@@ -11,67 +14,84 @@
   #root:has(#screen[data-screen=play],#screen[data-screen=watch]) .site-foot{display:none}
   .play .btn,.play button,.play .tab{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 
-  /* ---------------------------------------------------------------- header */
+  /* ---------------------------------------------------------------- header
+     Two rows, two voices: one sans for labels, mono for every figure; nothing under 14px.
+       row 1   Day N of 98 + window lamp on the left, clock on the right
+       row 2   net worth (largest) with cash beside it; the since-start change and one rank chip underneath
+     Wealth / Profit and the certificate strip live inside the Rivals sheet: they show only while it is open. */
   .play .rail-host{border:0;border-bottom:1px solid var(--gold);padding-top:env(safe-area-inset-top,0px);
     background:var(--rail);box-shadow:0 8px 18px -10px #000c;z-index:12}
-  .rail-host .rail{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:2px;align-items:center;
-    padding:8px 14px 9px;gap:2px 10px;position:relative;background:var(--rail)}
-  /* flatten the three wrappers so every readout can sit on one shared grid */
+  .rail-host .rail{display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:10px;row-gap:3px;align-items:center;
+    padding:8px 14px 15px;position:relative;background:var(--rail);font-family:var(--f-body)}
+  /* flatten the wrappers so every readout sits on one shared grid */
   .rail-host .rail-top,.rail-host .clock-row,.rail-host .clock,.rail-host .money,.rail-host .nw,.rail-host .nw-head{display:contents}
   .rail-host .nw .lbl,.rail-host .clock-card,.rail-host .cashrow .lbl{display:none}
 
-  /* row 1: where you are in the card, and the clock */
-  .rail-host .daylabel{grid-area:1/1;font:500 12px/1.3 var(--f-num);letter-spacing:0;text-transform:none;font-variant-caps:normal;
-    color:var(--rail-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:center}
-  .rail-host .transport{grid-area:1/2;gap:4px;justify-self:end}
+  /* row 1: where you are, the window lamp, the clock */
+  .rail-host .daylabel{grid-area:1/1;font:600 14px/1.2 var(--f-body);letter-spacing:.01em;text-transform:none;font-variant-caps:normal;
+    color:var(--rail-text);white-space:nowrap;align-self:center}
+  .rail-host .daylabel .dk{color:var(--rail-muted);font-weight:500}
+  .rail-host .daylabel .dn{font:600 15px/1 var(--f-num);color:var(--rail-text)}
+  .rail-host .daylabel .dt{color:var(--rail-muted);font-weight:500}
+  .rail-host .daylabel .dr{display:none}
+  .rail-host .lamp-row{grid-area:1/2;justify-self:start;min-width:0;min-height:0;gap:7px;font:600 14px/1.2 var(--f-body);color:var(--rail-text);
+    padding:3px 9px 3px 7px;border:1px solid var(--rail-line);border-radius:999px;background:color-mix(in srgb,var(--rail-2) 70%,var(--rail))}
+  .rail-host .lamp{flex:0 0 10px;width:10px;height:10px;box-shadow:inset 0 0 0 1px #0006,0 0 0 1.5px var(--rail-line)}
+  .rail-host .lamp.open{box-shadow:inset 0 0 0 1px #fff4,0 0 0 1.5px var(--good),0 0 8px 1px color-mix(in srgb,var(--good) 70%,transparent)}
+  /* the pill says Open / Closed; the long form (and the date) returns where there is room */
+  .rail-host .lamp-text{font-size:0;white-space:nowrap;min-width:0}
+  .rail-host .lamp-text b,.rail-host .lamp-text em{display:none}
+  .rail-host .lamp-text::before{font:600 14px/1.2 var(--f-body);letter-spacing:.01em;text-transform:none;color:var(--rail-text)}
+  .rail-host .rail:not(.win-open) .lamp-text::before{content:"Closed";color:var(--rail-muted)}
+  .rail-host .rail.win-open .lamp-text::before{content:"Open"}
+  .rail-host .transport{grid-area:1/3;gap:4px;justify-self:end}
   .rail-host .speeds{gap:4px}
-  .rail-host .rail .btn,.rail-host .btn{min-height:34px;min-width:36px;padding:0 9px;border-radius:6px;box-shadow:none;
-    background:var(--rail-2);border:1px solid var(--rail-line);color:var(--rail-text);font-size:12.5px;font-weight:600}
+  .rail-host .rail .btn,.rail-host .btn{min-height:36px;min-width:38px;padding:0 8px;border-radius:6px;box-shadow:none;
+    background:var(--rail-2);border:1px solid var(--rail-line);color:var(--rail-text);font:600 14px/1 var(--f-num);letter-spacing:0}
   .rail-host .btn:hover{background:#223a49}
   .rail-host .btn:active{transform:scale(.94);box-shadow:none}
   .rail-host .btn[aria-pressed=true]{background:var(--gold);border-color:var(--gold);color:var(--ink)}
   .rail-host .pause.paused{background:var(--gold);border-color:var(--gold);color:var(--ink);animation:phonePulse 1.8s ease-in-out infinite}
   @keyframes phonePulse{50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--gold) 28%,transparent)}}
 
-  /* row 2: the number that matters, and rivals */
-  .rail-host .nwv{grid-area:2/1;min-width:0;font-size:clamp(20px,7.2vw,27px);font-weight:500;line-height:1.05;letter-spacing:-.01em;white-space:nowrap;text-shadow:none}
-  .rail-host .rivals-toggle{grid-area:2/2;justify-self:end;flex-direction:row;gap:7px;min-height:34px;padding:0 10px;
-    background:transparent;border:1px solid var(--rail-line);border-radius:6px;color:var(--rail-muted);font-size:11px;letter-spacing:.12em;line-height:1}
-  .rail-host .rivals-toggle .rk{color:var(--gold);font-size:13px;font-weight:600;letter-spacing:0}
+  /* row 2: net worth, with cash beside it */
+  .rail-host .nwv{grid-area:2/1/3/-1;min-width:0;font:500 clamp(22px,7.2vw,28px)/1.05 var(--f-num);letter-spacing:-.01em;white-space:nowrap;text-shadow:none;align-self:center}
+  .rail-host .cashrow{grid-area:2/1/3/-1;justify-self:end;align-self:end;display:flex;align-items:baseline;gap:6px;border:0;padding:0;margin:0 0 3px;pointer-events:none}
+  .rail-host .cashrow::before{content:"Cash";font:500 14px/1 var(--f-body);letter-spacing:0;text-transform:none;color:var(--rail-muted)}
+  .rail-host .rail .cashrow .val{font:500 14px/1 var(--f-num);color:var(--rail-text)}
+
+  /* under it: change since the start (left), one rank chip that opens the sheet (right) */
+  .rail-host .nw-delta{grid-area:3/1/4/-1;min-height:0;min-width:0;max-width:calc(100% - 118px);flex-wrap:nowrap;white-space:nowrap;overflow:hidden;gap:6px;
+    font:500 14px/1.2 var(--f-body);align-self:center}
+  .rail-host .nw-delta .dv{font:600 14px/1.2 var(--f-num)}
+  .rail-host .rivals-toggle{grid-area:3/1/4/-1;justify-self:end;align-self:center;position:relative;flex-direction:row;align-items:center;gap:6px;
+    min-height:30px;padding:0 10px 0 11px;background:color-mix(in srgb,var(--rail-2) 80%,var(--rail));border:1px solid color-mix(in srgb,var(--gold) 60%,var(--rail-line));border-radius:999px;
+    color:var(--rail-text);font:600 14px/1 var(--f-body);letter-spacing:0;text-transform:none;transition:background .15s,border-color .15s}
+  .rail-host .rivals-toggle::before{content:"";position:absolute;inset:-8px -6px}
+  .rail-host .rivals-toggle:hover{background:#223a49}
+  .rail-host .rivals-toggle:active{transform:scale(.96)}
+  .rail-host .rivals-toggle .rk{color:var(--gold);font:600 14px/1 var(--f-num);letter-spacing:0}
   .rail-host .rivals-toggle::after{content:"";width:6px;height:6px;margin:-3px 0 0 1px;border-right:1.5px solid var(--gold);border-bottom:1.5px solid var(--gold);transform:rotate(45deg);transition:transform .2s var(--ease-out)}
-  .rail-host .rivals-toggle[aria-expanded=true]{border-color:var(--gold);color:var(--rail-text)}
+  .rail-host .rivals-toggle[aria-expanded=true]{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 14%,var(--rail-2))}
   .rail-host .rivals-toggle[aria-expanded=true]::after{transform:rotate(-135deg);margin-top:3px}
 
-  /* row 3: change since the start, and the wealth / profit switch */
-  .rail-host .nw-delta{grid-area:3/1;min-height:0;min-width:0;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;gap:6px;font-size:11.5px;align-self:center}
-  .rail-host .nw-delta .dv{font-size:13px}
-  .rail-host .seg{grid-area:3/2;justify-self:end;border-radius:5px;overflow:hidden}
-  .rail-host .seg button{min-height:24px;padding:0 8px;font-size:10px;letter-spacing:.08em}
-
-  /* row 4: the trading window, and cash */
-  .rail-host .lamp-row{grid-area:4/1;min-height:22px;min-width:0;gap:7px;font-size:11.5px}
-  .rail-host .lamp-text b{font-size:11px;letter-spacing:.04em}
-  .rail-host .lamp-text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .rail-host .lamp{flex:0 0 10px;width:10px;height:10px}
-  .rail-host .cashrow{grid-area:4/2;justify-self:end;align-self:center;display:flex;align-items:baseline;gap:6px;border:0;padding:0;margin:0}
-  .rail-host .cashrow::before{content:"Cash";font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--rail-muted)}
-  .rail-host .rail .cashrow .val{font-size:13px;color:var(--rail-text)}
-
-  /* row 5: the certificate, cut down to one paper strip: shares on the left, seals on the right */
-  .rail-host .rail .rcert{grid-area:5/1/6/-1;order:0;margin:3px 0 0;padding:5px 10px;clip-path:none;filter:none;box-shadow:inset 0 0 0 1px var(--paper-line);border-radius:3px;text-align:left}
-  .rail-host .rail .rcert .cert-in{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap;min-height:24px;overflow:hidden}
+  /* inside the sheet: the Wealth / Profit switch and the certificate strip appear only while it is open */
+  .rail-host .seg,.rail-host .rail .rcert{display:none}
+  .rail-host .rail.more-open .seg{display:inline-flex;grid-area:4/1/5/-1;justify-self:start;margin-top:6px;border-radius:6px;overflow:hidden}
+  .rail-host .seg button{min-height:34px;padding:0 14px;font:600 14px/1 var(--f-body);letter-spacing:.02em;text-transform:none}
+  .rail-host .rail.more-open .rcert{display:block;grid-area:5/1/6/-1;order:0;margin:6px 0 0;padding:6px 10px;clip-path:none;filter:none;box-shadow:inset 0 0 0 1px var(--paper-line);border-radius:3px;text-align:left}
+  .rail-host .rail .rcert .cert-in{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:nowrap;min-height:26px;overflow:hidden}
   .rail-host .rail .rcert .cert-head,.rail-host .rail .rcert .cert-vig,.rail-host .rail .rcert .cert-name,.rail-host .rail .rcert .cert-sub,.rail-host .rail .rcert .cert-border{display:none}
   .rail-host .rail .rcert .cert-shares{display:flex;align-items:baseline;gap:5px;flex:none;margin:0}
-  .rail-host .rail .rcert .cert-shares .count{font-size:15px;line-height:1.1;color:var(--ink);font-weight:500}
-  .rail-host .rail .rcert .cert-shares .u{font-size:9.5px;letter-spacing:.14em}
+  .rail-host .rail .rcert .cert-shares .count{font:500 16px/1.1 var(--f-num);color:var(--ink)}
+  .rail-host .rail .rcert .cert-shares .u{font:500 14px/1 var(--f-body);letter-spacing:0;text-transform:none}
   .rail-host .rail .rcert .seals{display:flex;flex-wrap:nowrap;gap:2px;margin:0;min-width:0;overflow:hidden;justify-content:flex-end}
   .rail-host .rail .rcert .seal{flex:0 1 20px;width:20px;height:20px;min-width:9px}
   .rail-host .rail .rcert .stamps{display:none}
 
   /* progress: a plain gold fuse along the foot of the header; a small diamond rides its head (no hatching, no ticks) */
-  .rail-host .rail{padding-bottom:14px}
   .rail-host .rail .rail-top::after{content:none}
-  .rail-host .yearbar{position:absolute;left:14px;right:14px;bottom:5px;height:3px;margin:0;border:0;border-radius:2px;
+  .rail-host .yearbar{position:absolute;left:14px;right:14px;bottom:6px;height:3px;margin:0;border:0;border-radius:2px;
     background:color-mix(in srgb,var(--rail-line) 80%,transparent);z-index:1;pointer-events:none}
   .rail-host .yearbar .fill{position:relative;height:100%;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 55%,#000),var(--gold));transition:width .12s linear}
   .rail-host .yearbar .fill::after{content:"";position:absolute;right:-5px;top:50%;width:9px;height:9px;transform:translateY(-50%) rotate(45deg);
@@ -80,6 +100,8 @@
 
   /* the rivals / rules sheet drops straight from under the header */
   .rail-host .rail-more{top:calc(100% + 1px);border-top:0;box-shadow:0 20px 30px -8px #000d;max-height:min(66dvh,520px);overscroll-behavior:contain}
+  /* the open sheet rides above a maintenance banner */
+  .play .rail-host:has(.rail.more-open){z-index:40}
   .rail-host .rail.more-open .rail-more{animation:phoneDrop .24s var(--ease-out)}
   @keyframes phoneDrop{from{opacity:0;transform:translateY(-8px)}}
 
@@ -109,16 +131,15 @@
   .paper .tk-text{flex:1 1 auto;min-width:0;color:var(--muted)}
   .paper .tk-text .when{font-size:11.5px}
 
-  /* bottom nav: the tools you can use, equal width, icon over label. Sealed tools fold into one 'Locked' chip
-     (the first sealed tool; tap it to read why and when, or press its number key). */
+  /* bottom nav: every tool, equal width, icon over label; sealed tools are dimmed and still open their reason. */
   .paper .tabbar{order:3;flex:none;position:relative;display:flex;align-items:stretch;gap:0;padding:0 0 var(--safe);height:calc(var(--nav-h) + var(--safe));
     border-top:1px solid var(--ink);border-bottom:0;background:var(--paper-2)}
   .paper .tabs{display:flex;flex:1 1 auto;margin:0;overflow:visible}
-  .paper .tab{flex:1 1 0;flex-direction:column;justify-content:center;gap:2px;min-height:0;min-width:0;margin:0;padding:5px 5px 4px;border:0;border-radius:0;
-    background:transparent;color:var(--muted);font-size:10px;font-weight:600;line-height:1.12;text-align:center;white-space:nowrap;position:relative;overflow:hidden;
+  .paper .tab{flex:1 1 0;flex-direction:column;justify-content:center;gap:2px;min-height:0;min-width:0;width:calc(100% / 7);margin:0;padding:5px 2px 4px;border:0;border-radius:0;
+    background:transparent;color:var(--muted);font-size:10.5px;font-weight:600;line-height:1.12;text-align:center;white-space:nowrap;position:relative;overflow:hidden;
     box-shadow:none;transition:background .15s,color .15s}
   .paper .tab+.tab::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:var(--paper-line)}
-  .paper .tab .lbl{display:block;max-width:100%;overflow:hidden;text-overflow:clip;letter-spacing:-.01em;padding-inline:1px}
+  .paper .tab .lbl{display:block;max-width:100%;overflow:hidden;text-overflow:clip;letter-spacing:-.03em;padding-inline:0}
   .paper .tab .ico,.paper .tab .ico img,.paper .tab .gl{width:20px;height:20px}
   .paper .tab:hover{background:color-mix(in srgb,var(--paper) 60%,var(--paper-2))}
   .paper .tab.active{background:var(--paper);color:var(--ink);box-shadow:inset 0 3px 0 var(--gold);border:0}
@@ -126,11 +147,11 @@
   .paper .tab:active{background:var(--paper)}
   .paper .tab:focus-visible{outline-offset:-3px}
   .paper .tab kbd{display:none}
-  .paper .tab.locked{display:none}
-  .paper .tab.locked:not(.tab.locked~.tab.locked){display:flex;flex:0 0 76px;color:var(--muted)}
-  .paper .tab.locked .lbl{font-size:0;opacity:1}
-  .paper .tab.locked .lbl::after{content:"Locked";font-size:10px;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+  /* Sealed tools stay visible and tappable one by one: each opens its own rule and unlock date (PRD 4.4). */
+  .paper .tab.locked{display:flex;color:var(--muted);opacity:.8}
   .paper .tab.locked .ico,.paper .tab.locked .gl{width:18px;height:18px}
+  /* the padlock is quiet grey, not four red alarms; the one red thing on the bar is the verb on the board above it */
+  .paper .tab.locked .gl.lock{fill:color-mix(in srgb,var(--muted) 70%,var(--paper-2));stroke:var(--paper-2)}
   /* the ? refresher sits inside the news strip, at its right end */
   .paper .help{position:absolute;right:8px;bottom:calc(100% + 3px);flex:none;width:28px;height:28px;margin:0;z-index:6;
     font-size:14px;box-shadow:none;border-color:var(--paper-line);background:var(--paper);color:var(--muted)}
@@ -169,10 +190,11 @@
   .panel .tool.stock>.plate{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);padding:0;border:0;white-space:nowrap}
   .panel .tool.stock>.bigs{order:1}
   .panel .tool.stock>.t-chart{order:2}
-  .panel .tool.stock>.keys{order:3}
+  .panel .tool.stock>.lockcard{order:3}
+  .panel .tool.stock>.keys{order:4}
   .panel .tool.stock .lower{display:contents}
-  .panel .tool.stock .sellbox{order:4}
-  .panel .tool.stock .lower>.box:not(.sellbox){order:5;margin-top:22px}
+  .panel .tool.stock .sellbox{order:5}
+  .panel .tool.stock .lower>.box:not(.sellbox){order:6;margin-top:22px}
 
   /* three numbers as one ledger strip */
   .panel .tool.stock .bigs{grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:7px 0 8px;border:1px solid var(--paper-line);
@@ -229,8 +251,36 @@
 
   /* the chart is the game: it takes every pixel the rest of the board leaves. Sell form open: leave room for it. */
   .panel .t-chart{height:clamp(220px,38vh,460px);height:clamp(220px,38dvh,460px);padding:4px 4px 2px;flex:none}
-  .panel .tool.stock>.t-chart{height:clamp(190px,calc(100vh - 560px),360px);height:clamp(190px,calc(100dvh - 560px),360px)}
-  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown)>.t-chart{height:clamp(200px,calc(100vh - 448px),420px);height:clamp(200px,calc(100dvh - 448px),420px)}
+  .panel .tool.stock>.t-chart{height:clamp(190px,calc(100vh - 474px),420px);height:clamp(190px,calc(100dvh - 474px),420px)}
+  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown)>.t-chart{height:clamp(200px,calc(100vh - 366px),480px);height:clamp(200px,calc(100dvh - 366px),480px)}
+  /* nothing to sell yet: the countdown card takes the room the sell form gave up, and the chart gives back the height it uses */
+  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown):has(.lockcard:not([hidden]))>.t-chart{height:clamp(190px,calc(100vh - 462px),460px);height:clamp(190px,calc(100dvh - 462px),460px)}
+
+  /* ------------------------------------------------ the countdown card: an engraved slip with a vignette, the next release and a fuse
+     Shown only while the sell form is folded to one line, so the screen always has one thing to watch and one thing to do. */
+  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown)>.lockcard:not([hidden]){display:grid}
+  .lockcard{grid-template-columns:80px minmax(0,1fr) auto;align-items:center;column-gap:10px;position:relative;margin:0;padding:8px 14px 14px 10px;
+    border:1px solid var(--ink);border-radius:2px;background:color-mix(in srgb,var(--paper) 70%,#fff);overflow:hidden;
+    box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--paper-line)}
+  .lc-art{width:80px;height:60px;display:grid;place-items:center}
+  .lc-art img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;opacity:.92}
+  .lc-main{min-width:0}
+  .lc-k{font:600 10px/1 var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .lc-h{font:500 14px/1.25 var(--f-body);margin-top:5px;color:var(--ink);white-space:nowrap}
+  .lc-h b{font:600 17px/1 var(--f-num);color:var(--seal)}
+  .lc-s{font:500 13px/1.2 var(--f-num);color:var(--muted);margin-top:3px}
+  .lc-count{display:grid;justify-items:end;gap:3px;text-align:right}
+  .lc-count b{font:500 30px/1 var(--f-num);color:var(--ink);display:block;transform-origin:100% 50%}
+  .lc-count span{font:500 12px/1 var(--f-body);color:var(--muted)}
+  .lc-count b.tick{animation:lcTick .3s var(--ease-pop)}
+  @keyframes lcTick{from{opacity:.25;transform:translateY(-5px) scale(1.12)}}
+  .lc-fuse{position:absolute;left:12px;right:12px;bottom:9px;height:3px;border-radius:2px;background:var(--paper-line)}
+  .lc-fuse i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 60%,#000),var(--gold));transition:width .3s var(--ease-out)}
+  /* inside five days the card turns oxblood and the fuse breathes: the one thing about to happen */
+  .lockcard.near{border-color:var(--seal)}
+  .lockcard.near .lc-count b{color:var(--seal)}
+  .lockcard.near .lc-fuse i{background:var(--seal);animation:lcFuse 1.6s ease-in-out infinite}
+  @keyframes lcFuse{50%{opacity:.45}}
   /* legend: the four marks every card uses, in one row that wraps instead of clipping; the rest appear on the desktop board */
   .panel .keys{flex-wrap:wrap;overflow:visible;white-space:normal;gap:3px 12px;margin:0;padding:0 2px;font-size:11px}
   .panel .keys li{flex:none;gap:5px}
@@ -247,13 +297,31 @@
   .page-body{padding:20px 16px}
 }
 
-@media (max-width:400px){ .paper .tab{font-size:9.5px} }
+@media (max-width:399px){
+  .paper .tab{font-size:10px}
+}
+/* narrow phones: the longest label gets a short form so nothing touches the edge; the full name stays the accessible name */
+@media (max-width:459px){
+  .paper .tab#tab-exchange .lbl{font-size:0;letter-spacing:0}
+  .paper .tab#tab-exchange .lbl::after{content:"Exch." / "";font-size:10.5px;font-weight:600;letter-spacing:-.02em}
+}
+/* a little more room: the long form of the window lamp, then the closing date */
+@media (min-width:430px) and (max-width:899px){
+  .rail-host .lamp-text b{display:inline;font:600 14px/1.2 var(--f-body);letter-spacing:.01em;text-transform:none;color:var(--rail-text)}
+  .rail-host .lamp-text::before{content:none!important}
+}
+@media (min-width:560px) and (max-width:899px){
+  .rail-host .lamp-text{font-size:14px;color:var(--rail-muted)}
+}
 @media (max-width:359px){
+  .rail-host .nw-delta .since{display:none}
   .rail-host .rail{padding-inline:10px;column-gap:6px}
-  .rail-host .btn{min-width:32px;padding:0 6px}
+  .rail-host .btn{min-width:34px;padding:0 6px}
   .rail-host .transport,.rail-host .speeds{gap:3px}
-  .rail-host .rivals-toggle{padding:0 8px;gap:5px;letter-spacing:.04em;font-size:10px}
-  .paper .tab{font-size:9px}
+  .rail-host .cashrow::before{display:none}
+  .rail-host .lamp-row{padding:3px 6px}
+  .rail-host .lamp-text{display:none}
+  .paper .tab{font-size:9.5px}
   .paper .tab .lbl{overflow-wrap:normal}
 }
 
@@ -265,7 +333,7 @@
 
 /* landscape phones: keep the chart on screen */
 @media (max-width:899px) and (max-height:520px){
-  .rail-host .nwv{font-size:21px}
+  .rail-host .nwv{font-size:22px}
   .paper{--nav-h:44px}
   .paper .tab{flex-direction:row;gap:5px;font-size:11px}
   .paper .tab .ico,.paper .tab .ico img,.paper .tab .gl{width:18px;height:18px}
@@ -274,6 +342,8 @@
 
 @media (max-width:899px) and (prefers-reduced-motion:reduce){
   .rail-host .pause.paused,.rail-host .rail.more-open .rail-more{animation:none}
+  .lc-count b.tick,.lockcard.near .lc-fuse i{animation:none}
+  .lc-fuse i{transition:none}
 }
 
 /* Cash tab glyph: a short stack of coins in the same single-weight engraved line as the other tabs (replaces the columned building) */

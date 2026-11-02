@@ -9,7 +9,7 @@ export const ACHIEVEMENTS = [
   ['through-the-blackout', 'Through the Blackout', 'Have a plan sell while the window is closed.'],
   ['floor-plan', 'Floor Plan', 'Put on your first collar.'],
   ['street-smart', 'Street Smart', 'Open the Street check.'],
-  ['cured', 'Cured', 'Meet a margin call with cash.'],
+  ['cured', 'Cured', 'Meet a maintenance call by posting cash.'],
   ['seal-breaker', 'Seal Breaker', 'See every tranche release.'],
   ['diversified', 'Diversified', 'Hold under half of your wealth in the stock.'],
   ['tax-aware', 'Tax Aware', 'Pay less tax than The Seller and end wealthier.'],
@@ -24,7 +24,7 @@ const RULES = [
   ['Trading window', 'Closed from 30 days before each earnings release until the second trading day after it.'],
   ['10b5-1 plan', 'Adopted only in an open window. Cooling-off before the first sale: 30 days for an engineer. One plan at a time.'],
   ['Rule 144 (founder)', 'Sales in any three months are capped, and none before IPO day 91.'],
-  ['Credit line', 'Borrow up to 25% of pledged value. A call comes above 35%; three business days to cure, then a taxable bank sale.'],
+  ['Credit line', 'Borrow up to 25% of pledged value. A call comes above 35%. You have three trading days to post cash; the bank sells at the close of the fourth, and the sale is taxable.'],
   ['Collar', 'Put at most 90% of today’s price, call at least 110%. Cash-settled at expiry.'],
   ['Tax', '23.8% on gains. Sales cost 0.25%.'],
 ];
@@ -67,6 +67,25 @@ const ICONS = {
   rules: '<svg viewBox="0 0 20 20"><path d="M10 3v13M5 16.5h10M4 6.5h12M4 6.5l-2 5h4zM16 6.5l-2 5h4z"/></svg>',
 };
 
+// engraved medallions for the Seals drawer: a ringed coin like the certificate's tranche tokens, one line glyph per seal
+const GLYPHS = {
+  'inside-the-window': '<rect x="22" y="20" width="20" height="22" rx="1.5"/><path d="M32 20v22M22 31h20M19.5 46h25"/>',
+  'cooling-off': '<path d="M25 19h14M25 45h14M26 19v4l6 9-6 9v4M38 19v4l-6 9 6 9v4"/>',
+  'through-the-blackout': '<path d="M38 19A13 13 0 1 0 45 38A10.5 10.5 0 0 1 38 19Z"/><path d="M43 22.5v.1M46.5 28v.1"/>',
+  'floor-plan': '<path d="M21 21h22M21 43h22M25 38l5-6 4 3 6-10"/>',
+  'street-smart': '<circle cx="29" cy="29" r="9"/><path d="M35.5 35.5L45 45M25 29h8"/>',
+  'cured': '<ellipse cx="32" cy="23" rx="10" ry="3.5"/><path d="M22 23v6c0 2 4.5 3.5 10 3.5s10-1.5 10-3.5v-6M22 29v6c0 2 4.5 3.5 10 3.5s10-1.5 10-3.5v-6M22 35v6c0 2 4.5 3.5 10 3.5s10-1.5 10-3.5v-6"/>',
+  'seal-breaker': '<g transform="translate(-3 1)"><path d="M30 20A12 12 0 0 0 30 44L32.5 38 28 32 32.5 26Z"/></g><g transform="translate(3 -1)"><path d="M34 20A12 12 0 0 1 34 44L31.5 38 36 32 31.5 26Z"/></g>',
+  'diversified': '<g transform="translate(2 -2)"><path d="M32 32V20A12 12 0 0 1 42.4 38Z"/></g><path d="M32 32L42.4 38A12 12 0 1 1 32 20Z"/>',
+  'tax-aware': '<rect x="23" y="19" width="18" height="26" rx="1.5"/><path d="M28 19v26M32 26h6M32 31h6M32 36h4"/>',
+  'beat-the-holder': '<circle cx="32" cy="24" r="4.5"/><path d="M28 31h8M29 31c0 6-3 8-4 12h14c-1-4-4-6-4-12M23 46h18"/>',
+  'beat-the-seller': '<path d="M24 20v8h16v-8h-3v3h-3v-3h-4v3h-3v-3ZM26 28v13M38 28v13M23 41h18v4H23Z"/>',
+  'beat-the-playbook': '<circle cx="32" cy="20" r="2"/><path d="M32 23c-5 4-7 8-5 12 1 2 3 3 5 3s4-1 5-3c2-4 0-8-5-12ZM33 27l-3 5M28 42h8M25 46h14"/>',
+};
+const MEDAL = (id) => `<svg class="medal" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+  <circle class="m-rim" cx="32" cy="32" r="29.5"/><circle class="m-dots" cx="32" cy="32" r="27"/><circle class="m-ring" cx="32" cy="32" r="23.5"/>
+  <g class="m-glyph">${GLYPHS[id] || ''}</g></svg>`;
+
 // the hero certificate plate: cut-corner paper with a double engraved rule, a drawdown tint and a hairline crack.
 // Drawn on a fixed 308x150 box and stretched to the rail; the CSS decides what shows.
 function platesvg(W = 308, H = 150) {
@@ -83,11 +102,15 @@ function platesvg(W = 308, H = 150) {
     <path class="rule1" d="${cut(6, 10)}"/>
     <path class="rule2" d="${cut(9.5, 7)}"/>
     <path class="gem" d="${dia(W / 2, 6)} ${dia(W / 2, H - 6)} ${dia(6, H / 2)} ${dia(W - 6, H / 2)}"/>
-    <path class="crack" d="M236 6L229 26L240 41L227 62L238 79L225 101L233 120L224 144"/>
-    <path class="crack c2" d="M240 41L256 50L262 66M227 62L211 70L206 88"/>
+    <path class="crack" d="M296 12L291 30L299 46L289 66L298 84L288 104L296 122L289 140"/>
+    <path class="crack c2" d="M299 46L303 58M289 66L281 74L283 88"/>
     <g clip-path="url(#rc-clip)"><rect class="sheen" x="-90" y="0" width="80" height="${H}" fill="url(#rc-sheen)"/></g>
   </svg>`;
 }
+
+// one drawer: a tile in the strip plus a panel that, on a wide screen, slides out over the main pane
+const drawer = (id, title, icon, cnt, sub, body) => `<details class="drawer" data-d="${id}"><summary><span class="ico" aria-hidden="true">${icon}</span><span class="s-t">${title}</span>${cnt}</summary>
+        <div class="dpanel" tabindex="-1" role="region" aria-label="${title}"><div class="dp-head"><h3>${title}</h3>${sub}<button type="button" class="dp-close" aria-label="Close ${title}"></button></div><div class="dp-body">${body}</div></div></details>`;
 
 export function createRail(el, h) {
   el.innerHTML = `
@@ -129,11 +152,11 @@ export function createRail(el, h) {
       <button class="rivals-toggle" aria-expanded="false" aria-controls="rail-more"><span>Rivals</span> <b class="rk"></b></button>
     </div>
     <div class="rail-more" id="rail-more">
-      <section class="rivals" aria-label="Rivals"><h3><span class="lbl">Rivals</span> <b class="rank-flag" aria-hidden="true"></b><span class="gapnote">gap to you</span></h3><ol></ol></section>
+      <section class="rivals" aria-label="Rivals"><h3><span class="lbl">Rivals</span> <b class="rank-flag" aria-hidden="true"></b><span class="gapnote">value · gap</span></h3><ol></ol></section>
       <div class="drawers">
-      <details class="drawer" data-d="ach"><summary><span class="ico" aria-hidden="true">${ICONS.ach}</span><span class="s-t">Seals</span><span class="cnt"></span></summary><ul class="ach"></ul></details>
-      <details class="drawer" data-d="port"><summary><span class="ico" aria-hidden="true">${ICONS.port}</span><span class="s-t">Holdings</span></summary><dl class="port"></dl></details>
-      <details class="drawer" data-d="rules"><summary><span class="ico" aria-hidden="true">${ICONS.rules}</span><span class="s-t">Rules</span></summary><dl class="rules">${RULES.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl><p class="more"><a href="#/method">Every rule, with its source</a></p></details>
+      ${drawer('ach', 'Seals', ICONS.ach, '<span class="cnt"></span>', '', `<div class="sp"><div class="sp-bar" role="progressbar" aria-label="Seals earned" aria-valuemin="0" aria-valuemax="${ACHIEVEMENTS.length}"><i></i></div><p class="sp-n num"><b>0</b> of ${ACHIEVEMENTS.length}</p></div><div class="sd" aria-live="polite"><span class="sd-k"></span><b class="sd-t"></b><span class="sd-d"></span></div><ul class="ach"></ul>`)}
+      ${drawer('port', 'Holdings', ICONS.port, '', '', '<dl class="port"></dl>')}
+      ${drawer('rules', 'Rules', ICONS.rules, '', '', `<dl class="rules">${RULES.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl><p class="more"><a href="#/method">Every rule, with its source</a></p>`)}
       </div>
     </div>
   </aside>`;
@@ -143,17 +166,39 @@ export function createRail(el, h) {
     bar: $('.yearbar'), fill: $('.yearbar .fill'), marks: $('.marks'), lamp: $('.lamp'), lampText: $('.lamp-text'),
     cert: $('.rcert'), vig: $('.cert-vig'), name: $('.cert-name'), count: $('.rcert .count'), sub: $('.cert-sub'), seals: $('.seals'), stamps: $('.stamps'),
     cash: $('.cash'), nw: $('.nwv'), nwLbl: $('.nw .lbl'), dv: $('.nw-delta .dv'), since: $('.nw-delta .since'), arr: $('.nw-arr'), delta: $('.nw-delta'), rivals: $('.rivals ol'), flag: $('.rank-flag'), rk: $('.rivals-toggle .rk'),
-    ach: $('.ach'), achCnt: $('[data-d=ach] .cnt'), port: $('.port'), more: $('#rail-more'), drawers: $('.drawers'),
+    ach: $('.ach'), achCnt: $('[data-d=ach] .cnt'), spBar: $('.sp-bar'), spFill: $('.sp-bar i'), spN: $('.sp-n'), sdK: $('.sd-k'), sdT: $('.sd-t'), sdD: $('.sd-d'), port: $('.port'), drawers: $('.drawers'),
   };
   const sealEls = new Map(), rivalEls = new Map(), markEls = new Map(), stampEls = new Map();
-  let last = {}, prevBroken = null, prevRank = null, prevNW = null, prevDelta = null, prevMode = null, prevRanks = new Map(), built = '', prevWinOpen = null, firstUpdate = true;
+  let last = {}, prevEarned = null, hoverSeal = null, nextSeal = null, prevBroken = null, prevRank = null, prevNW = null, prevDelta = null, prevMode = null, prevRanks = new Map(), built = '', prevWinOpen = null, firstUpdate = true;
 
-  // bottom fade on the drawers list only while there is more to scroll to
-  const fade = () => { const d = q.drawers; d.classList.toggle('more-below', d.scrollHeight - d.scrollTop - d.clientHeight > 6); };
-  q.drawers.addEventListener('scroll', fade, { passive: true });
-  q.drawers.addEventListener('toggle', () => requestAnimationFrame(fade), true);
-  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(fade) : null;
-  ro?.observe(q.drawers);
+  // drawers: on a wide screen only one is open, it takes focus, Escape or a click outside closes it and focus goes back to its tile
+  const wide = () => matchMedia('(min-width: 900px)').matches;
+  const drawerEls = [...q.drawers.querySelectorAll('.drawer')];
+  let openD = null;
+  const closeDrawer = (d, refocus) => { d.open = false; if (refocus) d.querySelector('summary').focus({ preventScroll: true }); };
+  q.drawers.addEventListener('toggle', (e) => {
+    const d = e.target; if (!d.classList?.contains('drawer')) return;
+    if (d.open) {
+      if (wide()) { for (const o of drawerEls) if (o !== d && o.open) o.open = false; requestAnimationFrame(() => d.querySelector('.dpanel').focus({ preventScroll: true })); }
+      openD = d;
+    } else if (openD === d) openD = null;
+  }, true);
+  // details line: the seal under the pointer or focus, otherwise the next one to earn
+  const showSeal = () => {
+    const li = hoverSeal || nextSeal, a = li && ACHIEVEMENTS.find((x) => x[0] === li.dataset.id);
+    if (!a) { q.sdK.textContent = 'All earned'; q.sdT.textContent = 'Every seal is yours.'; q.sdD.textContent = ''; return; }
+    q.sdK.textContent = hoverSeal ? (li.classList.contains('on') ? 'Earned' : 'Not yet earned') : 'Next seal';
+    q.sdT.textContent = a[1]; q.sdD.textContent = a[2];
+  };
+  const pick = (e) => { const li = e.target.closest?.('.ach li'); if (li) { hoverSeal = li; showSeal(); } };
+  const unpick = (e) => { if (!e.target.closest?.('.ach li')) return; hoverSeal = null; showSeal(); };
+  q.ach.addEventListener('pointerover', pick); q.ach.addEventListener('focusin', pick);
+  q.ach.addEventListener('pointerout', unpick); q.ach.addEventListener('focusout', unpick);
+  q.drawers.addEventListener('click', (e) => { const c = e.target.closest('.dp-close'); if (c) closeDrawer(c.closest('.drawer'), true); });
+  const onKey = (e) => { if (e.key === 'Escape' && openD && wide() && !e.defaultPrevented) { e.preventDefault(); closeDrawer(openD, true); } };
+  const onDown = (e) => { if (openD && wide() && !e.target.closest('.drawers')) closeDrawer(openD, false); };
+  document.addEventListener('keydown', onKey);
+  document.addEventListener('pointerdown', onDown);
 
   el.addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
@@ -174,7 +219,8 @@ export function createRail(el, h) {
 
   function build(v) {
     // (re)build static parts for a new game
-    const key = v.gameKey; if (built === key) return; built = key; firstUpdate = true; prevBroken = null; prevRank = null; prevNW = null; prevDelta = null; prevRanks = new Map(); prevWinOpen = null;
+    const key = v.gameKey; if (built === key) return; built = key; firstUpdate = true; prevBroken = null; prevRank = null; prevNW = null; prevDelta = null; prevRanks = new Map(); prevWinOpen = null; for (const d of drawerEls) d.open = false;
+    for (const d of drawerEls) d.open = false;
     q.card.textContent = v.cardLabel + (v.watch ? ' · watching' : '');
     q.speeds.innerHTML = v.speeds.map((s) => `<button class="btn sm speed" data-speed="${s}" aria-pressed="false" aria-label="Speed ${s}x">${s}x</button>`).join('');
     q.name.textContent = v.certName;
@@ -194,11 +240,12 @@ export function createRail(el, h) {
     q.rivals.innerHTML = ''; rivalEls.clear();
     for (const r of v.rivals) {
       const li = document.createElement('li'); li.dataset.id = r.id; li.className = r.you ? 'you' : '';
-      li.innerHTML = `<b class="rk"><span class="n"></span><i class="mv" aria-hidden="true"></i></b><span class="nm">${esc(r.name)}</span><span class="num gap"></span><span class="num w"></span>`;
+      li.innerHTML = `<b class="rk"><span class="n"></span><i class="mv" aria-hidden="true"></i></b><span class="nm">${esc(r.name)}</span><span class="num w"></span><span class="num gap">${r.you ? 'you' : ''}</span>`;
       q.rivals.appendChild(li); rivalEls.set(r.id, li);
     }
     q.rivals.style.height = v.rivals.length * ROW + 'px';
-    q.ach.innerHTML = ACHIEVEMENTS.map(([id, n, d]) => `<li data-id="${id}"><span class="mk" aria-hidden="true"></span><span><b>${esc(n)}</b><small>${esc(d)}</small></span></li>`).join('');
+    q.ach.innerHTML = ACHIEVEMENTS.map(([id, n, d]) => `<li data-id="${id}" tabindex="0">${MEDAL(id)}<b>${esc(n)}</b><span class="vh">${esc(d)}. <i class="st">Not yet earned</i></span></li>`).join('');
+    prevEarned = null; hoverSeal = null;
     stampEls.clear(); q.stamps.innerHTML = '';
   }
 
@@ -212,6 +259,7 @@ export function createRail(el, h) {
       q.day.innerHTML = m
         ? `<span class="dk">${esc(m[1])}</span> <b class="dn">${m[2]}</b> <span class="dt">of ${m[3]}</span>${m[4].trim() ? ` <span class="dr">${esc(m[4].replace(/^[\s·]+/, ''))}</span>` : ''}`
         : esc(s.dayLabel);
+      if (!firstUpdate && !reduced()) q.day.querySelector('.dn')?.classList.add('bump');
     }
     q.pause.setAttribute('aria-label', v.running ? 'Pause' : 'Resume');
     q.pause.classList.toggle('paused', !v.running);
@@ -282,19 +330,16 @@ export function createRail(el, h) {
     // rivals
     const sorted = [...v.rivals].sort((a, b) => b.W - a.W);
     const youW = (v.rivals.find((r) => r.you) || {}).W;
-    const level = v.rivals.every((r) => r.you || Math.abs(r.W - youW) < 0.5);
-    q.root.classList.toggle('all-level', level);
-    q.root.querySelector('.gapnote').textContent = level ? 'level at start' : 'gap to you';
     sorted.forEach((r, k) => {
       const li = rivalEls.get(r.id); if (!li) return;
       li.style.transform = `translateY(${k * ROW}px)`;
       li.querySelector('.rk .n').textContent = k + 1;
       const gap = li.querySelector('.gap'), w = li.querySelector('.w');
       w.textContent = money(r.W);
-      if (r.you) { gap.textContent = ''; gap.className = 'num gap'; }
+      if (r.you) { gap.className = 'num gap me'; }
       else {
         const d = r.W - youW;
-        gap.textContent = Math.abs(d) < 0.5 ? (level ? '' : 'level') : signedMoney(d, { compact: true });
+        gap.textContent = Math.abs(d) < 0.5 ? 'level' : signedMoney(d, { compact: true });
         gap.className = 'num gap ' + (Math.abs(d) < 0.5 ? 'lv' : d > 0 ? 'ahead' : 'behind');
         gap.setAttribute('aria-label', Math.abs(d) < 0.5 ? 'Level with you' : (d > 0 ? 'Ahead of you by ' : 'Behind you by ') + moneyFull(Math.abs(d)));
         gap.title = d > 0 ? 'Ahead of you' : d < 0 ? 'Behind you' : 'Level with you';
@@ -318,8 +363,21 @@ export function createRail(el, h) {
     prevRank = you;
     // achievements
     const earned = new Set([...(v.achievements || [])].map((x) => canonicalId(x) || slug(x)));
-    let n = 0;
-    q.ach.querySelectorAll('li').forEach((li) => { const on = earned.has(canonicalId(li.dataset.id) || li.dataset.id); if (on) n++; li.classList.toggle('on', on); });
+    let n = 0, firstOff = null;
+    const nowEarned = new Set();
+    q.ach.querySelectorAll('li').forEach((li) => {
+      const id = li.dataset.id, on = earned.has(canonicalId(id) || id);
+      if (on) { n++; nowEarned.add(id); } else if (!firstOff) firstOff = li;
+      const was = li.classList.contains('on');
+      li.classList.toggle('on', on);
+      li.querySelector('.st').textContent = on ? 'Earned' : 'Not yet earned';
+      if (on && !was && prevEarned && !reduced()) { li.classList.remove('won'); void li.offsetWidth; li.classList.add('won'); setTimeout(() => li.classList.remove('won'), 1200); }
+    });
+    prevEarned = nowEarned; nextSeal = firstOff;
+    q.spFill.style.width = (n / ACHIEVEMENTS.length * 100) + '%';
+    q.spBar.setAttribute('aria-valuenow', String(n));
+    q.spN.innerHTML = `<b>${n}</b> of ${ACHIEVEMENTS.length}`;
+    showSeal();
     const cntKey = `${n}/${ACHIEVEMENTS.length}`;
     if (q.achCnt.dataset.k !== cntKey) {
       q.achCnt.dataset.k = cntKey;
@@ -335,7 +393,6 @@ export function createRail(el, h) {
     const html = rows.map(([a, b]) => `<dt>${a}</dt><dd class="num">${b}</dd>`).join('');
     if (q.port._h !== html) { q.port._h = html; q.port.innerHTML = html; }
     firstUpdate = false;
-    fade();
   }
-  return { update, el: q.root, destroy() { ro?.disconnect(); cancelAnimationFrame(q.cash._raf); cancelAnimationFrame(q.nw._raf); } };
+  return { update, el: q.root, destroy() { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onDown); cancelAnimationFrame(q.cash._raf); cancelAnimationFrame(q.nw._raf); } };
 }

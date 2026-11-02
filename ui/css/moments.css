@@ -165,3 +165,11 @@
   .notice-slot .notice.moment-scrim,.moment,.pip.new,.m-delta,.margin,.m-stakes .big dd{animation:none!important}
   .pip.new{background:var(--gold);color:var(--ink)}
 }
+
+/* ---- desktop toasts: one at a time, docked in the right of the news row so they never cover a form or its confirm button.
+        The full text stays in the title attribute; achievements read "Seal earned: <name>" and live in the Seals drawer. */
+@media (min-width:900px){
+  .paper .toasts{position:fixed;top:auto;bottom:calc(var(--foot-h,35px) + 6px);right:16px;left:auto;max-width:min(520px,52vw);gap:0;z-index:30}
+  .paper .toast{padding:7px 12px;font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;box-shadow:none;border-radius:3px}
+  .paper .toast:not(:last-child){display:none}
+}

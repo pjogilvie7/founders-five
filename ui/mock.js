@@ -251,18 +251,20 @@ export function canDo(state, type, params = {}) {
   const ok = { allowed: true, reason: '', opensOn: null };
   const needFree = () => (s.shares.free > 0 ? null : no(nr ? `Locked by the lockup until ${dateLabel(ctx, nr.date)}` : 'Your remaining shares are locked or already used.', nr ? nr.date : null));
   switch (type) {
-    case 'sell': { const f = needFree(); if (f) return f; if (!win.open) return no(`Window closed until ${dateLabel(ctx, win.opensOn)}: a 10b5-1 plan can still sell`, win.opensOn); return ok; }
-    case 'adoptPlan': { const f = needFree(); if (f) return f; if (s.plan) return no('You already have a plan. Cancel it to adopt another.'); if (!win.open) return no(`Window closed until ${dateLabel(ctx, win.opensOn)}`, win.opensOn); return ok; }
+    case 'sell': { const f = needFree(); if (f) return f; if (!win.open) { const tail = s.plan ? (s.d < s.plan.firstTradeOn ? `, your plan starts selling ${dateLabel(ctx, s.plan.firstTradeOn)}.` : ', your 10b5-1 plan keeps selling.') : '.'; return no(`Window closed until ${dateLabel(ctx, win.opensOn)}${tail}`, win.opensOn); } return ok; }
+    case 'adoptPlan': { const f = needFree(); if (f) return f; if (s.plan) return no('You already have a plan. One plan at a time.'); if (!win.open) return no(`Window closed until ${dateLabel(ctx, win.opensOn)}`, win.opensOn); return ok; }
     case 'cancelPlan': return s.plan ? ok : no('You have no plan.');
     case 'collar': { const f = needFree(); if (f) return f; if (!win.open) return no(`Window closed until ${dateLabel(ctx, win.opensOn)}`, win.opensOn); return ok; }
+    case 'marginCall': return params.choice === 'sell' ? (s.shares.free + s.shares.pledged > 0 ? (win.open ? ok : no(`Window closed until ${dateLabel(ctx, win.opensOn)}: shares can be sold to meet the call then; posting cash is open now`, win.opensOn)) : needFree()) : ok;
     case 'pledge': return needFree() || ok;
-    case 'draw': return s.shares.pledged > 0 ? ok : no('Pledge free shares first.');
+    case 'draw': return s.shares.pledged > 0 ? ok : no('No shares are pledged yet.');
     case 'repay': return s.loan.balance > 0 ? ok : no('You have no loan.');
     default: return ok;
   }
 }
 export function gates(state) {
   const o = {}; for (const t of ['sell', 'adoptPlan', 'cancelPlan', 'collar', 'pledge', 'draw', 'repay', 'deposit', 'withdraw', 'buyPut', 'exchange']) o[t] = canDo(state, t);
+  o.marginSell = canDo(state, 'marginCall', { choice: 'sell' });
   return o;
 }
 
@@ -299,7 +301,7 @@ export function act(state0, action) {
     case 'house': {
       if (!s.pendingEvent || s.pendingEvent.type !== 'house') return fail('There is no house bill to settle.');
       if (action.choice === 'cash') { let need = 1e7; const c = Math.min(s.cash, need); s.cash -= c; need -= c; s.index.units = Math.max(0, s.index.units - need); }
-      else if (action.choice === 'credit') { const max = 0.25 * s.shares.pledged * p - s.loan.balance; if (max < 1e7) return fail('Your credit line is too small. Pledge more shares first.'); s.loan.balance += 1e7; }
+      else if (action.choice === 'credit') { const max = 0.25 * s.shares.pledged * p - s.loan.balance; if (max < 1e7) return fail('Your credit line is too small for that.'); s.loan.balance += 1e7; }
       else if (action.choice === 'sell') { const e = need('sell'); if (e) return fail(e); const n = Math.min(s.shares.free, Math.ceil(1e7 / (p * (1 - COST)))); sellShares(s, n); }
       s.pendingEvent = null; break;
     }

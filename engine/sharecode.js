@@ -12,7 +12,7 @@ const SEATS = ["engineer", "founder"];
 const EPOCH = Date.UTC(2015, 0, 1);
 
 const CHOICES = {
-  house: ["cash", "credit", "sell", "skip"],
+  house: ["cash", "credit", "sell"], // index 3 was the retired "skip" choice (decision RUN-6); codes that carry it are rejected on decode
   marginCall: ["post", "sell", "wait"],
   collarExpiry: ["roll", "end"],
 };
@@ -185,7 +185,7 @@ export function decodeShare(code) {
       if (typeof f === "string") a[f] = r.number();
       else if (f[1] === "bool") a[f[0]] = r.byte() === 1;
       else if (f[1] === "str") { const n2 = r.byte(); let v = ""; for (let i = 0; i < n2; i++) v += String.fromCharCode(r.byte()); a[f[0]] = v; }
-      else { const v = f[1][r.byte()]; if (v === undefined) throw bad("The share code is not valid."); a[f[0]] = v; }
+      else { const k2 = r.byte(), v = f[1][k2]; if (v === undefined) throw bad(t[0] === "house" && k2 === 3 ? "This share code is from an earlier version of the game." : "The share code is not valid."); a[f[0]] = v; }
     }
     a.d = dayIso(day);
     log.push(a);

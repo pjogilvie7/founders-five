@@ -8,7 +8,7 @@ export const ACHIEVEMENTS = {
   "through-the-blackout": { title: "Through the Blackout", lesson: "A plan sold while the trading window was closed." },
   "floor-plan": { title: "Floor Plan", lesson: "You put a collar on released shares." },
   "street-smart": { title: "Street Smart", lesson: "You opened the Street check." },
-  "cured": { title: "Cured", lesson: "You met a margin call with cash." },
+  "cured": { title: "Cured", lesson: "You met a maintenance call by posting cash instead of letting the bank sell." },
   "seal-breaker": { title: "Seal Breaker", lesson: "You watched every lockup tranche release." },
   "diversified": { title: "Diversified", lesson: "Less than half of your wealth sat in the stock." },
   "tax-aware": { title: "Tax Aware", lesson: "You paid less tax than The Seller and ended wealthier." },

@@ -22,9 +22,9 @@ export const DEFAULT_LESSONS = {
     { title: 'At expiry', body: 'At expiry the difference is settled in cash and taxed. You can roll the collar at that day’s prices or let it end.' },
   ],
   credit: [
-    { title: 'Borrow instead of selling', body: 'You can pledge free shares and borrow up to 25% of their value. Borrowing defers tax, but the loan costs interest.' },
+    { title: 'Borrowing against your shares', body: 'You can pledge free shares and borrow up to 25% of their value. Borrowing is not a sale, so it does not realize a gain, and the loan costs interest.' },
     { title: 'The maintenance call', body: 'If the loan rises above 35% of the pledged value, the bank issues a call. You post cash, or shares are sold.' },
-    { title: 'The forced sale', body: 'You have three trading days to meet a call. If it is still open after the last one, the bank sells enough shares at the next close. That sale is taxed and ignores the window.' },
+    { title: 'The forced sale', body: 'You have three trading days to meet a call. If the loan is still above 35% at the close of the next trading day, the bank sells enough shares at that close. That sale is taxed and ignores the window.' },
   ],
   cash: [
     { title: 'Cash', body: 'Cash earns the one-month Treasury rate. Your family’s spending comes out of it on the first trading day of each month.' },

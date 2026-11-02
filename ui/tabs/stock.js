@@ -1,5 +1,5 @@
 // Stock tab: price chart, where your shares are, and the sell form.
-import { createPriceChart } from '../chart.js';
+import { createPriceChart, nextReleaseInfo } from '../chart.js';
 import {
   esc, int, money, moneyFull, price, dl, quarterEnd, shortDate, events, safe, setText, setHTML, tween, actionForm, evOf, ensure, plateHTML, bigStat,
 } from './kit.js';
@@ -14,6 +14,12 @@ function build(k, c) {
     ${plateHTML('Stock', 'Your shares, the price since the first trade, and the one move that sells them.', '<span class="chip win" data-v="win"></span>')}
     <div class="bigs">${bigStat('Close today', 'close', true)}${bigStat('Offer price', 'offer', true)}${bigStat('Free to sell', 'free', true)}</div>
     <div class="t-chart" data-v="chart"></div>
+    <aside class="lockcard" data-v="lock" aria-label="Next release" hidden>
+      <span class="lc-art" aria-hidden="true"><img data-lc="art" alt="" decoding="async"></span>
+      <div class="lc-main"><p class="lc-k">Next release</p><p class="lc-h"><b class="num" data-lc="pct"></b> of your shares</p><p class="lc-s num" data-lc="date"></p></div>
+      <p class="lc-count"><b class="num" data-lc="days"></b><span data-lc="unit"></span></p>
+      <span class="lc-fuse" aria-hidden="true"><i data-lc="fill"></i></span>
+    </aside>
     <ul class="keys" aria-label="Chart key">
       <li><i class="k-line"></i>Close</li><li><i class="k-offer"></i>Offer price</li><li><i class="k-seal"></i>Release</li>
       <li><i class="k-win"></i>Window closed</li><li><i class="k-band"></i>Collar band</li><li><i class="k-tax"></i>Tax paid</li><li><i class="k-call"></i>Margin call</li>
@@ -76,8 +82,27 @@ function draw(c, snap, api) {
     tween(li.querySelector('b'), n, int, { flash: false });
     li.classList.toggle('zero', n === 0);
   }
+  drawLock(c, snap, api);
   k.chart.update(snap);
   k.sell.update(snap, api);
+}
+
+// The countdown card under the chart (phone): the next release, its share, the days to go. All of it comes from the engine snapshot.
+function drawLock(c, snap, api) {
+  const box = c.querySelector('[data-v=lock]'), info = nextReleaseInfo(api, snap);
+  box.hidden = !info;
+  if (!info) return;
+  const q = (n) => box.querySelector(`[data-lc=${n}]`);
+  const art = q('art'), src = api.card().vignette || 'assets/vignettes/neutral-key.png';
+  if (art.getAttribute('src') !== src) art.setAttribute('src', src);
+  setText(q('pct'), `${info.pct}%`);
+  setText(q('date'), dl(api, info.date));
+  setText(q('days'), info.days === 0 ? 'Today' : int(info.days));
+  setText(q('unit'), info.days === 0 ? '' : info.days === 1 ? 'day to go' : 'days to go');
+  q('fill').style.width = `${(info.frac * 100).toFixed(1)}%`;
+  box.classList.toggle('near', info.days <= 5);
+  if (box._days !== undefined && box._days !== info.days) { const n = q('days'); n.classList.remove('tick'); void n.offsetWidth; n.classList.add('tick'); }
+  box._days = info.days;
 }
 
 export default {

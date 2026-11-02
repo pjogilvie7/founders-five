@@ -92,7 +92,7 @@ RATE = 0.238
 saleTax({shares, price, basis, costRate=0}) -> {proceeds, cost, gain, tax}   // gain = shares*price*(1-costRate) - shares*basis
 // test 9: saleTax({shares:100000, price:150, basis:1.35}).tax === 3537870
 ```
-Engine tax ledger: cumulative net realized gain G (sales, collar/put settlements, index withdrawals); owed = 0.238 * max(0, G); on the last trading day of each calendar quarter the engine pays (owed - paidSoFar) if positive. Unpaid owed tax is a liability in W_t.
+Engine tax ledger: cumulative net realized gain G (sales, collar/put settlements, index withdrawals); owed = 0.238 * max(0, G); on the last trading day of each calendar quarter the engine pays (owed - paidSoFar) if positive. Unpaid owed tax is a liability in W_t. Terminal tax on the last day = 0.238 * max(0, G + U) - paidSoFar - owed (floored at -owed), so tax paid + owed + terminal = 0.238 * max(0, G + U).
 
 ### calendar.js (T4)
 ```
@@ -155,7 +155,7 @@ normalizeCard(card) -> card             // blind cards: price factor f = 100/off
 {type:"collar", shares, tenorMonths:6|12|24, putPct:0.80|0.85|0.90}    {type:"unwindCollar", id}
 {type:"pledge", shares}  {type:"unpledge", shares}  {type:"draw", amount}  {type:"repay", amount}
 {type:"deposit", amount} {type:"withdraw", amount}  {type:"setAutoInvest", on}
-{type:"house", choice:"cash"|"credit"|"sell"|"skip"}
+{type:"house", choice:"cash"|"credit"|"sell"}   // no skip (decision RUN-6)
 {type:"marginCall", choice:"post"|"sell"|"wait"}    // post = repay from cash then index to bring LTV to 25%
 {type:"collarExpiry", choice:"roll"|"end"}
 {type:"buyPut", shares, putPct, tenorMonths:6|12}   // should-have
@@ -183,7 +183,7 @@ fallToCall(from = 0.25, to = 0.35) -> 1 - from/to (28.57%)
 netPerShare(price, costRate) -> price * (1 - costRate)   // cash applied to the loan per share sold; tax is NOT withheld
 forcedSaleShares(balance, price, pledgedShares, costRate) -> fewest whole shares n (capped at pledged) with balance - n*a <= 0.25*(pledged - n)*price, a = netPerShare; n = (balance - 0.25*C) / (a - 0.25*price)
 ```
-Rate SOFR + 2.00%, accrued daily as balance * rate * (calendar days since the previous trading day)/365, capitalized on the first trading day of each month. Call when LTV > 35%; deadline 3 business days; if still > 35% at that day's close, the bank sells (ignores windows). The sale's tax goes on the client's ledger like any sale; the bank applies proceeds net of the 0.25% cost only.
+Rate SOFR + 2.00%, accrued daily as balance * rate * (calendar days since the previous trading day)/365, capitalized on the first trading day of each month. Call when LTV > 35%; deadline = the 3rd trading day after the call day; the loan is tested again at the close of the 4th trading day and, if still > 35%, the bank sells at that close (ignores windows). The sale's tax goes on the client's ledger like any sale; the bank applies proceeds net of the 0.25% cost only.
 
 ### bots.js (T7)
 ```
@@ -211,9 +211,9 @@ debrief(state, score, botScores) -> {paragraphs:[3 strings], verdict:"You beat T
 - Start: shares = round(100,000,000 / offerPrice) (all locked); basis = 1% of offer; cash $3,000,000; autoInvest on.
 - Each trading day i: interest on cash (DGS1MO, daily rf), loan accrual, releases, spending (first trading day of each month: $166,667 from cash -> credit line if pledged headroom -> overdraft at SOFR+4%), plan sales, collar/put expiries, margin checks, quarter-end tax, house (five-year cards, first trading day on/after firstTrade + 18 months), news, W_t.
 - Actions settle at day i's close. Sales cost 0.25% of proceeds. Proceeds -> cash -> index fund if autoInvest.
-- Seats: engineer = lockup, window, 30-day cooling-off. Founder = lockup, window, D&O cooling-off (later of 90 days or 2 business days after the next 10-Q/10-K, cap 120), Rule 144 volume cap (rolling 3 months: greater of 1% of sharesOutPost or average weekly volume over the prior 4 calendar weeks), no sale before IPO day 91.
+- Seats: engineer = lockup, window, 30-day cooling-off. Founder = lockup, window, D&O cooling-off (later of 90 days or 2 business days after the 10-Q/10-K for the fiscal quarter in which the plan was adopted, cap 120), Rule 144 volume cap (rolling 3 months: greater of 1% of sharesOutPost or average weekly volume over the prior 4 calendar weeks), no sale before IPO day 91.
 - SpaceX founder seat: not playable: "The founder's shares are locked until June 12, 2027 (424B4)."
-- Gated controls always say why and when: "Locked by the lockup until Aug 6", "Window closed until Feb 4: a 10b5-1 plan can still sell", "Cooling-off: plan trades from Nov 23".
+- Gated controls always say why and when: "Locked by the lockup until Aug 6", "Window closed until Feb 4, your 10b5-1 plan keeps selling.", "Cooling-off: plan trades from Nov 23".
 
 ## 4. UI contracts (T6 owns the shell; tabs plug in)
 

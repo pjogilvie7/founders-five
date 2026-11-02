@@ -5,11 +5,11 @@ import { showLesson } from './lesson.js';
 import { art, artManifest } from './data.js';
 
 export const INTRO_CARDS = [
-  { title: 'Time runs', cap: 'The needle sweeps and a trading day is gone.', body: 'Each tick is one trading day of the real record. Press Space to pause, and speed up when you are ready.' },
-  { title: 'Your shares unlock', cap: 'Each seal has a date. Then it cracks.', body: 'Your $100 million is locked. Shares become free on the dates in the prospectus, and the seals on your certificate break one by one.' },
-  { title: 'The trading window', cap: 'A door that opens on the company’s schedule.', body: 'You can sell free shares only while the trading window is open. When it closes, the sellable count drops to zero.' },
-  { title: 'Your family spends', cap: 'Every month opens with the same withdrawal.', body: 'Your family spends $2 million a year, taken on the first trading day of each month.' },
-  { title: 'Three rivals', cap: 'Same card, same days, three different nerves.', body: 'The Holder, The Seller and The Playbook play the same card. Their results show live in the rail.' },
+  { title: 'Time runs', body: 'Each sweep of the needle is one trading day of the real record.' },
+  { title: 'Your shares unlock', body: 'Shares unlock on the prospectus dates, and a seal breaks at each one.' },
+  { title: 'The trading window', body: 'You can sell free shares only while the trading window is open.' },
+  { title: 'Your family spends', body: 'Your family spends $2 million a year, taken on each month’s first trading day.' },
+  { title: 'Three rivals', body: 'Three rivals play the same card, and their results show live in the rail.' },
 ];
 
 const INK = '#18262F', PAPER = '#F8F4E8', PAPER2 = '#E8E0CC', LINE = '#D9CEB4', GOLD = '#B08A3E', SEAL = '#9C2A23', GOOD = '#2F6B4F', MUTED = '#5B6870';
@@ -29,53 +29,118 @@ const T = (x, y, txt, cls = 'si-num', anchor = 'start', fill = INK, size = 11) =
 /* Every plate is drawn on a 440 x 340 sheet. Phones crop the side margins (see VIEW) so the art fills a taller, narrower plate.
    Each plate has a "hold" state that already looks mid-action, so a screenshot or a reduced-motion reader still sees it alive;
    the motion itself is CSS (see seat-intro.css), except the rivals race which is a small rAF loop. */
-const VIEW = { wide: '0 0 440 340', phone: '24 -22 392 384' };
+const VIEW = { wide: '0 0 440 340', phone: '24 -50 392 440' };
 const isPhone = () => window.matchMedia('(max-width:899px)').matches;
 const still = () => window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 const pt = (r, a) => `${(r * Math.sin(a * Math.PI / 180)).toFixed(1)} ${(-r * Math.cos(a * Math.PI / 180)).toFixed(1)}`;
 const wedge = (r, a0, a1, o) => `<path d="M0 0 L${pt(r, a0)} A${r} ${r} 0 0 1 ${pt(r, a1)}Z" fill="${SEAL}" fill-opacity="${o}"/>`;
 
-/* ---- 1. the clock ---- */
-const clock = () => `
-  <g transform="translate(124 148)">
+/* ---- 1. the clock (live: needle, speed keys, play and Space all work) ---- */
+const CLOCK = { speed: 1, playing: true, touched: false, day: 7, frac: 138 / 360 };
+const resetClock = () => Object.assign(CLOCK, { speed: 1, playing: !still(), touched: false, day: 7, frac: 138 / 360 });
+const DAYS_ON_TRACK = 20;
+
+/* A chunky key: a dark base, a face that sinks when pressed, a dashed focus ring. */
+const keyBtn = (id, x, y, w, h, label, inner, extra = '') => `
+  <g class="si-kb" data-k="${id}" role="button" tabindex="0" aria-label="${label}" transform="translate(${x} ${y})">
+    <rect x="0" y="5" width="${w}" height="${h}" rx="6" fill="${INK}"/>
+    <g class="si-kface"><rect class="si-kbg" width="${w}" height="${h}" rx="6" fill="${extra || PAPER}" stroke="${INK}" stroke-width="1.6"/>${inner}</g>
+    <rect class="si-kfocus" x="-4" y="-4" width="${w + 8}" height="${h + 13}" rx="9" fill="none" stroke="${GOLD}" stroke-width="2.2" stroke-dasharray="4 3"/>
+    <rect width="${w}" height="${h + 5}" fill="transparent"/>
+  </g>`;
+
+const clock = (phone) => {
+  const L = phone
+    ? { dial: [220, 52], lab: [44, 178], sx: (i) => 144 + i * 84, sy: 186, sw: 76, play: [44, 186, 92, 50], trk: [44, 268], tw: 352, line: 344, spc: [88, 356] }
+    : { dial: [120, 138], lab: [230, 58], sx: (i) => 230 + i * 61, sy: 66, sw: 54, play: [230, 134, 176, 50], trk: [230, 204], tw: 176, line: 274, spc: [88, 286] };
+  const [px, py, pw, ph] = L.play, pcx = phone ? pw / 2 : 40;
+  const speedKeys = [1, 2, 4].map((n, i) => keyBtn(`x${n}`, L.sx(i), L.sy, L.sw, 50, `Speed ${n}x`,
+    `${T(L.sw / 2, 32, `${n}x`, 'si-num si-ktxt', 'middle', INK, 20)}${n === 2 ? `<rect class="si-nudge" x="-5" y="-5" width="${L.sw + 10}" height="60" rx="9" fill="none" stroke="${GOLD}" stroke-width="2"/>` : ''}`)).join('');
+  const playKey = keyBtn('play', px, py, pw, ph, 'Pause the clock',
+    `<g class="si-ic-play"><path d="M${pcx - 7} ${ph / 2 - 12}L${pcx + 12} ${ph / 2}L${pcx - 7} ${ph / 2 + 12}Z" fill="${PAPER}"/></g>
+     <g class="si-ic-pause" fill="${PAPER}"><rect x="${pcx - 9}" y="${ph / 2 - 12}" width="7" height="24"/><rect x="${pcx + 3}" y="${ph / 2 - 12}" width="7" height="24"/></g>
+     ${phone ? '' : `<text class="si-lb-play si-disp" x="${pcx + 28}" y="${ph / 2 + 6}" fill="${PAPER}" font-size="17">PLAY</text><text class="si-lb-pause si-disp" x="${pcx + 28}" y="${ph / 2 + 6}" fill="${PAPER}" font-size="17">PAUSE</text>`}`, SEAL);
+  const [tx, ty] = L.trk, TW = L.tw;
+  return `
+  <g transform="translate(${L.dial[0]} ${L.dial[1]})">
     <circle r="96" fill="${PAPER}" stroke="${INK}" stroke-width="1.6"/>
     <circle r="89" fill="none" stroke="${GOLD}" stroke-width="1"/>
     <g stroke="${INK}" stroke-width="1">${ticks(60, 82, 77, 5, 70)}</g>
     <g stroke="${LINE}" stroke-width=".7" fill="none"><circle r="54"/><circle r="45"/><circle r="36"/></g>
-    ${T(0, 44, 'TRADING', 'si-disp', 'middle', MUTED, 11)}${T(0, 64, 'DAY', 'si-disp', 'middle', INK, 19)}
-    <g class="si-hand">
+    ${T(0, 30, 'TRADING DAY', 'si-disp', 'middle', MUTED, 10.5)}${T(0, 60, '7', 'si-disp si-daynum', 'middle', INK, 27)}
+    <g class="si-pausedtxt">${T(0, -30, 'PAUSED', 'si-disp', 'middle', SEAL, 12)}</g>
+    <g class="si-hand" transform="rotate(138)">
       ${[0, 1, 2, 3, 4, 5, 6].map((k) => wedge(74, -(k + 1) * 11, -k * 11, (.3 - k * .042).toFixed(3))).join('')}
       <line x1="0" y1="8" x2="0" y2="-70" stroke="${SEAL}" stroke-width="2.8" stroke-linecap="round"/>
     </g>
     <circle r="6.5" fill="${INK}"/><circle r="2.4" fill="${GOLD}"/>
   </g>
-  <g transform="translate(246 82)">
-    ${T(0, 0, 'SPEED', 'si-disp', 'start', MUTED, 12)}
-    <g transform="translate(0 10)">
-      <rect width="44" height="44" fill="${PAPER}" stroke="${INK}" stroke-width="1.4"/>
-      <path d="M16 11 34 22 16 33Z" fill="${SEAL}"/>
-      <g transform="translate(52 0)">
-        <rect width="118" height="44" fill="${PAPER}" stroke="${INK}" stroke-width="1.4"/>
-        <rect class="si-spd" x="2" y="2" width="38" height="40" fill="${INK}"/>
-        <g class="si-num" font-size="15" text-anchor="middle" font-weight="600">
-          <text x="21" y="28" class="si-t1">1x</text><text x="59" y="28" class="si-t2">2x</text><text x="97" y="28" class="si-t4">4x</text>
-        </g>
-      </g>
-    </g>
-  </g>
-  <g transform="translate(246 168)">
+  ${T(L.lab[0], L.lab[1], 'SPEED', 'si-disp', 'start', MUTED, 12)}
+  ${speedKeys}${playKey}
+  <g transform="translate(${tx} ${ty})">
     ${T(0, 0, 'DAY TRACKER', 'si-disp', 'start', MUTED, 12)}
-    <rect class="si-track" x="0" y="43" width="170" height="7" fill="${GOLD}"/>
-    <line x1="0" y1="50" x2="170" y2="50" stroke="${INK}" stroke-width="1.4"/>
-    <g stroke="${INK}" stroke-width="1">${Array.from({ length: 22 }, (_, i) => `<line x1="${i * 7.8 + 0.5}" y1="${i % 5 === 0 ? 40 : 45}" x2="${i * 7.8 + 0.5}" y2="50"/>`).join('')}</g>
-    <g class="si-flag"><path d="M0 50V22" stroke="${SEAL}" stroke-width="2.2"/><path d="M0 22h16l-4.500 5 4.500 5H0Z" fill="${SEAL}"/><circle cy="50" r="4.500" fill="${SEAL}"/></g>
+    <rect class="si-track" x="0" y="45" width="${(TW * .32).toFixed(1)}" height="7" fill="${GOLD}"/>
+    <line x1="0" y1="52" x2="${TW}" y2="52" stroke="${INK}" stroke-width="1.4"/>
+    <g stroke="${INK}" stroke-width="1">${Array.from({ length: DAYS_ON_TRACK + 1 }, (_, i) => `<line x1="${(i * TW / DAYS_ON_TRACK).toFixed(1)}" y1="${i % 5 === 0 ? 40 : 46}" x2="${(i * TW / DAYS_ON_TRACK).toFixed(1)}" y2="52"/>`).join('')}</g>
+    <g class="si-flag" transform="translate(${(TW * .32).toFixed(1)} 0)"><path d="M0 52V22" stroke="${SEAL}" stroke-width="2.2"/><path d="M0 22h16l-4.500 5 4.500 5H0Z" fill="${SEAL}"/><circle cy="52" r="4.500" fill="${SEAL}"/></g>
   </g>
-  <line x1="44" y1="268" x2="396" y2="268" stroke="${GOLD}" stroke-width="1"/>
-  <g transform="translate(112 284)">
-    <rect x="0" y="4" width="84" height="26" rx="4" fill="${INK}"/>
-    <g class="si-key"><rect x="0" y="0" width="84" height="26" rx="4" fill="${PAPER}" stroke="${INK}" stroke-width="1.4"/>${T(42, 17.500, 'SPACE', 'si-num', 'middle', INK, 12)}</g>
-    ${T(98, 21, 'PAUSES THE CLOCK', 'si-disp', 'start', MUTED, 13)}
-  </g>`;
+  <line x1="44" y1="${L.line}" x2="396" y2="${L.line}" stroke="${GOLD}" stroke-width="1"/>
+  ${keyBtn('space', L.spc[0], L.spc[1], 100, 32, 'Pause or resume the clock', T(50, 21.500, 'SPACE', 'si-num', 'middle', INK, 13))}
+  <g transform="translate(${L.spc[0] + 114} ${L.spc[1]})"><g class="si-hint-run">${T(0, 21.500, 'PAUSES THE CLOCK', 'si-disp', 'start', MUTED, 13)}</g><g class="si-hint-paused">${T(0, 21.500, 'RESUMES THE CLOCK', 'si-disp', 'start', MUTED, 13)}</g></g>`;
+};
+
+/* Drives the plate: the needle sweeps one trading day per turn at 1x, and every key changes the sweep. */
+let live = null;
+function clockLive(svg, onTouch) {
+  const S = CLOCK, TW = Number(svg.dataset.tw);
+  const q = (s) => svg.querySelector(s);
+  const hand = q('.si-hand'), num = q('.si-daynum'), track = q('.si-track'), flag = q('.si-flag'), play = q('[data-k=play]');
+  const keys = [1, 2, 4].map((n) => [n, q(`[data-k=x${n}]`)]);
+  const frame = () => {
+    hand.setAttribute('transform', `rotate(${(S.frac * 360).toFixed(1)})`);
+    num.textContent = String(S.day);
+    const p = (((S.day - 1) % DAYS_ON_TRACK) + S.frac) / DAYS_ON_TRACK;
+    track.setAttribute('width', (TW * p).toFixed(1));
+    flag.setAttribute('transform', `translate(${(TW * p).toFixed(1)} 0)`);
+  };
+  const ui = () => {
+    svg.dataset.run = S.playing ? '1' : '0';
+    svg.dataset.touched = S.touched ? '1' : '0';
+    keys.forEach(([n, k]) => { k.classList.toggle('is-on', S.speed === n); k.setAttribute('aria-pressed', S.speed === n ? 'true' : 'false'); });
+    play.setAttribute('aria-label', S.playing ? 'Pause the clock' : 'Play the clock');
+  };
+  const act = (id) => {
+    if (id === 'play' || id === 'space') S.playing = !S.playing;
+    else { S.speed = Number(id.slice(1)); S.playing = true; }
+    if (!S.touched) { S.touched = true; onTouch(); }
+    ui(); frame();
+  };
+  svg.addEventListener('click', (e) => {
+    const k = e.target.closest('.si-kb'); if (!k) return;
+    act(k.dataset.k);
+    if (e.detail > 0) k.blur();            // after a tap, Space goes back to meaning "pause"
+  });
+  svg.addEventListener('keydown', (e) => {
+    const k = e.target.closest?.('.si-kb');
+    if (!k || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); e.stopPropagation();  // Enter would otherwise advance the slide
+    act(k.dataset.k);
+  });
+  let last = performance.now();
+  const step = (now) => {
+    if (!svg.isConnected) { if (live && live.svg === svg) live = null; return; }
+    const dt = Math.min((now - last) / 1000, .1); last = now;
+    if (S.playing) {
+      S.frac += (dt / 6) * S.speed;
+      while (S.frac >= 1) { S.frac -= 1; S.day += 1; }
+      frame();
+    }
+    requestAnimationFrame(step);
+  };
+  ui(); frame();
+  requestAnimationFrame((t) => { last = t; requestAnimationFrame(step); });
+  live = { svg, space: () => act('space'), spaceKey: q('[data-k=space]') };
+}
 
 /* ---- 2. the certificate ---- */
 const certificate = () => {
@@ -205,15 +270,21 @@ function race(svg, loop) {
   requestAnimationFrame(step);
 }
 
-const SLIDES = [clock, certificate, windowSlide, family, rivals];
+const SLIDES = [() => clock(isPhone()), certificate, windowSlide, family, rivals];
 
-const stage = (i, dir) => {
+const stage = (i, onTouch) => {
   const wrap = document.createElement('div');
-  wrap.innerHTML = `<svg class="si-svg" data-s="${i}" viewBox="${isPhone() ? VIEW.phone : VIEW.wide}" role="presentation" aria-hidden="true" focusable="false"><g transform="translate(220 170) scale(.94) translate(-220 -170)">${SLIDES[i]()}</g></svg>`;
+  const phone = isPhone(), live1 = i === 0;
+  const a11y = live1 ? 'role="group" aria-label="Clock controls"' : 'role="presentation" aria-hidden="true"';
+  wrap.innerHTML = `<svg class="si-svg" data-s="${i}" data-tw="${phone ? 352 : 176}" viewBox="${phone ? VIEW.phone : VIEW.wide}" ${a11y} focusable="false"><g transform="translate(220 170) scale(.94) translate(-220 -170)">${SLIDES[i]()}</g></svg>`;
   const svg = wrap.firstElementChild;
+  if (live1) clockLive(svg, onTouch);
   if (i === 4) race(svg, !still());
   return svg;
 };
+
+const CAP_HINT = 'Tap a speed or play. Space pauses.';
+const CAP_DONE = 'That is the clock. Space pauses it any time.';
 
 function enhance(node) {
   node.classList.add('intro');
@@ -222,35 +293,68 @@ function enhance(node) {
   bg.innerHTML = art('securityWave', { width: 1200, height: 420, lines: 34, color: '#2C4352', amplitude: 22 });
   node.prepend(bg);
   const plate = document.createElement('div');
-  plate.className = 'intro-plate'; plate.setAttribute('aria-hidden', 'true');
+  plate.className = 'intro-plate';
   const wrap = document.createElement('div');
-  wrap.className = 'intro-stage'; wrap.setAttribute('aria-hidden', 'true');
-  wrap.innerHTML = `<div class="intro-rosette">${art('rosette', { size: 900, petals: 14, rings: 9, stroke: 0.7, color: 'currentColor' })}</div>`;
-  plate.innerHTML = `<div class="intro-wave">${art('securityWave', { width: 440, height: 340, lines: 18, color: '#D9CEB4', amplitude: 10 })}</div><div class="intro-art"></div>`;
+  wrap.className = 'intro-stage';
+  wrap.innerHTML = `<div class="intro-rosette" aria-hidden="true">${art('rosette', { size: 900, petals: 14, rings: 9, stroke: 0.7, color: 'currentColor' })}</div>`;
+  plate.innerHTML = `<div class="intro-wave" aria-hidden="true">${art('securityWave', { width: 440, height: 340, lines: 18, color: '#D9CEB4', amplitude: 10 })}</div><div class="intro-art"></div>`;
   wrap.append(plate);
   node.querySelector('.kicker').after(wrap);
   const slot = plate.querySelector('.intro-art');
   const body = node.querySelector('.lesson-body');
+  const next = node.querySelector('[data-a=next]');
   const dots = [...node.querySelectorAll('.dots i')];
-  let shown = -1;
+  let shown = -1, capEl = null;
+  // Next is dimmed (never disabled) until the student has touched one clock control; one touch, no gate on later slides.
+  const gate = () => { node.dataset.gate = shown === 0 && !CLOCK.touched ? '1' : '0'; };
+  const setCap = () => { if (capEl) capEl.textContent = CLOCK.touched ? CAP_DONE : CAP_HINT; };
+  const onTouch = () => {
+    gate(); setCap();
+    if (still()) return;
+    next.classList.remove('si-pop'); void next.offsetWidth; next.classList.add('si-pop');
+  };
+  next.addEventListener('animationend', () => next.classList.remove('si-pop'));
+  const render = (dir) => {
+    slot.replaceChildren(stage(shown, onTouch));
+    slot.dataset.i = String(shown); slot.dataset.dir = dir;
+    slot.style.animation = 'none'; void slot.offsetWidth; slot.style.animation = '';
+  };
   const sync = () => {
     const i = Math.max(0, dots.findIndex((d) => d.classList.contains('on')));
     if (i === shown) return;
     const dir = i < shown ? 'back' : 'fwd';
     shown = i;
-    const cap = document.createElement('p');
-    cap.className = 'intro-cap'; cap.textContent = INTRO_CARDS[i].cap;
-    body.querySelector('.dlg-title')?.after(cap);
-    slot.replaceChildren(stage(i));
-    slot.dataset.i = String(i); slot.dataset.dir = dir;
-    slot.style.animation = 'none'; void slot.offsetWidth; slot.style.animation = '';
+    capEl = null;
+    if (i === 0) {
+      capEl = document.createElement('p');
+      capEl.className = 'intro-cap'; capEl.setAttribute('aria-live', 'polite');
+      body.querySelector('p')?.after(capEl); setCap();
+    }
+    gate(); render(dir);
   };
   new MutationObserver(sync).observe(body, { childList: true });
-  window.matchMedia('(max-width:899px)').addEventListener('change', () => { const s = slot.querySelector('svg'); if (s) s.setAttribute('viewBox', isPhone() ? VIEW.phone : VIEW.wide); });
+  window.matchMedia('(max-width:899px)').addEventListener('change', () => { if (node.isConnected && shown >= 0) render('fwd'); });
+
+  // Space pauses the clock while the first slide is showing, wherever focus is (a focused clock key keeps its own Space).
+  let swallow = false;
+  const down = (e) => {
+    if (!node.isConnected) { document.removeEventListener('keydown', down, true); document.removeEventListener('keyup', up, true); return; }
+    if (e.key !== ' ' || shown !== 0 || !live || !live.svg.isConnected || e.target.closest?.('.si-kb')) return;
+    e.preventDefault(); e.stopPropagation(); swallow = true;
+    live.space();
+    live.spaceKey.classList.add('is-down');
+  };
+  const up = (e) => {
+    if (e.key !== ' ' || !swallow) return;
+    e.preventDefault(); swallow = false; live?.spaceKey?.classList.remove('is-down');
+  };
+  document.addEventListener('keydown', down, true);
+  document.addEventListener('keyup', up, true);
   sync();
 }
 
 export function showIntro() {
+  resetClock(); live = null;
   const done = showLesson(INTRO_CARDS, { kicker: 'Before the clock starts', skipLabel: 'Skip', doneLabel: 'Start the clock', label: 'Introduction' });
   const node = document.querySelector('.dialog.lesson');
   if (node) enhance(node);

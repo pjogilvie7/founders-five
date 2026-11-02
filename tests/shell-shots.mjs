@@ -116,7 +116,7 @@ async function session(name, viewport, mobile) {
   await page.evaluate(() => window.__ff.step(400)); await wait(400);
   for (let k = 0; k < 8 && await page.locator('.dialog.lesson').count(); k++) { await page.keyboard.press('Escape'); await wait(300); }
   await page.waitForSelector('.dialog.event', { timeout: 5000 }); await wait(500); await shot('15-house-modal');
-  check(await page.locator('.dialog.event .choice .btn').count() === 4, 'house modal has four choices');
+  check(await page.locator('.dialog.event .choice .btn').count() === 3, 'house modal has three choices (no skip; decision RUN-6)');
   await page.click('.dialog.event .btn.primary'); await page.waitForSelector('.dialog.event', { state: 'detached' });
   await wait(300); await shot('16-blind-play');
   check(/Year \d of 5/.test(await page.textContent('.daylabel')), 'five-year day label');

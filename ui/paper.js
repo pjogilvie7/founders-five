@@ -173,14 +173,15 @@ export function createPaper(el, ctx) {
     if (key === bannerKey) return;
     bannerKey = key;
     if (!call) { banner.innerHTML = ''; return; }
-    const text = v.marginText || `Maintenance call. Loan-to-value is ${(call.ltv * 100).toFixed(1)}%; the limit is 35%. Post ${money(call.toPost)} by ${dateLabel(v.dctx, call.deadline)}, or the bank sells shares at that day’s close. The sale is taxable.`;
+    const text = v.marginText || `Maintenance call. Loan-to-value is ${(call.ltv * 100).toFixed(1)}%; the limit is 35%. It takes ${money(call.toPost)} posted by ${dateLabel(v.dctx, call.deadline)} to bring it back to 25%. If the loan is above 35% at the close of ${dateLabel(v.dctx, call.sellOn || call.deadline)}, the bank sells shares at that close. The sale is taxable.`;
     const stake = (label, val, cls = '') => `<div class="${cls}"><dt>${label}</dt><dd class="num">${esc(val)}</dd></div>`;
     banner.innerHTML = `<div class="margin" role="alert">
       <div class="m-main"><b class="m-h">Maintenance call</b><p>${esc(text.replace(/^Maintenance call\.\s*/, ''))}</p></div>
       <dl class="m-stakes">${stake('To post', money(call.toPost), 'big')}${stake('Loan to value', (call.ltv * 100).toFixed(1) + '%')}${stake('Post by', dateLabel(v.dctx, call.deadline))}</dl>
       <div class="m-btns"><button class="btn" data-mc="post">Post ${esc(money(call.toPost))}</button><button class="btn" data-mc="sell">Sell shares now</button><button class="btn" data-mc="wait">Wait</button></div></div>`;
     banner.querySelectorAll('[data-mc]').forEach((b) => b.addEventListener('click', () => h.onChoice('marginCall', b.dataset.mc)));
-    if (v.snap.gates?.sell && !v.snap.gates.sell.allowed) { const s = banner.querySelector('[data-mc=sell]'); s.setAttribute('aria-disabled', 'true'); s.title = v.snap.gates.sell.reason; }
+    const ms = v.snap.gates?.marginSell;   // the engine's gate for the margin-call sale (free shares first, then pledged), not the plain sell gate
+    if (ms && !ms.allowed) { const s = banner.querySelector('[data-mc=sell]'); s.setAttribute('aria-disabled', 'true'); s.title = ms.reason; }
   }
 
   // Moments: one designed card for every pause. Release leads with the free-share count; the rest are plain notes under it.
@@ -252,7 +253,7 @@ export function createPaper(el, ctx) {
   }
 
   function toast(text, kind = '') {
-    const t = document.createElement('div'); t.className = 'toast ' + kind; t.textContent = text; toasts.appendChild(t);
+    const t = document.createElement('div'); t.className = 'toast ' + kind; t.textContent = text; t.title = text; toasts.appendChild(t);
     while (toasts.children.length > 4) toasts.firstChild.remove();
     setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, kind === 'ach' ? 5200 : 4200);
   }

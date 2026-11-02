@@ -66,7 +66,7 @@ function liveHTML(c, snap, api) {
       <div class="big"><span class="k">Sales done</span><span class="v num">${p.salesDone} of ${p.salesTotal}</span><span class="sub"><span class="dots2" role="img" aria-label="${p.salesDone} of ${p.salesTotal} sales done">${dots}</span></span></div>
     </div>
     ${cooling ? `<p class="t-hint">${esc(`Cooling-off: plan trades from ${dl(api, p.firstTradeOn)}.`)} Until then you can still sell by hand in an open window.</p>` : '<p class="t-hint">The plan sells on its dates even when the trading window is closed.</p>'}
-    <p class="t-hint">A new collar or put on the stock is blocked while the plan is adopted, cooling-off included: it would void the plan’s defense. Cancel the plan first to hedge.</p>
+    <p class="t-hint">A new collar or put on the stock is blocked while the plan is adopted, cooling-off included: it would void the plan’s defense. Cancelling the plan lifts the block, and a later plan starts a new cooling-off.</p>
     ${cancel}`;
 }
 

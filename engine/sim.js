@@ -27,7 +27,7 @@ export const UNWIND_FEE = 0.01;      // of collar notional
 export const CALL_DEADLINE_DAYS = 3; // trading days after the call day; the bank sells at the close of the next trading day
 export const MIN_HISTORY = 20;       // trading days of price history before an option can be priced (index of the first day)
 export const AUTO_INVEST_KEEP = 2_000_000; // auto-invest leaves this much cash (a year of spending)
-export const RULE_PLAN_ACTIVE = "A 10b5-1 plan is active: a new hedge on the stock would void the plan's defense (Rule 10b5-1(c)(1)(i)(C)). Cancel the plan first, which starts a new cooling-off.";
+export const RULE_PLAN_ACTIVE = "A 10b5-1 plan is active, so new collars and puts are not allowed: a new hedge on the stock would void the plan's defense (Rule 10b5-1(c)(1)(i)(C)). Cancelling the plan lifts the block, and a later plan starts a new cooling-off.";
 const EPS = 1e-9;
 export const HOUSE_CHOICES = [
   { choice: "cash", label: "Pay from cash and the index fund" },
@@ -296,10 +296,11 @@ function partsOf(s, ctx) {
 }
 
 // Tax still to come if everything were sold or settled on the last day (PRD 4.8, decision of 2026-11-02):
-//   0.238 * max(0, G + U) - 0.238 * max(0, G)
+//   0.238 * max(0, G + U) - tax already paid - tax the ledger still owes
 // G is the realized gain in the ledger and U the unrealized gains on shares, the index fund and the exchange fund plus the
-// open collars (zero cost, so the whole mark) and puts (mark less premium). Losses net against gains. The result is floored
-// at minus what the ledger already owes, so the two together are never negative.
+// open collars (zero cost, so the whole mark) and puts (mark less premium). Losses net against gains, and tax paid in earlier
+// quarters is credited, so paid + owed + this = 0.238 * max(0, G + U) even when a later loss leaves more paid than 0.238 * G.
+// The result is floored at minus what the ledger already owes, so a fall in the stock never refunds tax already paid.
 export function terminalTax(state) {
   const ctx = getCtx(state);
   return terminalTaxOf(state, ctx);
@@ -312,8 +313,9 @@ function terminalTaxOf(s, ctx) {
   for (const c of s.collars) U += c.shares * collarMarkPerShare(s, ctx, c);
   for (const p of s.puts) U += p.shares * putMarkPerShare(s, ctx, p) - p.premium;
   const G = s.tax.realized;
-  const raw = RATE * Math.max(0, G + U) - RATE * Math.max(0, G);
-  return { unrealizedTax: Math.max(-taxLiability(s), raw) || 0, U, G };
+  const owed = taxLiability(s);
+  const raw = RATE * Math.max(0, G + U) - s.tax.paid - owed;
+  return { unrealizedTax: Math.max(-owed, raw) || 0, U, G };
 }
 
 function pushRow(s, ctx, replace) {
@@ -464,7 +466,7 @@ function quoteCollar(s, ctx, tenorMonths, putPct) {
     putPrice: z.putPrice, callPrice: z.callPrice, capPct: z.Kc / S, usedSmile: !!smile, error: null,
   };
   if (putPct > 0.9 + EPS) out.error = "The floor must be at most 90% of today's price.";
-  else if (z.Kc < 1.1 * S - EPS) out.error = "At this floor the cap would sit below 110% of today's price, which is too tight a band. Choose a lower floor or a longer tenor.";
+  else if (z.Kc < 1.1 * S - EPS) out.error = "At this floor the cap would sit below 110% of today's price, which is too tight a band for the game.";
   return out;
 }
 
@@ -568,7 +570,7 @@ function noFreeShares(s, ctx) {
     const e = s.collars.map((c) => c.expiry).sort()[0];
     return no(`Collared shares are held until the collar ends on ${labelDate(ctx, e)}`, e);
   }
-  if (s.shares.pledged > 0) return no("Pledged shares are held by the bank. Unpledge them first");
+  if (s.shares.pledged > 0) return no("Pledged shares are held by the bank until they are unpledged");
   if (s.shares.exchanged > 0) return no("Your remaining shares are in the exchange fund");
   return no("You have no shares left");
 }
@@ -620,7 +622,7 @@ function cureSellCheck(s, ctx) {
   if (s.shares.free + s.shares.pledged <= 0) return noFreeShares(s, ctx);
   const fg = founderGate(s, ctx);
   if (fg) return fg;
-  const wb = windowBlock(s, ctx, "post cash or let the bank sell");
+  const wb = windowBlock(s, ctx, "shares can be sold to meet the call then; posting cash is open now");
   if (wb) return wb;
   const room = rule144Room(s, ctx);
   if (room <= 0) return no("Rule 144 volume limit reached for this three-month period");
@@ -660,8 +662,8 @@ function check(s, ctx, type, p) {
     case "adoptPlan": {
       if (s.plan) {
         return s.d < s.plan.firstTradeOn
-          ? no(`Cooling-off: plan trades from ${labelDate(ctx, s.plan.firstTradeOn)}. One plan at a time: cancel it to start over`, s.plan.firstTradeOn)
-          : no(`A plan is running (${s.plan.salesDone} of ${s.plan.salesTotal} sales done). One plan at a time: cancel it to start a new one`);
+          ? no(`Cooling-off: plan trades from ${labelDate(ctx, s.plan.firstTradeOn)}. One plan at a time`, s.plan.firstTradeOn)
+          : no(`A plan is running (${s.plan.salesDone} of ${s.plan.salesTotal} sales done). One plan at a time`);
       }
       if (stockShares(s) + s.shares.exchanged <= 0 && s.shares.free + s.shares.locked + s.shares.collared + s.shares.pledged <= 0) return no("You have no shares left");
       const wb = windowBlock(s, ctx, "a plan can be adopted then");
@@ -713,8 +715,8 @@ function check(s, ctx, type, p) {
     case "draw": {
       if (s.shares.pledged <= 0) {
         return s.shares.locked > 0 && s.shares.free <= 0
-          ? no("Pledge shares first. Locked shares cannot be pledged", nextReleaseOf(s, ctx) ? nextReleaseOf(s, ctx).date : null)
-          : no("Pledge shares first");
+          ? no("No shares are pledged yet, and locked shares cannot be pledged", nextReleaseOf(s, ctx) ? nextReleaseOf(s, ctx).date : null)
+          : no("No shares are pledged yet");
       }
       const h = headroom(s, ctx);
       if (h <= 0.005) return no("The credit line is full: the bank lends 25% of the pledged value", null, { max: 0 });
@@ -724,7 +726,7 @@ function check(s, ctx, type, p) {
     case "repay": {
       const debt = loanDebt(s);
       if (debt <= 0.005) return no("You have no loan to repay");
-      if (s.cash <= 0.005) return no("No cash. Withdraw from the index fund first");
+      if (s.cash <= 0.005) return no("No cash to repay with");
       const max = Math.min(s.cash, debt);
       if (p.amount !== undefined && !(p.amount > 0 && p.amount <= max + 0.005)) return no(`You can repay up to ${money(max)}`, null, { max });
       return yes({ max });
@@ -770,12 +772,16 @@ function check(s, ctx, type, p) {
     case "house": {
       if (p.choice === "credit") {
         const h = headroom(s, ctx);
-        return h >= HOUSE - 0.005 ? yes() : no(`The credit line has ${money(h)} of room, short of ${money(HOUSE)}. Pledge more shares or choose another way.`);
+        return h >= HOUSE - 0.005 ? yes() : no(`The credit line has ${money(h)} of room, short of ${money(HOUSE)}.`);
       }
       if (p.choice === "sell") { const g = houseCanSell(s, ctx).check; return g.allowed ? yes() : g; }
       return yes();
     }
-    case "marginCall": case "collarExpiry": case "flag":
+    case "marginCall":
+      // "sell" in a maintenance call sells free shares first, then pledged ones: the same window and Rule 144 gates as a sale
+      if (p.choice === "sell") return cureSellCheck(s, ctx);
+      return yes();
+    case "collarExpiry": case "flag":
       return yes();
     default:
       return no("Unknown action");
@@ -789,6 +795,7 @@ export function gates(state) {
     ["draw", "draw"], ["repay", "repay"], ["deposit", "deposit"], ["withdraw", "withdraw"], ["buyPut", "buyPut"], ["exchange", "exchange"]]) {
     out[k] = check(state, ctx, t, {});
   }
+  out.marginSell = check(state, ctx, "marginCall", { choice: "sell" }); // the maintenance-call "sell" button: free shares first, then pledged
   return out;
 }
 
@@ -918,7 +925,7 @@ function answerHouse(s, ctx, a, ev) {
     ev.push({ type: "spend", d: s.d, pause: false, text: payText("for the house", HOUSE, r), data: { source: "house", ...r } });
   } else if (choice === "credit") {
     const h = headroom(s, ctx);
-    if (h < HOUSE - 0.005) return `The credit line has ${money(h)} of room, short of ${money(HOUSE)}. Pledge more shares or choose another way.`;
+    if (h < HOUSE - 0.005) return `The credit line has ${money(h)} of room, short of ${money(HOUSE)}.`;
     s.loan.balance += HOUSE; s.stats.drawn += HOUSE;
     ev.push({ type: "spend", d: s.d, pause: false, text: `Paid ${money(HOUSE)} for the house from the credit line at SOFR + 2.00%.`, data: { source: "house", credit: HOUSE } });
   } else if (choice === "sell") {
@@ -929,7 +936,7 @@ function answerHouse(s, ctx, a, ev) {
     s.stats.sells++; s.stats.sharesSold += n;
     receive(s, ctx, sale.net - HOUSE, true);
     ev.push({ type: "spend", d: s.d, pause: false, text: `Sold ${commas(n)} shares at $${sale.price.toFixed(2)} and paid ${money(HOUSE)} for the house. Tax on the gain is paid at quarter end.`, data: { source: "house", sale } });
-  } else return "Choose cash, credit or sell.";
+  } else return "The house choices are cash, credit or sell.";
   s.spentToday += HOUSE; s.stats.spendTotal += HOUSE;
   s.flags.houseDone = true;
   s.stats.houseChoice = choice;
@@ -948,7 +955,7 @@ function answerCollar(s, ctx, a, ev) {
     if (n <= 0) return "Those shares are no longer free.";
     const err = openCollar(s, ctx, n, d.tenorMonths, d.putPct, ev);
     if (err) return err;
-  } else if (a.choice !== "end") return "Choose roll or end.";
+  } else if (a.choice !== "end") return "The collar choices are roll or end.";
   resolvePending(s, "collarExpiry");
   return null;
 }
@@ -982,7 +989,7 @@ function answerCall(s, ctx, a, ev) {
     let gotIdx = 0;
     if (rest > EPS) { const w = withdrawIndex(s, ctx, rest); gotIdx = w.got; }
     const total = got + gotIdx;
-    if (total <= 0.005) return "You have no cash or index fund to post. Choose sell or wait.";
+    if (total <= 0.005) return "You have no cash or index fund to post.";
     s.cash -= got;
     repayLoan(s, total);
     const r = ltvOf(loanDebt(s), coll);
@@ -994,7 +1001,7 @@ function answerCall(s, ctx, a, ev) {
     } else {
       resolvePending(s, "marginCall");
       s.loan.call = { ...call, toPost: callCure(loanDebt(s), coll), ltv: Math.min(r, 9.99) };
-      ev.push({ type: "marginCall", d: s.d, pause: false, text: `You posted ${money(total)}. Loan-to-value is still ${pctText(r)}; post ${money(s.loan.call.toPost)} more by ${labelDateWd(ctx, call.deadline)} or the bank sells at the close of ${labelDateWd(ctx, call.sellOn)}.`, data: { resolved: false, posted: total } });
+      ev.push({ type: "marginCall", d: s.d, pause: false, text: `You posted ${money(total)}. Loan-to-value is still ${pctText(r)}; it takes ${money(s.loan.call.toPost)} more by ${labelDateWd(ctx, call.deadline)} to bring it back to ${pctText(CURE_LTV, 0)}. If the loan is above ${pctText(CALL_LTV, 0)} at the close of ${labelDateWd(ctx, call.sellOn)}, the bank sells at that close.`, data: { resolved: false, posted: total } });
     }
     return null;
   }
@@ -1030,7 +1037,7 @@ function answerCall(s, ctx, a, ev) {
     ev.push({ type: "marginCall", d: s.d, pause: false, text: `You sold ${commas(soldN)} shares at $${P.toFixed(2)} and put ${money(applied)} against the loan. Loan-to-value is ${pctText(Math.min(r, 9.99))}. Tax on the sale is paid at quarter end.`, data: { resolved: r <= CALL_LTV + EPS, sold: soldN } });
     return null;
   }
-  return "Choose post, sell or wait.";
+  return "The call choices are post, sell or wait.";
 }
 
 // After any accepted action: clear a call that is no longer needed and refresh today's history row.
@@ -1116,7 +1123,7 @@ function checkLoan(s, ctx, ev) {
       s.loan.call = { ...call, toPost, ltv: Math.min(r, 9.99) };
       const e = {
         type: "marginCall", d: s.d, pause: true,
-        text: `Last day to meet the call. Loan-to-value is ${pctText(r)}. Post ${money(toPost)} today, or if the loan is still above ${pctText(CALL_LTV, 0)} after today's close the bank sells about ${aboutShares(est)} shares at the close of ${labelDateWd(ctx, call.sellOn)}. The sale is taxable.`,
+        text: `Last day to meet the call. Loan-to-value is ${pctText(r)}. It takes ${money(toPost)} posted today to bring it back to ${pctText(CURE_LTV, 0)}. If the loan is still above ${pctText(CALL_LTV, 0)} at the close of ${labelDateWd(ctx, call.sellOn)}, the bank sells about ${aboutShares(est)} shares at that close. The sale is taxable.`,
         data: { ltv: Math.min(r, 9.99), toPost, deadline: call.deadline, sellOn: call.sellOn, estShares: est, lastDay: true, choices: callChoices, canPost: s.cash + indexValue(s, ctx) },
       };
       ev.push(e);
@@ -1131,7 +1138,7 @@ function checkLoan(s, ctx, ev) {
     const est = forcedSaleShares(debt, P, s.shares.pledged, COST);
     const e = {
       type: "marginCall", d: s.d, pause: true,
-      text: `Maintenance call. Loan-to-value is ${pctText(r)}; the limit is ${pctText(CALL_LTV, 0)}. Post ${money(toPost)} by ${labelDateWd(ctx, deadline)}, the third trading day. If the loan is still above ${pctText(CALL_LTV, 0)} after that day's close, the bank sells about ${aboutShares(est)} shares at the close of ${labelDateWd(ctx, sellOn)}. The sale is taxable.`,
+      text: `Maintenance call. Loan-to-value is ${pctText(r)}; the limit is ${pctText(CALL_LTV, 0)}. It takes ${money(toPost)} posted by ${labelDateWd(ctx, deadline)}, the third trading day, to bring it back to ${pctText(CURE_LTV, 0)}. If the loan is above ${pctText(CALL_LTV, 0)} at the close of ${labelDateWd(ctx, sellOn)}, the bank sells about ${aboutShares(est)} shares at that close. The sale is taxable.`,
       data: { ltv: Math.min(r, 9.99), toPost, deadline, sellOn, estShares: est, choices: callChoices, canPost: s.cash + indexValue(s, ctx) },
     };
     ev.push(e);
@@ -1159,7 +1166,7 @@ function forcedSale(s, ctx, ev) {
   s.stats.forced.push({ d: s.d, shares: n, price: P, gross: sale.gross, gain: sale.gain });
   const text = `The bank sold ${commas(n)} pledged shares at $${P.toFixed(2)}, ignoring the trading window, to bring the loan back to 25% of the shares left. ` +
     `${money(toLoan)} went against the loan. The sale is taxable: the tax, about ${money(taxApprox)} on a gain of ${money(sale.gain)}, is your bill and is paid at quarter end. ` +
-    `Lesson: a credit line against one stock can be called when the price falls, and the bank sells at the worst moment, whatever the window says.` +
+    `Lesson: a credit line against one stock can be called when the price falls. The bank sells at that day's close, at whatever price the stock has by then, and the trading window does not apply.` +
     (moved > 0 ? ` No pledged shares are left, so the remaining ${money(moved)} moved to the overdraft at SOFR + 4.00%.` : "");
   ev.push({ type: "forcedSale", d: s.d, pause: true, text, data: { shares: n, price: P, gross: sale.gross, gain: sale.gain, toLoan } });
 }

@@ -1,0 +1,115 @@
+/* Founder's Five submission PDF: Intaglio look on US Letter. Built by scripts/make-pdf.mjs. */
+:root {
+  --paper: #F1ECDF; --paper-2: #E8E0CC; --paper-line: #D9CEB4; --ink: #18262F; --muted: #5B6870;
+  --gold: #B08A3E; --seal: #9C2A23; --collar: #2E6E72; --good: #2F6B4F; --rail: #121F29;
+  --f-display: "Cormorant SC", Georgia, serif;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, monospace;
+}
+@page { size: 8.5in 11in; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--paper); }
+body { font: 400 9.4pt/1.45 var(--f-body); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+a { color: var(--collar); text-decoration: underline; text-decoration-thickness: 0.6pt; text-underline-offset: 1.5pt; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; margin: 0; line-height: 1.08; letter-spacing: 0.04em; color: var(--ink); }
+p { margin: 0 0 6pt; }
+.num, code { font-family: var(--f-num); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+code { font-size: 0.88em; background: var(--paper-2); padding: 0 2pt; }
+
+/* One printed page = one .page; fixed height so a page can never spill onto a sixth. */
+.page { position: relative; width: 8.5in; height: 11in; padding: 0.62in 0.62in 0.7in; overflow: hidden; page-break-after: always; break-after: page; background: var(--paper); }
+.page:last-child { page-break-after: auto; break-after: auto; }
+.page::before { /* hairline gold double rule, like a certificate border */
+  content: ""; position: absolute; inset: 0.26in; border: 0.8pt solid var(--gold); pointer-events: none;
+}
+.page::after { content: ""; position: absolute; inset: 0.30in; border: 0.4pt solid var(--gold); pointer-events: none; }
+.band { position: absolute; left: 0.62in; right: 0.62in; top: 0.40in; height: 9pt; background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='9' viewBox='0 0 60 9'><path d='M0 4.5 C10 -1 20 -1 30 4.5 S50 10 60 4.5' fill='none' stroke='%23B08A3E' stroke-width='0.8'/><path d='M0 4.5 C10 10 20 10 30 4.5 S50 -1 60 4.5' fill='none' stroke='%23B08A3E' stroke-width='0.8'/></svg>") repeat-x center; opacity: 0.85; }
+.running { position: absolute; left: 0.62in; right: 0.62in; bottom: 0.38in; display: flex; justify-content: space-between; font: 400 7.2pt var(--f-num); color: var(--muted); }
+.running a { color: var(--muted); }
+
+.kicker { font: 600 8.4pt var(--f-display); letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold); margin: 14pt 0 3pt; }
+.page h2 { font-size: 22pt; letter-spacing: 0.05em; margin-bottom: 6pt; }
+.page h3 { font-size: 12.5pt; letter-spacing: 0.05em; margin: 10pt 0 3pt; }
+.lede { font-size: 10.4pt; line-height: 1.5; color: var(--ink); max-width: 6.6in; }
+.small { font-size: 8pt; line-height: 1.4; color: var(--muted); }
+.rule { height: 0; border-top: 0.6pt solid var(--paper-line); margin: 8pt 0; }
+
+/* Page 1 */
+.cover .kicker { margin-top: 18pt; }
+.cover h1 { font-size: 46pt; letter-spacing: 0.1em; line-height: 1; }
+.cover .sub { font: 600 10.5pt var(--f-display); letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin: 5pt 0 14pt; }
+.linkrow { display: grid; grid-template-columns: 1fr 1.25in; gap: 16pt; align-items: center; border: 0.8pt solid var(--ink); background: var(--paper-2); padding: 11pt 14pt; box-shadow: 2.5pt 2.5pt 0 var(--gold); margin: 6pt 0 14pt; }
+.linkrow .label { font: 600 7.8pt var(--f-display); letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+.linkrow .url { font: 500 13pt var(--f-num); word-break: break-all; margin: 3pt 0 4pt; }
+.linkrow img { width: 1.25in; height: 1.25in; display: block; image-rendering: pixelated; }
+.shot { display: block; width: 100%; border: 0.8pt solid var(--ink); box-shadow: 2.5pt 2.5pt 0 var(--gold); background: var(--rail); }
+.cap { font: 400 7.2pt var(--f-num); color: var(--muted); margin: 5pt 0 0; line-height: 1.35; }
+.summary { margin: 14pt 0 8pt; font-size: 10.4pt; line-height: 1.52; }
+.facts { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 0.6pt solid var(--ink); border-bottom: 0.6pt solid var(--ink); margin: 8pt 0 10pt; }
+.facts div { padding: 6pt 8pt 6pt 0; }
+.facts div + div { padding-left: 9pt; border-left: 0.5pt solid var(--paper-line); }
+.facts .v { font: 500 14pt var(--f-num); display: block; }
+.facts .l { font: 400 7.4pt var(--f-body); color: var(--muted); line-height: 1.3; display: block; }
+.team { display: flex; gap: 22pt; font: 500 9.4pt var(--f-body); margin-top: 4pt; }
+.team span { border-bottom: 0.6pt solid var(--ink); padding-bottom: 2pt; min-width: 1.5in; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; }
+th { font: 600 7.6pt var(--f-display); letter-spacing: 0.16em; text-transform: uppercase; text-align: left; padding: 5pt 6pt; background: var(--paper-2); border-bottom: 1pt solid var(--ink); color: var(--ink); }
+td { vertical-align: top; padding: 5pt 6pt; border-bottom: 0.5pt solid var(--paper-line); font-size: 8.3pt; line-height: 1.38; }
+td.req { font-weight: 600; width: 1.35in; }
+td.where { width: 1.5in; color: var(--muted); font-size: 7.9pt; }
+.matrix td { padding: 5pt 6pt; }
+.rules td { font-size: 7.7pt; padding: 3.6pt 6pt; line-height: 1.32; }
+.rules td:first-child { font-weight: 600; width: 1.45in; }
+.rules td:last-child { width: 2.15in; color: var(--muted); }
+
+/* Boxes */
+.box { border: 0.8pt solid var(--ink); background: var(--paper-2); padding: 8pt 11pt; margin: 8pt 0; }
+.box.gold { box-shadow: 2.5pt 2.5pt 0 var(--gold); }
+.path { counter-reset: s; margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 5pt 16pt; }
+.path li { counter-increment: s; padding-left: 17pt; position: relative; font-size: 8.5pt; line-height: 1.38; }
+.path li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 12pt; height: 12pt; border: 0.7pt solid var(--seal); color: var(--seal); border-radius: 50%; font: 600 7.4pt/11pt var(--f-num); text-align: center; }
+
+/* Page 3 */
+.diagram { width: 100%; height: auto; display: block; margin: 6pt 0 4pt; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16pt; }
+.three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12pt; margin: 6pt 0; }
+.three div { border-top: 1.6pt solid var(--gold); padding-top: 5pt; }
+.three b { display: block; font: 600 10.6pt var(--f-display); letter-spacing: 0.05em; margin-bottom: 2pt; }
+.three p { font-size: 8.3pt; line-height: 1.4; margin: 0; }
+.crop { overflow: hidden; border: 0.8pt solid var(--ink); box-shadow: 2.5pt 2.5pt 0 var(--gold); background: var(--rail); }
+.crop img { display: block; width: 100%; }
+.links { margin: 6pt 0 0; padding: 0; list-style: none; font-size: 8.5pt; line-height: 1.5; }
+.links li { padding-left: 10pt; position: relative; }
+.links li::before { content: ""; position: absolute; left: 0; top: 5pt; width: 4pt; height: 4pt; background: var(--gold); }
+
+/* Page 4 */
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 0.6pt solid var(--ink); border-bottom: 0.6pt solid var(--ink); margin: 8pt 0 6pt; }
+.stats div { padding: 6pt 6pt 6pt 0; }
+.stats div + div { padding-left: 8pt; border-left: 0.5pt solid var(--paper-line); }
+.stats .v { font: 500 15pt var(--f-num); display: block; }
+.stats .l { font-size: 7.2pt; color: var(--muted); line-height: 1.28; display: block; }
+.job { display: grid; grid-template-columns: 1.3in 1fr; gap: 12pt; padding: 5.2pt 0; border-bottom: 0.5pt solid var(--paper-line); }
+.job:last-of-type { border-bottom: 0; }
+.job h3 { margin: 0; font-size: 11.4pt; }
+.job .tag { font: 400 6.6pt var(--f-num); color: var(--muted); margin-top: 3pt; display: block; letter-spacing: 0; }
+.job p { font-size: 8.2pt; line-height: 1.38; margin: 0 0 3pt; }
+.job p:last-child { margin: 0; }
+.caught { margin: 2pt 0 0; padding-left: 10pt; font-size: 7.9pt; line-height: 1.34; }
+.caught li { margin-bottom: 1.4pt; }
+
+/* Page 5 */
+.formulas { margin: 4pt 0; }
+.formulas div { display: grid; grid-template-columns: 1.15in 1fr; gap: 10pt; padding: 4.6pt 0; border-bottom: 0.5pt solid var(--paper-line); font-size: 8.4pt; line-height: 1.38; }
+.formulas b { font: 600 9.6pt var(--f-display); letter-spacing: 0.05em; }
+.formulas .m { font: 400 7.9pt/1.42 var(--f-num); }
+.leaves { columns: 2; column-gap: 16pt; margin: 2pt 0 0; padding-left: 10pt; font-size: 8.3pt; line-height: 1.38; }
+.leaves li { break-inside: avoid; margin-bottom: 1.6pt; }
+.disclaimer { margin-top: 8pt; padding: 7pt 11pt; border: 0.8pt solid var(--seal); color: var(--seal); font-weight: 600; font-size: 8.8pt; background: color-mix(in srgb, var(--seal) 6%, var(--paper)); }
+
+.shotbox { height: 3.5in; overflow: hidden; border: 0.8pt solid var(--ink); box-shadow: 2.5pt 2.5pt 0 var(--gold); background: var(--rail); }
+.shotbox img { display: block; width: 100%; margin-top: -0.2in; }
+.strip3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12pt; margin-top: 10pt; }
+.strip3 figure { margin: 0; }
+.strip3 .cap { font-size: 6.8pt; }

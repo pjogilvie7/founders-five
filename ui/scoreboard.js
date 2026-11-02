@@ -427,7 +427,7 @@ export async function renderScoreboard(el, ctx) {
     ? `<section class="sc-in sc-reveal" style="--i:3" aria-labelledby="sc-rev-h"><h3 id="sc-rev-h">What the card was</h3><p class="sc-para" id="sc-reveal-text">${esc(card.reveal.text)}</p></section>` : '';
   const lessonBlock = forced.length && !watch
     ? `<section class="sc-in sc-lesson" style="--i:3" role="note" data-lesson="forced-sale"><h3>A lesson from the bank sale</h3>
-        <p>The bank sold ${esc(int(forcedShares))} of your pledged shares at the close${forced.length > 1 ? ` in ${forced.length} sales` : ''}, ignoring the trading window, and each sale was taxed. A loan against one stock lets the bank choose the day, and it chooses the day the price is low. This is a lesson, not a badge.</p></section>` : '';
+        <p>The bank sold ${esc(int(forcedShares))} of your pledged shares at the close${forced.length > 1 ? ` in ${forced.length} sales` : ''}, ignoring the trading window, and each sale was taxed. A loan against one stock can be called when the price falls, and the bank sells at the close of the sale day at whatever price the stock has by then. This is a lesson, not a badge.</p></section>` : '';
 
   el.innerHTML = `<article class="sc" data-card="${esc(cardId)}" data-seat="${esc(ctx.seat || '')}" data-watch="${watch ? 'true' : 'false'}" data-blind="${card.blind ? 'true' : 'false'}">
     <header class="sc-head sc-in" style="--i:0"><p class="kicker">${esc(kicker)}</p><h1>${esc(headline)}</h1></header>

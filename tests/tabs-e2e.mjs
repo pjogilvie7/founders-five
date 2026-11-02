@@ -123,6 +123,57 @@ await page.locator('.stock [data-max]').click(); await wait(150);
 ok((await page.locator('.stock .fld-in').inputValue()).replace(/,/g, '') === String(s.shares.free), 'MAX fills all free shares');
 await fill('.stock .fld-in', '');
 
+// ---- 4. Collar and the Street check
+await tab('collar');
+const q = await txt('.collar .quote');
+ok(/model price/.test(q) && /Floor/.test(q) && /Cap/.test(q) && /\$0/.test(q), 'collar shows a live model-price quote: floor, cap, zero cost');
+ok(/Band rule/.test(q), 'band rule shown');
+await fill('.collar .fld-in', 50000);
+ok(/^Collar 50,000 shares for 12 months$/.test(await txt('.collar .t-go')), 'collar confirm button names shares and tenor');
+ok(/Held until/.test(await txt('.collar .t-prev')) && /put pays you/.test(await txt('.collar .t-prev')) && /you pay the call/.test(await txt('.collar .t-prev')), 'collar preview shows the hold date, floor and cap terms');
+await shot('04a-collar-ready-1280');
+await page.setViewportSize({ width: 375, height: 812 }); await wait(400); await shot('04b-collar-ready-375');
+await page.locator('.panel-wrap').evaluate((e) => { e.scrollTop = e.scrollHeight; }); await wait(200); await shot('04c-collar-ready-375-bottom');
+await page.locator('.panel-wrap').evaluate((e) => { e.scrollTop = 0; });
+await page.setViewportSize({ width: 1280, height: 800 }); await wait(400);
+await page.locator('.collar [data-seg=put] [data-v="0.9"]').click(); await wait(150);
+const q90 = await txt('.collar .quote');
+ok(q90 !== q, 'quote changes when the floor changes');
+await page.locator('.collar [data-seg=put] [data-v="0.85"]').click(); await wait(150);
+await page.locator('.collar .t-go').click();
+await page.waitForSelector('.collar .t-stamp');
+ok((await txt('.collar .t-stamp')) === 'COLLARED', 'COLLARED stamp');
+await wait(700);
+const inside = await page.evaluate(() => { const a = document.querySelector('.collar .t-stamp').getBoundingClientRect(), b = document.querySelector('.collar .plate').getBoundingClientRect(); return a.left >= b.left - 1 && a.right <= b.right + 1 && a.top >= b.top - 1 && a.bottom <= b.bottom + 1; });
+ok(inside, 'collar stamp sits inside the header plate');
+ok(/Collar set on 50,000/.test(await txt('.collar .t-res')), 'result line shows the engine text after confirming');
+await fill('.collar .fld-in', 1);
+ok((await txt('.collar .t-res')) === '', 'result line clears as soon as the input changes');
+await fill('.collar .fld-in', '');
+s = await st();
+ok(s.collars === 1 && s.shares.collared === 50000, 'engine holds the collar');
+await wait(400);
+ok(/Unwind: (receive|pay)/.test(await txt('.collar [data-v=list]')), 'active collar listed with an unwind price');
+ok(await page.locator('.collar .street').count() === 1, 'Street check box present on the live card');
+await page.locator('.collar .street summary').click(); await wait(300);
+const sc = await txt('.collar .street');
+const opt = JSON.parse(readFileSync(join(root, 'data/spcx-options.json'), 'utf8')).streetCheck;
+ok(sc.includes(opt.modelCap.toFixed(2)) && sc.includes(opt.marketCap.toFixed(2)) && /Listed SPCX options/.test(sc) && /dealer/.test(sc), `Street check shows model cap $${opt.modelCap} and listed cap $${opt.marketCap}`);
+s = await st();
+ok(!!s.firstUse.streetCheck, 'opening the Street check flagged streetCheck in the engine');
+await shot('04-collar-street-check');
+
+// ---- 4b. Put (must come before the plan: a live 10b5-1 plan blocks new hedges)
+await mountExtra('put');
+ok(/model price/.test(await txt('#xh .quote')) && /Premium per share/.test(await txt('#xh .quote')), 'put tab shows the engine premium quote');
+await fill('#xh .fld-in', 8000);
+ok(/Buy puts on 8,000 shares for \$[\d,]+/.test(await txt('#xh .t-go')), 'put confirm button shows the premium');
+await shot('06-put-preview');
+await page.locator('#xh .t-go').click(); await page.waitForSelector('#xh .t-stamp');
+ok((await txt('#xh .t-stamp')) === 'HEDGED', 'HEDGED stamp');
+s = await st(); ok(s.puts === 1, 'engine holds the put');
+await unmountExtra();
+
 // ---- 3. Plan: adopt a 10% a month plan
 await tab('plan');
 await page.locator('.plan [data-seg=pct] [data-v="10"]').click();
@@ -141,37 +192,14 @@ await page.locator('.plan [data-a=ask]').click();
 ok(/new cooling-off/.test(await txt('.plan .warn-box')), 'cancel shows the new cooling-off warning');
 await shot('03b-plan-cancel-warning');
 await page.locator('.plan [data-a=no]').click();
-// A live 10b5-1 plan blocks new hedges (engine rule), so cancel it before the collar.
-await page.locator('.plan [data-a=ask]').click();
-await page.locator('.plan [data-a=yes]').click(); await wait(300);
-ok(!(await st()).plan, 'plan cancelled so the collar is allowed');
 
-// ---- 4. Collar and the Street check
+// A live 10b5-1 plan (cooling-off included) blocks new hedges: the Collar tab must show the engine's reason, not a confirm button.
 await tab('collar');
-const q = await txt('.collar .quote');
-ok(/model price/.test(q) && /Floor/.test(q) && /Cap/.test(q) && /\$0/.test(q), 'collar shows a live model-price quote: floor, cap, zero cost');
-ok(/Band rule/.test(q), 'band rule shown');
-await fill('.collar .fld-in', 50000);
-ok(/Collar 50,000 shares: floor \$[\d.]+, cap \$[\d.]+, 12 months/.test(await txt('.collar .t-go')), 'collar confirm button gives floor and cap');
-await page.locator('.collar [data-seg=put] [data-v="0.9"]').click(); await wait(150);
-const q90 = await txt('.collar .quote');
-ok(q90 !== q, 'quote changes when the floor changes');
-await page.locator('.collar [data-seg=put] [data-v="0.85"]').click(); await wait(150);
-await page.locator('.collar .t-go').click();
-await page.waitForSelector('.collar .t-stamp');
-ok((await txt('.collar .t-stamp')) === 'COLLARED', 'COLLARED stamp');
-s = await st();
-ok(s.collars === 1 && s.shares.collared === 50000, 'engine holds the collar');
-await wait(400);
-ok(/Unwind: (receive|pay)/.test(await txt('.collar [data-v=list]')), 'active collar listed with an unwind price');
-ok(await page.locator('.collar .street').count() === 1, 'Street check box present on the live card');
-await page.locator('.collar .street summary').click(); await wait(300);
-const sc = await txt('.collar .street');
-const opt = JSON.parse(readFileSync(join(root, 'data/spcx-options.json'), 'utf8')).streetCheck;
-ok(sc.includes(opt.modelCap.toFixed(2)) && sc.includes(opt.marketCap.toFixed(2)) && /Listed SPCX options/.test(sc) && /dealer/.test(sc), `Street check shows model cap $${opt.modelCap} and listed cap $${opt.marketCap}`);
-s = await st();
-ok(!!s.firstUse.streetCheck, 'opening the Street check flagged streetCheck in the engine');
-await shot('04-collar-street-check');
+await fill('.collar .fld-in', 10000);
+const planGate = await txt('.collar .t-gate');
+ok(/10b5-1 plan is active/.test(planGate), `Collar tab shows the engine's reason while a plan is active: "${planGate.slice(0, 70)}"`);
+ok((await page.getAttribute('.collar .t-go', 'aria-disabled')) === 'true', 'Collar confirm button is disabled while a plan is active');
+await fill('.collar .fld-in', '');
 
 // ---- 5. Credit: pledge, draw the maximum
 await tab('credit');
@@ -216,15 +244,6 @@ ok((await page.getAttribute('.cash .sw', 'aria-checked')) === 'false', 'auto-inv
 await page.locator('.cash .sw').click(); await wait(250);
 
 // ---- 7. Put and Exchange (not in the shell's tab list yet): mount them directly on the same game
-await mountExtra('put');
-ok(/model price/.test(await txt('#xh .quote')) && /Premium per share/.test(await txt('#xh .quote')), 'put tab shows the engine premium quote');
-await fill('#xh .fld-in', 8000);
-ok(/Buy puts on 8,000 shares for \$[\d,]+/.test(await txt('#xh .t-go')), 'put confirm button shows the premium');
-await shot('06-put-preview');
-await page.locator('#xh .t-go').click(); await page.waitForSelector('#xh .t-stamp');
-ok((await txt('#xh .t-stamp')) === 'HEDGED', 'HEDGED stamp');
-s = await st(); ok(s.puts === 1, 'engine holds the put');
-await unmountExtra();
 await mountExtra('exchange');
 ok(/seven years/.test(await txt('#xh .lockbox')), 'exchange tab states the seven-year lock');
 await fill('#xh .fld-in', 10000);

@@ -80,6 +80,19 @@ test("share code: an empty log is a valid run; the code is short", () => {
   assert.deepEqual(decodeShare(code), { cardId: "c3", seat: "engineer", log: [] });
 });
 
+test("share code: the retired house \"skip\" choice is refused on encode, and an old code that carries it is rejected cleanly", () => {
+  const good = encodeShare({ cardId: "c1", seat: "engineer", log: [{ type: "house", choice: "cash", d: "2020-03-02" }] });
+  const bytes = [...Buffer.from(good, "base64url")];
+  const n = bytes.length - 3;
+  bytes[n - 1] = 3; // the choice byte is the last one before the checksum; 3 was "skip"
+  let h = 0x811c9dc5;
+  for (let i = 0; i < n; i++) { h ^= bytes[i]; h = Math.imul(h, 0x01000193) >>> 0; }
+  bytes[n] = (h >>> 24) & 255; bytes[n + 1] = (h >>> 16) & 255; bytes[n + 2] = (h >>> 8) & 255;
+  const old = Buffer.from(bytes).toString("base64url");
+  assert.throws(() => decodeShare(old), (e) => e instanceof ShareCodeError && /earlier version of the game/.test(e.message));
+  assert.throws(() => encodeShare({ cardId: "c1", seat: "engineer", log: [{ type: "house", choice: "skip", d: "2020-03-02" }] }), ShareCodeError);
+});
+
 test("share code: a changed, cut or padded code is rejected by the checksum", () => {
   const run = runBot("playbook", c1, "engineer", market, null);
   const code = encodeShare({ cardId: "c1", seat: "engineer", log: run.state.log });

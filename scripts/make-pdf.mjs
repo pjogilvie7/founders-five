@@ -5,7 +5,7 @@
 // Usage: node scripts/make-pdf.mjs [--no-shots] [--base http://127.0.0.1:8800/]
 // Needs the app served (python3 -m http.server 8800 in the project root) and Playwright (npm install).
 import { chromium } from 'playwright';
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, existsSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -23,6 +23,13 @@ async function takeShots(browser) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
+  // The page column only (no dark side margins), without the footer strip.
+  const clipShot = async (name) => {
+    const box = await page.locator('.page-body').first().boundingBox();
+    const x = Math.max(0, Math.floor((box?.x ?? 196) - 24)), w = Math.min(1280 - x, Math.ceil((box?.width ?? 888) + 48));
+    await page.screenshot({ path: join(shots, name + '.png'), clip: { x, y: 0, width: w, height: 756 } });
+    console.log('  shot', name, `(clip ${w}x756)`);
+  };
   const shot = async (name) => { await page.screenshot({ path: join(shots, name + '.png') }); console.log('  shot', name); };
 
   // 1. Title with the data-as-of strip (let the hero art finish drawing)
@@ -80,12 +87,12 @@ async function takeShots(browser) {
   await page.goto(BASE + '#/data'); await page.waitForSelector('.page-body'); await wait(1200);
   await page.evaluate(() => { const h = [...document.querySelectorAll('h2')].find((e) => /job runs/i.test(e.textContent)); h && h.scrollIntoView({ block: 'start' }); });
   await wait(600);
-  await shot('05-data');
+  await clipShot('05-data');
 
   // 6. Method page top
   await page.goto(BASE + '#/method'); await page.waitForSelector('.page-body'); await wait(1200);
   await page.evaluate(() => window.scrollTo(0, 0));
-  await shot('06-method');
+  await clipShot('06-method');
   await ctx.close();
   if (errors.length) console.log('  page errors:', errors.slice(0, 3));
 }
@@ -112,6 +119,7 @@ try {
   await wait(500);
   await page.pdf({ path: join(root, 'submission/Founders-Five.pdf'), format: 'Letter', printBackground: true, preferCSSPageSize: true, margin: { top: 0, right: 0, bottom: 0, left: 0 } });
   await ctx.close();
+  rmSync(built, { force: true });
   console.log('wrote submission/Founders-Five.pdf');
 } finally {
   await browser.close();
@@ -127,7 +135,7 @@ function collectFacts() {
   const cardsSrc = ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'].filter((c) => existsSync(join(root, `data/src/${c}/lockup.json`)));
   let headlines = 0; for (const c of cardsSrc) { try { headlines += sh(c).length; } catch {} }
   const asOf = new Date(meta.asOf + 'T12:00:00Z');
-  const asOfLong = asOf.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const asOfLong = asOf.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).replace(',', '');
   let tests = '167';
   try {
     const out = execSync('node --test', { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });

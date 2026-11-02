@@ -476,6 +476,7 @@ function handleEvents(events, quiet) {
         else { g.notices = [...g.notices, momentFor(ev)]; g.holds.add('notice'); }
         break;
       case 'windowClose': case 'planSale': g.paper.toast(ev.text, 'info'); break;
+      case 'dividend': if (!quiet) g.paper.toast(ev.text, 'info'); break;   // the engine's own text, no arithmetic here
       case 'taxPaid': g.paper.toast(ev.text, 'warn'); break;
       case 'forcedSale':
         if (watch) g.paper.toast(ev.text, 'err');
@@ -484,7 +485,7 @@ function handleEvents(events, quiet) {
       case 'news': g.paper.setNews(ev.text, dateLabel(g.dctx, ev.d)); break;
       case 'achievement': {
         const id = (ev.data && (ev.data.id || ev.data.name)) || ev.text; g.achievements.add(id); saveAch();
-        if (!quiet) g.paper.toast(`Achievement: ${(ev.data && ev.data.name) || ev.text}`, 'ach');
+        if (!quiet) g.paper.toast(`Seal earned: ${String((ev.data && (ev.data.title || ev.data.name)) || ev.text).split('. ')[0]}`, 'ach');
         break;
       }
       case 'marginCall':

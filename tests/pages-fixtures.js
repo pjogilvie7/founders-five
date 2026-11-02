@@ -71,7 +71,7 @@ export function makeCtx() {
       { id: "c2", blind: true, label: "Card 2", tradingDays: 1260 }
     ],
     spcxOptions: { asOf: "2026-10-30", iv30: 53.744, smile: [],
-      streetCheck: { modelCap: 186.99, marketCap: 182.0, floor: 114.512, spot: 134.72, vol: 0.537, method: "Black-Scholes, flat vol both legs; market cap interpolated from mid prices on listed Sept 2027 and Dec 2027 options.", asOf: "2026-10-30" } },
+      streetCheck: { modelCap: 188.84, marketCap: 182.59, floor: 114.51, spot: 134.72, vol: 0.5374, method: "Black-Scholes, flat vol both legs; market cap interpolated from mid prices on listed Sept 2027 and Dec 2027 options.", asOf: "2026-10-30" } },
     universe: {
       rule: "US IPOs (no direct listings, no SPACs) priced 2019-01-01 to 2021-06-30 with gross proceeds of at least $1B.",
       seed: "founders-five-2026-11-01",

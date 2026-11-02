@@ -19,3 +19,7 @@ Then open https://pjogilvie7.github.io/founders-five/ in a private window (about
 
 ## 2. Keep-awake
 The keep-awake request was also refused by the classifier at 00:21 ET; the build relied on the app's own per-turn hold.
+
+## Submission PDF (submission/Founders-Five.pdf)
+- Page 1 has three placeholders, `[Team member 1]` to `[Team member 3]`. Send the names (or say solo) and the PDF is rebuilt with `node scripts/make-pdf.mjs`.
+- The live link, QR code and GitHub links return 404 until the repo is pushed (command above).

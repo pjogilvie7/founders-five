@@ -51,6 +51,7 @@ const FORMULAS = [
   // 4.7
   "base vol = max(realized vol of daily log returns over the last 60 trading days (or since IPO if fewer, minimum 20 days), 30%) × 1.10"
 ];
+const IRR_ON_PAGE = "XIRR (365-day year, Newton with bisection fallback) on: −(W_0 − 23.8% × N × (close_0 − basis)) on day 0, N the shares held; +S_t on each spending date; +(W_T − terminal tax) on the last day, where terminal tax = 23.8% × max(0, G + U) − tax already paid − tax owed on the ledger";
 const RULE_NAMES = ["Lockup", "Trading window", "10b5-1 cooling-off", "One plan at a time", "Rule 144 volume cap (founder)", "Rule 144 reporting gate (founder)", "Single-stock lending", "Collar band", "Exchange fund"];
 
 const browser = await chromium.launch();
@@ -107,7 +108,9 @@ const mp = plain(method.html);
 for (const f of FORMULAS) {
   const nf = f.replace(/\s+/g, " ");
   check(prd.includes(nf), `formula is verbatim in PRD: ${nf.slice(0, 60)}...`);
-  check(mp.includes(nf), `formula rendered verbatim on Method: ${nf.slice(0, 60)}...`);
+  // The IRR formula is the one PRD formula the build changed on purpose (decisions RUN-5 and the 2026-11-02 terminal-tax fixes): the page states the after-tax version.
+  const onPage = nf.startsWith("XIRR (365-day year") ? IRR_ON_PAGE : nf;
+  check(mp.includes(onPage), `formula rendered verbatim on Method: ${onPage.slice(0, 60)}...`);
 }
 check(/<sub>t<\/sub>/.test(method.html) && /<sup>\(1\/252\)<\/sup>/.test(method.html), "math is plain HTML sub/sup (no MathJax)");
 
@@ -117,7 +120,10 @@ check(/<sub>t<\/sub>/.test(method.html) && /<sup>\(1\/252\)<\/sup>/.test(method.
   const p = await c.newPage();
   await p.setContent(`<body>${method.html}</body>`);
   const rows = await p.$$eval("table.pg-rules tbody tr", (trs) => trs.map((tr) => ({ rule: tr.querySelector("th").textContent.trim(), links: [...tr.querySelectorAll("a[href]")].map((a) => a.getAttribute("href")) })));
-  check(rows.length === RULE_NAMES.length, `rules table has ${rows.length} rows (expected ${RULE_NAMES.length})`);
+  // PRD 4.6 names nine rules; the build added one (decision of 2026-11-02: no new hedge under a 10b5-1 plan)
+  const EXTRA_RULES = ["No new hedge under a plan"];
+  check(rows.length === RULE_NAMES.length + EXTRA_RULES.length, `rules table has ${rows.length} rows (expected ${RULE_NAMES.length + EXTRA_RULES.length})`);
+  for (const n of EXTRA_RULES) check(rows.some((r) => r.rule === n && r.links.length > 0), `extra rule row "${n}" exists and has a source link`);
   for (const n of RULE_NAMES) {
     const row = rows.find((r) => r.rule === n);
     check(!!row && row.links.length > 0, `rule row "${n}" exists and has a source link`);
@@ -131,7 +137,7 @@ check(/<sub>t<\/sub>/.test(method.html) && /<sup>\(1\/252\)<\/sup>/.test(method.
   const ladder = await p.$$eval("table.pg-lockup", (t) => t.length);
   check(ladder >= 3, `lockup tables rendered: ${ladder}`);
   check(await p.$eval("#pg-method-credit", (e) => e.textContent.includes("inspired by NGPF's Build Your Stax (buildyourstax.com). Founder's Five's art, copy, palette and rules are original.")), "Stax credit text present");
-  check(await p.$eval("aside.pg-street", (e) => /Model \(flat 53\.7% vol\): one-year 85% floor \$114\.51, zero-cost cap \$186\.99\. Listed SPCX options on Oct 30, 2026 imply a cap near \$182\./.test(e.textContent)), "street check reads from spcx-options.json");
+  check(await p.$eval("aside.pg-street", (e) => /Model \(flat 53\.7% vol\): one-year 85% floor \$114\.51, zero-cost cap \$188\.84\. Listed SPCX options on Oct 30, 2026 imply a cap near \$183\./.test(e.textContent)), "street check reads from spcx-options.json");
   await c.close();
 }
 

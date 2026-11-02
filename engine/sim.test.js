@@ -312,7 +312,7 @@ test("8b: maintenance call: exact copy, amounts, 'post' cures with cash", () => 
   s = r.state;
   assert.equal(s.i, 61);
   assert.ok(s.pendingEvent && s.pendingEvent.type === "marginCall");
-  assert.match(r.event.text, /^Maintenance call\. Loan-to-value is 3\d\.\d%; the limit is 35%\. Post \$\d\.\dM by \w{3} \w{3} \d+, the third trading day\. If the loan is still above 35% after that day's close, the bank sells about [\d,]+ shares at the close of \w{3} \w{3} \d+\. The sale is taxable\.$/);
+  assert.match(r.event.text, /^Maintenance call\. Loan-to-value is 3\d\.\d%; the limit is 35%\. It takes \$\d\.\dM posted by \w{3} \w{3} \d+, the third trading day, to bring it back to 25%\. If the loan is above 35% at the close of \w{3} \w{3} \d+, the bank sells about [\d,]+ shares at that close\. The sale is taxable\.$/);
   const debt = s.loan.balance + s.loan.accrued;
   const coll = s.shares.pledged * 70;
   near(s.loan.call.toPost, debt - 0.25 * coll, 1e-6);
@@ -419,6 +419,29 @@ test("8d: sell to cure needs an open window; with a closed window it explains wh
   const r = tickUntilEvent(s, "marginCall");
   const e = act(r.state, { type: "marginCall", choice: "sell" });
   assert.match(e.error, /^Window closed until /);
+});
+
+test("8d2: the margin-call sell gate comes from the engine: with every share pledged the plain sell gate is shut but the call's sell is open, and it sells pledged shares", () => {
+  const { s: s0 } = marginScenario();             // every share pledged, none free
+  const s = tickUntilEvent(s0, "marginCall").state;
+  assert.equal(s.shares.free, 0);
+  assert.equal(canDo(s, "sell").allowed, false);
+  assert.match(canDo(s, "sell").reason, /until they are unpledged/);
+  assert.equal(gates(s).sell.allowed, false);
+  assert.equal(canDo(s, "marginCall", { choice: "sell" }).allowed, true);
+  assert.equal(gates(s).marginSell.allowed, true);
+  assert.ok(canDo(s, "marginCall", { choice: "sell" }).max > 0);
+  const pledged0 = s.shares.pledged;
+  const after = ok(act(s, { type: "marginCall", choice: "sell" }));
+  assert.ok(after.shares.pledged < pledged0);
+  // a closed window shuts the call's sell, with the engine's reason
+  const card = flatCard({ n: 120, close: (d, i) => (i <= 60 ? 100 : 70), earnings: [{ d: "2020-04-10" }] });
+  let c = tickToIdx(game(card), 2);
+  c = ok(act(c, { type: "pledge", shares: c.shares.free }));
+  c = ok(act(c, { type: "draw", amount: canDo(c, "draw").max }));
+  c = tickUntilEvent(c, "marginCall").state;
+  assert.equal(gates(c).marginSell.allowed, false);
+  assert.match(gates(c).marginSell.reason, /^Window closed until .*posting cash is open now/);
 });
 
 test("8e: sell choice (window open) repays and clears the call", () => {
@@ -787,7 +810,7 @@ test("house: five-year cards only, month 18, the exact copy, three choices as {c
   assert.equal(s.d, "2021-07-02");
   assert.equal(s.pendingEvent.type, "house");
   assert.equal(tick(s).blocked, true);
-  assert.match(act(s, { type: "house", choice: "skip" }).error, /Choose cash, credit or sell/);
+  assert.match(act(s, { type: "house", choice: "skip" }).error, /The house choices are cash, credit or sell/);
   assert.ok(!/no effect on your score|score effect/i.test(event.text));
   // never on the live card
   const live = runToEnd(game(spcxLike));
@@ -1102,7 +1125,7 @@ test("bots run on the live SpaceX-like card and the engineer seat only", () => {
 });
 
 // ================================================================ accuracy fixes (critics, 2026-11-02)
-const PLAN_RULE = "A 10b5-1 plan is active: a new hedge on the stock would void the plan's defense (Rule 10b5-1(c)(1)(i)(C)). Cancel the plan first, which starts a new cooling-off.";
+const PLAN_RULE = "A 10b5-1 plan is active, so new collars and puts are not allowed: a new hedge on the stock would void the plan's defense (Rule 10b5-1(c)(1)(i)(C)). Cancelling the plan lifts the block, and a later plan starts a new cooling-off.";
 
 test("2: no new collar or put while a 10b5-1 plan is active, cooling-off included; existing hedges stay; cancelling frees the hedge tools", () => {
   const card = flatCard({ n: 300 });
@@ -1203,6 +1226,36 @@ test("6: terminal tax = 0.238 * max(0, G + U) - 0.238 * max(0, G); realized loss
   const base = RATE * (c.total * (100 - 1) + mark) - RATE * Math.max(0, c.tax.realized);
   near(terminalTax(c).unrealizedTax, Math.max(-wealthParts(c).tax, base), 1e-6);
   near(terminalTax(c).U, c.total * 99 + mark, 1e-6);
+});
+
+test("6a: tax already paid is credited at the end: paid + owed + terminal tax = 23.8% * max(0, G + U), even when a later loss leaves more paid than 23.8% of G", () => {
+  // sell 300,000 shares at $100 (a large gain) and buy a put; the quarter-end payments go out; the put then expires worthless, a realized loss
+  const card = flatCard({ n: 250 });
+  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2);
+  s = ok(act(s, { type: "sell", shares: 300_000 }));
+  s = tickToIdx(s, 21);
+  s = ok(act(s, { type: "buyPut", shares: 100_000, putPct: 0.85, tenorMonths: 6 }));
+  const premium = s.puts[0].premium;
+  assert.ok(premium > 100_000);
+  while (s.puts.length && !s.done) s = tickToIdx(s, s.i + 1);
+  assert.equal(s.puts.length, 0, "the put expired");
+  const tt = terminalTax(s);
+  assert.ok(s.tax.paid > 0);
+  assert.ok(RATE * tt.G < s.tax.paid - 1_000, "more tax was paid than 23.8% of the gain now on the ledger");
+  const total = s.tax.paid + wealthParts(s).tax + tt.unrealizedTax;
+  near(total, RATE * Math.max(0, tt.G + tt.U), 1e-6, "tax in total");
+  near(tt.unrealizedTax, RATE * (tt.G + tt.U) - s.tax.paid, 1e-6);
+  near(score(s).unrealizedTax, tt.unrealizedTax, 1e-9);
+});
+
+test("6a2: the shipped card c6 Seller is not overtaxed: tax paid + owed + terminal tax = 23.8% * (G + U) to the cent", (t) => {
+  const cf = path.join(here, "..", "data", "cards", "c6.json"), mf = path.join(here, "..", "data", "market.json");
+  if (!fs.existsSync(cf) || !fs.existsSync(mf)) return t.skip("c6 not built");
+  const card = JSON.parse(fs.readFileSync(cf, "utf8")), mk = JSON.parse(fs.readFileSync(mf, "utf8"));
+  const r = runBot("seller", card, "engineer", mk, null);
+  const tt = terminalTax(r.state);
+  assert.ok(RATE * tt.G < r.state.tax.paid, "the Seller paid more than 23.8% of its final realized gain");
+  near(r.state.tax.paid + wealthParts(r.state).tax + tt.unrealizedTax, RATE * Math.max(0, tt.G + tt.U), 0.01);
 });
 
 test("6b: never below what the ledger already owes: a crash after the tax is paid cannot create a refund", () => {
