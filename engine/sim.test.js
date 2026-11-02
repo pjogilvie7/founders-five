@@ -1486,6 +1486,75 @@ test("9e: the debrief states the idle-cash fact when cash sits above a year of s
   assert.ok(!/sat in cash/.test(dl.paragraphs[1]));
 });
 
+test("9f: history rows carry A, after-tax net worth; a sale does not move it by the tax realized; snapshot has Wat and profitAt", () => {
+  const card = flatCard({ n: 120, close: (d, i) => 100 + i }); // rising, so a sale realizes a large gain
+  let s = tickToIdx(game(card), 25);
+  const h = (st) => st.history[st.history.length - 1];
+  assert.ok(s.history.every((r) => Number.isFinite(r.A)));
+  near(h(s).A, h(s).W - terminalTax(s).unrealizedTax, 1e-6);
+  assert.ok(h(s).A < h(s).W, "tax embedded in unsold shares is deducted");
+  const before = h(s).A;
+  const sold = ok(act(s, { type: "sell", shares: 300_000 }));
+  const taxRealized = sold.tax.realized * RATE;
+  assert.ok(taxRealized > 5_000_000);
+  assert.ok(h(sold).W < h(s).W - 1_000_000, "W drops by the tax now owed");
+  near(h(sold).A, before - 300_000 * (100 + 25) * COST * (1 - RATE), 1, "A only loses the 0.25% sale cost, less the tax it saves");
+  // snapshot
+  const snap = snapshot(sold);
+  near(snap.Wat, h(sold).A, 1e-6);
+  near(snap.profitAt, h(sold).A - sold.history[0].A, 1e-6);
+  assert.equal(snapshot(game(card)).profitAt, 0);
+  // the last day's A is the scoreboard's after-tax wealth less spending added back
+  const end = runWithPolicy(s, {});
+  const sc = score(end);
+  near(h(end).A + sc.totalSpending, sc.afterTaxWealth, 1e-6);
+});
+
+test("9g: runBot returns seriesAfterTax, and ranking the three bots by the last A matches score().afterTaxWealth", () => {
+  for (const [id, seat, opts] of [["spcx", "engineer", spcxOptions], ["c1", "engineer", null], ["c1", "founder", null]]) {
+    const p = path.join(here, "..", "data", "cards", `${id}.json`);
+    const mp = path.join(here, "..", "data", "market.json");
+    if (!fs.existsSync(p) || !fs.existsSync(mp)) continue;
+    const card = JSON.parse(fs.readFileSync(p, "utf8")), mk = JSON.parse(fs.readFileSync(mp, "utf8"));
+    const runs = BOTS.map((b) => ({ b, r: runBot(b, card, seat, mk, opts) }));
+    for (const { r } of runs) {
+      assert.equal(r.seriesAfterTax.length, r.series.length);
+      near(r.seriesAfterTax[r.seriesAfterTax.length - 1], r.state.history[r.state.history.length - 1].A, 0);
+    }
+    const byA = [...runs].sort((x, y) => y.r.seriesAfterTax.at(-1) - x.r.seriesAfterTax.at(-1)).map((x) => x.b);
+    const byScore = [...runs].sort((x, y) => y.r.score.afterTaxWealth - x.r.score.afterTaxWealth).map((x) => x.b);
+    assert.deepEqual(byA, byScore, `${id} ${seat}`);
+  }
+});
+
+test("9h: with some shares released but none free, the gates say so and name the next release; nothing released keeps the lockup wording", () => {
+  const dates = weekdays("2020-01-02", 200);
+  const card = flatCard({ n: 200 });
+  const late = dates[100];
+  const g = card.lockup.groups.find((x) => x.id === "g-e");
+  g.tranches = [
+    { id: "a", pct: 50, trigger: { type: "date", date: dates[1] }, resolvedDate: dates[1] },
+    { id: "b", pct: 50, trigger: { type: "date", date: late }, resolvedDate: late },
+  ];
+  let s = tickToIdx(game(card), 25);
+  assert.equal(s.shares.free, 500_000);
+  s = ok(act(s, { type: "pledge", shares: 500_000 }));
+  assert.equal(s.shares.free, 0);
+  const nr = `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+late.slice(5, 7) - 1]} ${+late.slice(8)}`;
+  const want = (what) => `No free shares to ${what}. The next release is ${nr}.`;
+  assert.equal(canDo(s, "pledge").reason, want("pledge"));
+  assert.equal(canDo(s, "sell").reason, want("sell"));
+  assert.equal(canDo(s, "collar").reason, want("collar"));
+  assert.equal(canDo(s, "buyPut").reason, want("protect with a put"));
+  assert.equal(canDo(s, "exchange").reason, want("contribute"));
+  assert.equal(canDo(s, "sell").opensOn, late);
+  assert.equal(act(s, { type: "pledge", shares: 1 }).error, want("pledge"));
+  assert.ok(!/lockup|Locked/.test(canDo(s, "pledge").reason));
+  // nothing released yet: the lockup wording stays
+  const early = game(card);
+  assert.match(canDo(early, "pledge").reason, /^Locked by the lockup until /);
+});
+
 test("10: gate copy claims a plan only when one exists: none, cooling-off, live", () => {
   // no plan: the window text stands alone
   let a = tickTo(game(spcxLike, "engineer"), "2026-09-21");

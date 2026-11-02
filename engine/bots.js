@@ -147,5 +147,5 @@ export function runBot(botId, card, seat, market, spcxOptions = null, opts = {})
   const start = createGame({ card, seat, market, spcxOptions, opts });
   const events = [];
   const state = runWithPolicy(start, botPolicy(botId), (todays) => { events.push(todays); });
-  return { state, series: state.history.map((r) => r.W), events, score: score(state) };
+  return { state, series: state.history.map((r) => r.W), seriesAfterTax: state.history.map((r) => r.A), events, score: score(state) };
 }

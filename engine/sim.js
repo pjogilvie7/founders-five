@@ -318,7 +318,9 @@ function terminalTaxOf(s, ctx) {
 }
 
 function pushRow(s, ctx, replace) {
-  const row = { d: s.d, W: partsOf(s, ctx).W, S: s.spentToday, rf: dailyRf(ctx.dgs1mo[s.i]), close: ctx.close[s.i], cash: s.cash };
+  const W = partsOf(s, ctx).W;
+  // A: after-tax net worth, W less the tax still to come on everything unsold (the same figure score() uses on the last day)
+  const row = { d: s.d, W, A: W - terminalTaxOf(s, ctx).unrealizedTax, S: s.spentToday, rf: dailyRf(ctx.dgs1mo[s.i]), close: ctx.close[s.i], cash: s.cash };
   if (replace) s.history[s.history.length - 1] = row; else s.history.push(row);
 }
 
@@ -561,9 +563,16 @@ function nextReleaseOf(s, ctx) {
   return best;
 }
 
-function noFreeShares(s, ctx) {
+// `what` completes "No free shares to ...". Nothing released yet reads as the lockup; some released but none free now (all sold,
+// pledged, collared or exchanged) says so plainly and names the next release, so it does not read as a lock.
+function noFreeShares(s, ctx, what = "use") {
   if (s.shares.locked > 0) {
     const nr = nextReleaseOf(s, ctx);
+    if (s.total - s.shares.locked > 0) {
+      return nr
+        ? no(`No free shares to ${what}. The next release is ${labelDate(ctx, nr.date)}.`, nr.date)
+        : no(`No free shares to ${what}. The rest of your shares have no release date yet.`);
+    }
     return nr
       ? no(`Locked by the lockup until ${labelDate(ctx, nr.date)}`, nr.date)
       : no("Locked by the lockup: the rest of your shares have no release date yet");
@@ -621,7 +630,7 @@ function rule144Room(s, ctx) {
 
 // Sale of free or pledged shares, for curing a maintenance call. Same window and Rule 144 gates as any sale.
 function cureSellCheck(s, ctx) {
-  if (s.shares.free + s.shares.pledged <= 0) return noFreeShares(s, ctx);
+  if (s.shares.free + s.shares.pledged <= 0) return noFreeShares(s, ctx, "sell");
   const fg = founderGate(s, ctx);
   if (fg) return fg;
   const wb = windowBlock(s, ctx, "shares can be sold to meet the call then; posting cash is open now");
@@ -632,7 +641,7 @@ function cureSellCheck(s, ctx) {
 }
 
 function sellCheck(s, ctx, shares) {
-  if (s.shares.free <= 0) return noFreeShares(s, ctx);
+  if (s.shares.free <= 0) return noFreeShares(s, ctx, "sell");
   const fg = founderGate(s, ctx);
   if (fg) return fg;
   const wb = sellWindowBlock(s, ctx);
@@ -678,7 +687,7 @@ function check(s, ctx, type, p) {
     case "cancelPlan":
       return s.plan ? yes() : no("You have no plan to cancel");
     case "collar": {
-      if (s.shares.free <= 0) return noFreeShares(s, ctx);
+      if (s.shares.free <= 0) return noFreeShares(s, ctx, "collar");
       const wb = hedgeBlock(s, ctx, "Collars", "a new collar can be set up then");
       if (wb) return wb;
       if (p.tenorMonths !== undefined && ![6, 12, 24].includes(p.tenorMonths)) return no("A collar runs 6, 12 or 24 months");
@@ -697,7 +706,7 @@ function check(s, ctx, type, p) {
       return c ? yes() : no("That collar is not open");
     }
     case "pledge": {
-      if (s.shares.free <= 0) return noFreeShares(s, ctx);
+      if (s.shares.free <= 0) return noFreeShares(s, ctx, "pledge");
       if (p.shares !== undefined && (!Number.isInteger(p.shares) || p.shares <= 0 || p.shares > s.shares.free)) {
         return no(`Enter a whole number up to ${commas(s.shares.free)}`, null, { max: s.shares.free });
       }
@@ -748,7 +757,7 @@ function check(s, ctx, type, p) {
       return yes({ max: v });
     }
     case "buyPut": {
-      if (s.shares.free <= 0) return noFreeShares(s, ctx);
+      if (s.shares.free <= 0) return noFreeShares(s, ctx, "protect with a put");
       const wb = hedgeBlock(s, ctx, "Puts", "a put can be bought then");
       if (wb) return wb;
       if (p.putPct !== undefined && ![0.8, 0.85, 0.9].includes(p.putPct)) return no("The strike is 80%, 85% or 90% of today's price");
@@ -759,7 +768,7 @@ function check(s, ctx, type, p) {
       return yes({ max: s.shares.free });
     }
     case "exchange": {
-      if (s.shares.free <= 0) return noFreeShares(s, ctx);
+      if (s.shares.free <= 0) return noFreeShares(s, ctx, "contribute");
       const wb = windowBlock(s, ctx, "shares can be contributed then");
       if (wb) return wb;
       const P = ctx.close[s.i];
@@ -1466,6 +1475,7 @@ export function snapshot(state, rivals = null) {
     exchange: s.exchange ? { ...s.exchange } : null,
     taxOwed: parts.tax, taxPaid: s.tax.paid, W: parts.W, profit: parts.W - W0, parts,
     unrealizedTax: tt.unrealizedTax, afterTaxW: parts.W - tt.unrealizedTax,
+    Wat: parts.W - tt.unrealizedTax, profitAt: parts.W - tt.unrealizedTax - s.history[0].A, // after-tax net worth, and its change since day 0
     window: { open: w.open, closesOn: w.closesOn, opensOn: w.opensOn, projected: w.projected },
     nextRelease, gates: gates(s), rivals: riv, pendingEvent: s.pendingEvent, achievements: s.flags.achievements.slice(),
     spentToday: s.spentToday,

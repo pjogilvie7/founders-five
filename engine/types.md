@@ -142,7 +142,7 @@ normalizeCard(card) -> card             // blind cards: price factor f = 100/off
   exchange:{value, basisShares, contributedOn}|null,
   tax:{realized, paid},
   log:[action...],                                // every accepted action with its date, for determinism and share codes
-  history:[{d, W, S, rf, close, cash}],                 // one row per trading day played
+  history:[{d, W, A, S, rf, close, cash}],   // A = after-tax net worth = W - terminalTax(...).unrealizedTax (the figure score() uses); a sale moves A only by the sale cost, not by the tax realized                 // one row per trading day played
   flags:{houseDone, seenTranches:[], firstUse:{}, achievements:[]},
   pendingEvent: null | event                      // set when the clock must pause for a choice (house, collar expiry, margin call)
 }
@@ -170,7 +170,8 @@ normalizeCard(card) -> card             // blind cards: price factor f = 100/off
 ```
 { d, i, dayLabel /* "Year 2 of 5 · Month 4" or "Day 98 of 98 so far" */, close, offerPrice,
   shares, cash, overdraft, index:{value, units, cost}, loan:{balance, ltv, maxDraw, call}, collars:[...with mark], puts:[...],
-  plan, exchange, taxOwed, W, profit /* W - W0 */, window:{open, closesOn, opensOn, projected},
+  plan, exchange, taxOwed, W, profit /* W - W0 */,
+  Wat /* after-tax net worth today: W - unrealizedTax (afterTaxW is the same number) */, profitAt /* Wat - history[0].A */, window:{open, closesOn, opensOn, projected},
   nextRelease:{date, pct}|null, gates, rivals?:{holder, seller, playbook} /* W of each bot on day i */ }
 ```
 
@@ -188,7 +189,7 @@ Rate SOFR + 2.00%, accrued daily as balance * rate * (calendar days since the pr
 ### bots.js (T7)
 ```
 BOTS = ["holder","seller","playbook"]
-runBot(botId, card, seat, market, spcxOptions?) -> {state, series:[W...], score}
+runBot(botId, card, seat, market, spcxOptions?) -> {state, series:[W...], seriesAfterTax:[A...], score}   // ranking bots by the last A equals ranking by score.afterTaxWealth
 ```
 The UI calls `runBot` for all three at game start and shows `series[i]` live.
 
@@ -217,7 +218,7 @@ The Holder never deposits. The Seller and The Playbook, on the first trading day
 - Actions settle at day i's close. Sales cost 0.25% of proceeds. Proceeds -> cash (after clearing any overdraft); moving cash into the index fund is the player's own `deposit`.
 - Seats: engineer = lockup, window, 30-day cooling-off. Founder = lockup, window, D&O cooling-off (later of 90 days or 2 business days after the 10-Q/10-K for the fiscal quarter in which the plan was adopted, cap 120), Rule 144 volume cap (rolling 3 months: greater of 1% of sharesOutPost or average weekly volume over the prior 4 calendar weeks), no sale before IPO day 91.
 - SpaceX founder seat: not playable: "The founder's shares are locked until June 12, 2027 (424B4)."
-- Gated controls always say why and when: "Locked by the lockup until Aug 6", "Window closed until Feb 4, your 10b5-1 plan keeps selling.", "Cooling-off: plan trades from Nov 23".
+- Gated controls always say why and when: "Locked by the lockup until Aug 6" (nothing released yet), "No free shares to pledge. The next release is Aug 20." (some released, none free now), "Window closed until Feb 4, your 10b5-1 plan keeps selling.", "Cooling-off: plan trades from Nov 23".
 
 ## 4. UI contracts (T6 owns the shell; tabs plug in)
 
