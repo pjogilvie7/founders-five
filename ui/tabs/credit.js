@@ -64,16 +64,18 @@ function bigStat2(label, key) { return `<div class="big"><span class="k">${esc(l
 
 function callHTML(snap, api) {
   const call = snap.loan.call;
-  const days = daysBetween(snap.d, call.deadline);
+  // trading days left to the deadline (the engine counts them on the card's own price dates)
+  const days = typeof call.daysLeft === 'number' ? call.daysLeft : daysBetween(snap.d, call.deadline);
+  const sellOn = call.sellOn || call.deadline;
   const sellG = snap.gates.sell;
   const sellOff = sellG && !sellG.allowed;
   return `<h3>Maintenance call</h3>
-    <p class="call-line"><b class="num">${days <= 0 ? 'Due today' : `${days} ${days === 1 ? 'day' : 'days'} left`}</b>
-      Loan to value is <span class="num">${pctTxt(call.ltv)}</span> and the limit is 35%. Post <b class="num">${moneyFull(call.toPost)}</b> by <b class="num">${esc(dl(api, call.deadline))}</b>, or the bank sells pledged shares at that day’s close, window open or not. That sale is taxable.</p>
+    <p class="call-line"><b class="num">${days <= 0 ? 'Last day to meet the call' : `${days} trading ${days === 1 ? 'day' : 'days'} left`}</b>
+      Loan to value is <span class="num">${pctTxt(call.ltv)}</span> and the limit is 35%. Post <b class="num">${moneyFull(call.toPost)}</b> by <b class="num">${esc(dl(api, call.deadline))}</b>, the third trading day after the call. If the loan is still above 35% after that day’s close, the bank sells pledged shares at the close of <b class="num">${esc(dl(api, sellOn))}</b>, window open or not. That sale is taxable.</p>
     <div class="ch">
       <div><button type="button" class="btn primary" data-ch="post">Post ${esc(money(call.toPost))}</button><span class="t-hint">From cash, then the index fund.</span></div>
       <div><button type="button" class="btn" data-ch="sell"${sellOff ? ' aria-disabled="true"' : ''}>Sell shares now</button><span class="t-hint">${sellOff ? esc(sellG.reason + '.') : 'Sold at today’s close.'}</span></div>
-      <div><button type="button" class="btn" data-ch="wait">Wait</button><span class="t-hint">The bank sells on ${esc(dl(api, call.deadline))} if the loan is still above 35%.</span></div>
+      <div><button type="button" class="btn" data-ch="wait">Wait</button><span class="t-hint">You can still act through ${esc(dl(api, call.deadline))}. The bank sells at the close of ${esc(dl(api, sellOn))} if the loan is still above 35%.</span></div>
     </div>`;
 }
 
@@ -113,9 +115,9 @@ function draw(c, snap, api) {
 export default {
   id: 'credit', label: 'Credit Line', icon: 'assets/icons/credit.svg', hotkey: '4',
   lesson: [
-    { title: 'Borrow instead of selling', body: 'You can pledge free shares and borrow up to 25% of their value. Borrowing defers tax, but the loan costs interest.' },
+    { title: 'Borrowing against your shares', body: 'You can pledge free shares and borrow up to 25% of their value. Borrowing defers tax, but the loan costs interest.' },
     { title: 'The maintenance call', body: 'If the loan rises above 35% of the pledged value, the bank issues a call. You post cash, or shares are sold.' },
-    { title: 'The forced sale', body: 'If a call is still open after three business days, the bank sells enough shares at the close. That sale is taxed and ignores the window.' },
+    { title: 'The forced sale', body: 'If a call is still open after the third trading day, the bank sells enough shares at the next close. That sale is taxed and ignores the window.' },
   ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;

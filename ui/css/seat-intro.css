@@ -6,7 +6,7 @@
 .seat-screen .back{padding:10px 0;min-height:44px;display:inline-flex;align-items:center}
 .seat-screen .btn{box-shadow:0 1px 0 #0003,0 8px 14px -8px #000a}
 .seat-screen .btn:active{transform:translateY(1px);box-shadow:none}
-.seats{gap:36px;max-width:880px;margin:0 auto}
+.seats{gap:36px;max-width:880px;margin:0 auto;align-items:stretch}
 .seat{padding:28px 26px 22px;gap:14px;align-items:center;text-align:center;border-color:var(--ink);
   box-shadow:0 22px 40px -26px #000d,0 0 0 5px var(--rail),0 0 0 6px var(--gold);
   background:radial-gradient(ellipse 80% 46% at 50% 0,#fbf8ee 0,transparent 70%),linear-gradient(180deg,#f6f1e3 0,var(--paper) 140px);
@@ -51,13 +51,13 @@
 .seal-note{display:block;padding:0;border:0;background:none;margin:0;font-size:12.5px;font-weight:500;line-height:1.4;color:var(--muted)}
 
 @media (hover:hover) and (prefers-reduced-motion:no-preference){
-  .seat:not(.sealed):hover{transform:translateY(-6px);box-shadow:0 30px 44px -26px #000d,0 0 0 5px var(--rail),0 0 0 6px var(--gold)}
+  .seat:not(.sealed):hover{box-shadow:0 22px 40px -26px #000d,0 0 0 5px var(--rail),0 0 0 6px var(--gold),0 0 34px -6px #b08a3e66}
   .seat:not(.sealed):hover .seat-emblem{transform:rotate(-5deg) scale(1.06)}
 }
 @media (prefers-reduced-motion:no-preference){
-  .seat{animation:seatIn .55s var(--ease-out) both}
-  .seat:nth-child(2){animation-delay:.09s}
-  @keyframes seatIn{from{opacity:0;transform:translateY(14px)}}
+  .seat{animation:seatIn .3s var(--ease-out) both}
+  .seat:nth-child(2){animation-delay:.04s}
+  @keyframes seatIn{from{opacity:0;transform:translateY(6px)}}
 }
 
 @media (max-width:899px){
@@ -99,9 +99,9 @@
   -webkit-mask-image:radial-gradient(closest-side,#000 55%,transparent);mask-image:radial-gradient(closest-side,#000 55%,transparent)}
 .intro-rosette svg{width:100%;height:100%;display:block}
 @media (prefers-reduced-motion:no-preference){.intro-rosette svg{animation:siTurn 180s linear infinite}@keyframes siTurn{to{transform:rotate(360deg)}}}
-.intro-plate{position:relative;z-index:1;width:min(540px,100%);aspect-ratio:440/275;flex:none;background:var(--paper);color:var(--ink);
+.intro-plate{position:relative;z-index:1;width:min(520px,100%);aspect-ratio:440/340;flex:none;background:var(--paper);color:var(--ink);
   border:1px solid #000;box-shadow:0 0 0 7px var(--rail),0 0 0 8px var(--gold),0 26px 50px -20px #000e;overflow:hidden;
-  max-height:min(46vh,340px);max-width:calc(min(46vh,340px) * 1.6)}
+  max-height:min(44vh,400px);max-width:calc(min(44vh,400px) * 1.294)}
 .intro-plate::after{content:"";position:absolute;inset:5px;border:1px solid var(--paper-line);pointer-events:none}
 .intro-wave{position:absolute;inset:0;opacity:.8}
 .intro-wave svg{width:100%;height:100%;display:block}
@@ -110,14 +110,17 @@
 .si-disp{font-family:var(--f-display);font-weight:700;letter-spacing:.1em}
 .si-num{font-family:var(--f-num)}
 .si-body{font-family:var(--f-body);font-weight:500}
-.intro-art{animation:siIn .45s var(--ease-out) both}
-@keyframes siIn{from{opacity:0;transform:translateY(8px) scale(.985)}}
+.intro-art{animation:siIn .42s var(--ease-out) both}
+.intro-art[data-dir=back]{animation-name:siInBack}
+@keyframes siIn{from{opacity:0;transform:translateX(16px) scale(.985)}}
+@keyframes siInBack{from{opacity:0;transform:translateX(-16px) scale(.985)}}
 
-.intro .lesson-body{min-height:0;gap:8px;max-width:520px;text-align:center;align-content:start}
+.intro .lesson-body{min-height:0;gap:6px;max-width:520px;text-align:center;align-content:start}
 .intro .lesson-body.flip{animation:siBody .4s var(--ease-out)}
 @keyframes siBody{from{opacity:0;transform:translateY(8px)}}
 .intro .dlg-title{font-size:clamp(28px,6.4vw,38px);letter-spacing:.07em;color:var(--rail-text)}
-.intro p{font-size:clamp(15px,3.6vw,17px);line-height:1.5;color:#cfd3cd}
+.intro-cap{font-family:var(--f-body);font-weight:500;font-size:clamp(14px,3.7vw,16px);letter-spacing:.01em;color:#d6b56d;text-wrap:balance;margin-bottom:2px}
+.intro p:not(.intro-cap){font-size:clamp(14.5px,3.6vw,16px);line-height:1.5;color:#c5cbc7}
 .intro .lesson-body .step{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .intro .dots{gap:12px}
 .intro .dots i{width:10px;height:10px;border-color:var(--gold);background:transparent;transition:background .2s,transform .25s var(--ease-pop)}
@@ -138,63 +141,104 @@
 .intro [data-a=skip]:hover{color:var(--rail-text);border-color:var(--gold)}
 .intro :focus-visible{outline-color:var(--gold)}
 
-/* ----- stage motion (only when motion is welcome); static end-state otherwise ----- */
-.si-hand{transform-box:fill-box;transform-origin:center}
-.si-spd{transform:translateX(0)}
-.si-t1{fill:var(--paper)}.si-t2,.si-t4{fill:var(--ink)}
-.si-track{transform-box:fill-box;transform-origin:left center;transform:scaleX(.45)}
-.si-flag{transform:translateX(82px)}
-.si-lockd{opacity:1}.si-freed{opacity:0}
-.si-sell{transform-box:fill-box;transform-origin:left center}
+/* ----- plate motion -----
+   Base rules below are the HELD state (what reduced-motion readers and screenshots see): each plate is caught mid-action.
+   Animations then start already part-way through (negative delays) so the first frame is the same moment. */
+.si-svg *{transform-box:fill-box}
+.si-hand{transform-box:view-box;transform-origin:0 0;transform:rotate(138deg)}
+.si-spd{transform:translateX(38px)}
+.si-t1{fill:var(--ink)}.si-t2{fill:#F1ECDF}.si-t4{fill:var(--ink)}
+.si-track{transform-origin:left center;transform:scaleX(.38)}
+.si-flag{transform:translateX(65px)}
+.si-key{transform:none}
+.si-lockd{opacity:1}.si-freed{opacity:0}.si-burst{opacity:0}
+.si-seal.is-open .si-lockd{opacity:0}.si-seal.is-open .si-freed{opacity:1}
+.si-crack{opacity:1}
 .si-p-closed{opacity:0}.si-p-open{opacity:1}
-.si-now{transform:translateX(150px)}
-.si-cash{transform-box:fill-box;transform-origin:left center;transform:scaleX(.7)}
-.si-coin{transform:translateX(150px)}
-.si-run{transform:translateX(120px)}
+.si-sell{transform-origin:left center}
+.si-now{transform:translateX(119px)}
+.si-halo{opacity:.5}
+.si-hl,.si-coin{transform:translateX(124px)}
+.si-fall{transform:translateY(62px)}
+.si-cash{transform-origin:left center;transform:scaleX(.8)}
+.si-pulse{transform-origin:center;opacity:.32;transform:scale(1.3)}
+.si-pulse2{opacity:0}
+
 @media (prefers-reduced-motion:no-preference){
-  .si-hand{animation:siSpin 6s linear infinite}
-  @keyframes siSpin{to{transform:rotate(360deg)}}
-  .si-spd{animation:siSpd 6s step-end infinite}
-  @keyframes siSpd{0%{transform:translateX(0)}33.3%{transform:translateX(44px)}66.6%{transform:translateX(88px)}}
-  .si-t1{animation:siT1 6s step-end infinite}.si-t2{animation:siT2 6s step-end infinite}.si-t4{animation:siT4 6s step-end infinite}
+  /* 1: clock */
+  .si-hand{animation:siHand 6s linear infinite -1.8s}
+  @keyframes siHand{0%{transform:rotate(0)}78%,90%{transform:rotate(280deg)}100%{transform:rotate(360deg)}}
+  .si-spd{animation:siSpd 6s step-end infinite -1.8s}
+  @keyframes siSpd{0%{transform:translateX(0)}33.3%{transform:translateX(38px)}66.6%{transform:translateX(76px)}}
+  .si-t1{animation:siT1 6s step-end infinite -1.8s}.si-t2{animation:siT2 6s step-end infinite -1.8s}.si-t4{animation:siT4 6s step-end infinite -1.8s}
   @keyframes siT1{0%{fill:#F1ECDF}33.3%{fill:#18262F}}
   @keyframes siT2{0%{fill:#18262F}33.3%{fill:#F1ECDF}66.6%{fill:#18262F}}
   @keyframes siT4{0%{fill:#18262F}66.6%{fill:#F1ECDF}}
-  .si-track{animation:siTrack 6s linear infinite}
-  @keyframes siTrack{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-  .si-flag{animation:siFlag 6s linear infinite}
-  @keyframes siFlag{from{transform:translateX(0)}to{transform:translateX(184px)}}
-  .si-lockd{animation:siLock 9s ease-in-out infinite;animation-delay:calc(var(--k) * -1.15s)}
-  .si-freed{animation:siFree 9s ease-in-out infinite;animation-delay:calc(var(--k) * -1.15s)}
-  @keyframes siLock{0%,34%{opacity:1}40%,86%{opacity:0}92%,100%{opacity:1}}
-  @keyframes siFree{0%,34%{opacity:0}40%,86%{opacity:1}92%,100%{opacity:0}}
-  .si-p-open{animation:siOpen 9s step-end infinite}
-  .si-p-closed{animation:siClosed 9s step-end infinite}
+  .si-track{animation:siTrack 6s linear infinite -1.8s}
+  @keyframes siTrack{0%{transform:scaleX(0)}78%,90%{transform:scaleX(.78)}100%{transform:scaleX(1)}}
+  .si-flag{animation:siFlag 6s linear infinite -1.8s}
+  @keyframes siFlag{0%{transform:translateX(0)}78%,90%{transform:translateX(132px)}100%{transform:translateX(170px)}}
+  .si-key{animation:siKey 6s ease-in-out infinite -1.8s}
+  @keyframes siKey{0%,76%{transform:translateY(0)}79%,89%{transform:translateY(3px)}92%,100%{transform:translateY(0)}}
+
+  /* 2: seals crack one after another */
+  .si-seal .si-lockd{opacity:1}.si-seal .si-freed{opacity:0}
+  .si-crack{display:none}
+  .si-seal .si-lockd,.si-seal .si-freed,.si-seal .si-burst{transform-origin:center;animation-duration:10s;animation-iteration-count:infinite;animation-timing-function:ease-out;
+    animation-delay:calc((var(--k) - 2) * 1.4s - 1.2s)}
+  .si-seal .si-lockd{animation-name:siLock}
+  .si-seal .si-freed{animation-name:siFree}
+  .si-seal .si-burst{animation-name:siBurst}
+  @keyframes siLock{0%,8%{opacity:1;transform:none}9.5%{transform:rotate(-7deg) scale(1.04)}11.5%{transform:rotate(7deg) scale(1.06)}13.5%{transform:rotate(-5deg) scale(1.08)}
+    15%{opacity:1;transform:scale(1.12)}15.6%,86%{opacity:0;transform:scale(1.3)}92%,100%{opacity:1;transform:none}}
+  @keyframes siFree{0%,15%{opacity:0;transform:scale(.7)}17.5%{opacity:1;transform:scale(1.18)}21%,86%{opacity:1;transform:scale(1)}92%,100%{opacity:0;transform:scale(1)}}
+  @keyframes siBurst{0%,14.5%{opacity:0;transform:scale(.6)}15.6%{opacity:1;transform:scale(.9)}27%,100%{opacity:0;transform:scale(1.55)}}
+
+  /* 3: the window and the calendar marker */
+  .si-p-open{animation:siOpen 9s step-end infinite -2.4s}
+  .si-p-closed{animation:siClosed 9s step-end infinite -2.4s}
   @keyframes siOpen{0%{opacity:0}20%{opacity:1}60%{opacity:0}}
   @keyframes siClosed{0%{opacity:1}20%{opacity:0}60%{opacity:1}}
-  .si-sell{animation:siSell 9s ease-out infinite}
-  @keyframes siSell{0%,20%{transform:scaleX(0)}30%,58%{transform:scaleX(1)}62%,100%{transform:scaleX(0)}}
-  .si-now{animation:siNow 9s linear infinite}
-  @keyframes siNow{from{transform:translateX(0)}to{transform:translateX(360px)}}
-  .si-cash{animation:siCash 12s steps(12,end) infinite}
+  .si-sell{animation:siSell 9s cubic-bezier(.3,.9,.3,1) infinite -2.4s}
+  @keyframes siSell{0%,20%{transform:scaleX(0)}31%,58%{transform:scaleX(1)}62%,100%{transform:scaleX(0)}}
+  .si-chip{transform-origin:center;animation:siChip 9s ease-out infinite -2.4s}
+  @keyframes siChip{0%,19%{opacity:.35;transform:scale(.94)}23%{opacity:1;transform:scale(1.1)}28%,58%{opacity:1;transform:scale(1)}62%,100%{opacity:.35;transform:scale(.94)}}
+  .si-now{animation:siNow 9s linear infinite -2.4s}
+  @keyframes siNow{from{transform:translateX(0)}to{transform:translateX(372px)}}
+  .si-halo{transform-origin:center;animation:siHalo 1.6s ease-out infinite -.7s}
+  @keyframes siHalo{0%{opacity:.6;transform:scale(.8)}100%{opacity:0;transform:scale(1.8)}}
+
+  /* 4: a year of first trading days, one coin per month */
+  .si-hl,.si-coin{animation:siMonth 12s steps(12,end) infinite -4s}
+  @keyframes siMonth{from{transform:translateX(0)}to{transform:translateX(372px)}}
+  .si-fall{animation:siFall 1s ease-in infinite -4s}
+  @keyframes siFall{0%{opacity:0;transform:translateY(-6px) scale(.5)}12%{opacity:1;transform:translateY(0) scale(1)}62%{opacity:1;transform:translateY(124px) scale(1)}82%,100%{opacity:0;transform:translateY(144px) scale(.5)}}
+  .si-cash{animation:siCash 12s steps(12,start) infinite -3.3s}
   @keyframes siCash{from{transform:scaleX(1)}to{transform:scaleX(.4)}}
-  .si-coin{animation:siCoin 12s steps(12,end) infinite}
-  @keyframes siCoin{from{transform:translateX(0)}to{transform:translateX(334px)}}
-  .si-run{animation:siRun var(--v,6s) ease-in-out infinite alternate}
-  @keyframes siRun{from{transform:translateX(4px)}to{transform:translateX(188px)}}
+
+  /* 5: the You medallion pulses; the race itself is the rAF loop in intro.js */
+  .si-pulse{animation:siPulse 2.4s ease-out infinite -1s}
+  .si-pulse2{animation-delay:-2.2s}
+  @keyframes siPulse{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.65)}}
 }
 
 /* ----- phone ----- */
 @media (max-width:899px){
   .intro .kicker{left:16px;right:96px;text-align:left;font-size:12px;letter-spacing:.2em;top:26px}
-  .dialog.lesson.intro{padding:56px 16px max(18px,env(safe-area-inset-bottom));gap:22px;justify-content:center}
-  .intro-plate{width:100%;max-height:none;max-width:none;box-shadow:0 0 0 5px var(--rail),0 0 0 6px var(--gold),0 20px 40px -20px #000e}
-  .intro .lesson-body{min-height:8.6em}
+  .dialog.lesson.intro{padding:76px 16px max(20px,env(safe-area-inset-bottom));gap:14px;justify-content:flex-start}
+  .intro-plate{width:100%;max-height:none;max-width:none;aspect-ratio:392/384;box-shadow:0 0 0 5px var(--rail),0 0 0 6px var(--gold),0 20px 40px -20px #000e}
+  .intro .lesson-body{min-height:9.4em;flex:1 1 auto;align-content:center}
+  .intro-stage{margin-top:2px}
   .dialog.lesson.intro > .dlg-actions{width:100%;grid-template-columns:96px 1fr}
 }
 @media (max-width:899px) and (max-height:700px){
   .intro .lesson-body{min-height:0}
+  .dialog.lesson.intro{padding-top:68px;gap:12px}
 }
 @media (min-width:900px){
-  .intro .lesson-body{min-height:6.6em}
+  .intro .lesson-body{min-height:7.4em}
+}
+@media (min-width:900px) and (max-height:720px){
+  .intro-plate{max-height:min(40vh,400px);max-width:calc(min(40vh,400px) * 1.294)}
+  .intro .lesson-body{min-height:0}
 }

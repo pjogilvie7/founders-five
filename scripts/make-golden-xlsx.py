@@ -182,16 +182,13 @@ calc(ws, "B17", "=(B9-B16)/B15", "LTV after the cure (should be 25%)", "0.0000%"
 ws["A19"] = "Forced sale example: bank sells shares at the post-fall price"
 ws["A19"].font = BOLD
 calc(ws, "B20", "=B7*(1-B14)", "Price P after the fall", "0.00")
-inp(ws, "B21", 1, "Cost basis per share", "0.00")
-inp(ws, "B22", 0.0025, "Sale cost rate", "0.00%")
-inp(ws, "B23", 0.238, "Tax rate on gains", "0.0%")
-calc(ws, "B24", "=B20*(1-B22)", "Net of cost per share", "0.0000")
-calc(ws, "B25", "=B24-B23*MAX(0,B24-B21)", "a = cash to loan per share sold (after cost and tax)", "0.0000", True)
-calc(ws, "B26", "=B25-B4*B20", "a - 0.25 P", "0.0000")
-calc(ws, "B27", "=(B9-B4*B6*B20)/B26", "n exact = (L - 0.25 C') / (a - 0.25 P)", "#,##0.0000")
-calc(ws, "B28", "=IF(B9>B4*B6*B20,IF(B26>0,MIN(B6,MAX(0,ROUNDUP(B27-0.000000001,0))),B6),0)", "FORCED-SALE SHARES (rounded up, capped at pledged)", "#,##0", True)
-calc(ws, "B29", "=(B9-B28*B25)/((B6-B28)*B20)", "LTV after the sale (<= 25%)", "0.0000%")
-calc(ws, "B30", "=(B9-(B28-1)*B25)/((B6-B28+1)*B20)", "LTV if one share fewer were sold (> 25%)", "0.0000%")
+inp(ws, "B21", 0.0025, "Bank's sale cost rate", "0.00%")
+calc(ws, "B22", "=B20*(1-B21)", "a = cash to loan per share sold = P(1 - cost); tax is the client's bill, not withheld", "0.0000", True)
+calc(ws, "B23", "=B22-B4*B20", "a - 0.25 P", "0.0000")
+calc(ws, "B24", "=(B9-B4*B6*B20)/B23", "n exact = (L - 0.25 C') / (a - 0.25 P),  C' = pledged * P", "#,##0.0000")
+calc(ws, "B25", "=IF(B9>B4*B6*B20,IF(B23>0,MIN(B6,MAX(0,ROUNDUP(B24-0.000000001,0))),B6),0)", "FORCED-SALE SHARES (rounded up, capped at pledged)", "#,##0", True)
+calc(ws, "B26", "=(B9-B25*B22)/((B6-B25)*B20)", "LTV after the sale (<= 25%)", "0.0000%")
+calc(ws, "B27", "=(B9-(B25-1)*B22)/((B6-B25+1)*B20)", "LTV if one share fewer were sold (> 25%)", "0.0000%")
 
 # ------------------------------------------------------------------ Test 9: tax
 ws = sheet(wb, "T9_Tax", "Test 9: Tax on a sale", "Flat 23.8% (20% federal + 3.8% NIIT) on realized gain. Zero sale cost here.")
@@ -227,8 +224,8 @@ rows = [
     ("8a", "T8 fall that takes LTV 25% to 35%", "=T8_Loan!B10", "0.0000%", 1e-12, 0.2857, 0.00005),
     ("8b", "T8 LTV after that fall", "=T8_Loan!B11", "0.0000%", 1e-12, 0.35, 1e-9),
     ("8c", "T8 cure after a 30% fall (balance $25M)", "=T8_Loan!B16", "#,##0.00", 1e-6, None, None),
-    ("8d", "T8 forced-sale shares (P $70, pledged 1,000,000, basis $1)", "=T8_Loan!B28", "#,##0", 0, None, None),
-    ("8e", "T8 net cash to loan per share sold", "=T8_Loan!B25", "0.0000", 1e-9, None, None),
+    ("8d", "T8 forced-sale shares (P $70, pledged 1,000,000, 0.25% cost)", "=T8_Loan!B25", "#,##0", 0, None, None),
+    ("8e", "T8 net cash to loan per share sold", "=T8_Loan!B22", "0.0000", 1e-9, None, None),
     ("9", "T9 tax, 100,000 sh at $150, basis $1.35", "=T9_Tax!B13", "$#,##0.00", 0.005, 3537870, 0.005),
 ]
 first = 5

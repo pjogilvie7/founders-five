@@ -7,7 +7,7 @@ function build(k, c) {
   c.innerHTML = `<div class="tool exchange">
     ${plateHTML('Exchange Fund', 'Swap free shares for a share of a diversified pool, without selling. The price is a long lock.', '<span class="chip" data-v="n"></span>')}
     <section class="box lockbox"><h3>The seven-year lock</h3>
-      <p>Your shares go into a pool that tracks the S&amp;P 500, less 1% a year. The fund is locked for seven years. At the end of the card it is valued at the fund value less 23.8% tax on the gain over your carried-over basis, and it is labeled locked two more years. Leave early and you get your own shares back.</p>
+      <p>Your shares go into a pool that tracks the S&amp;P 500, less 1% a year. The fund is locked for seven years. At the end of the card it is valued at the fund value less 23.8% tax on the gain over your carried-over basis, and it is labeled locked two more years. Leaving early (returning your own shares) is not modeled; the game holds the fund to the end.</p>
       <p class="t-hint">The minimum contribution is $1M of free shares, and you can contribute only while the trading window is open.</p></section>
     <section class="box" aria-labelledby="ex-h"><h3 id="ex-h">Contribute shares</h3><div data-v="form"></div></section>
     <section class="box" data-v="cur" hidden></section>
@@ -40,7 +40,7 @@ export default {
   id: 'exchange', label: 'Exchange Fund', icon: 'assets/icons/exchange.svg', hotkey: '7',
   lesson: [
     { title: 'Diversify without selling', body: 'You put free shares into a pool with other investors’ shares. You own a slice of the whole pool instead of one company.' },
-    { title: 'A seven-year lock', body: 'The pool stays locked for seven years. Leave early and you get your own shares back, not cash.' },
+    { title: 'A seven-year lock', body: 'The pool stays locked for seven years. Leaving early (returning your own shares) is not modeled; the game holds the fund to the end.' },
     { title: 'Tax at the end', body: 'Nothing is taxed when you contribute. At the end the fund is valued less 23.8% tax on the gain over your carried-over basis.' },
   ],
   render(c, snap, api) {

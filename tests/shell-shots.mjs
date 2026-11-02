@@ -82,7 +82,7 @@ async function session(name, viewport, mobile) {
   await shot('05-play-sealed-tab');
   await page.keyboard.press('1');
   // run to the first release (day ~38 on SpaceX)
-  await page.evaluate(() => window.__ff.step(37)); await wait(300);
+  await page.evaluate(() => { const ff = window.__ff; for (let k = 0; k < 120 && !ff.G.holds.has('notice'); k++) ff.step(1); }); await wait(300); // step to the release itself, not past it
   await page.waitForSelector('.dialog.lesson', { timeout: 8000 }); await wait(500); await shot('06-lesson');
   for (let k = 0; k < 6 && await page.locator('.dialog.lesson').count(); k++) { await page.keyboard.press('Escape'); await wait(250); }
   await wait(900); await shot('07-play-release');

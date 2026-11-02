@@ -23,7 +23,7 @@ const XLSX_PATH = path.join(root, "tests", "golden.xlsx");
 const S = 134.72, K = 114.512, T = 1, r = 0.04, vol = 0.537;
 const z = zeroCostCall({ S, Kp: K, T, r, volPut: vol, volCall: vol });
 const loanC = 100_000_000, loanBal = maxAdvance(loanC);
-const P2 = 70, pledged = 1_000_000, basis2 = 1, costRate = 0.0025, taxRate = 0.238;
+const P2 = 70, pledged = 1_000_000, costRate = 0.0025;
 
 export const values = {
   "1a": bsPrice({ type: "put", S, K, T, r, vol }),
@@ -35,8 +35,8 @@ export const values = {
   "8a": fallToCall(),
   "8b": ltv(loanBal, loanC * (1 - fallToCall())),
   "8c": callCure(loanBal, loanC * (1 - 0.30)),
-  "8d": forcedSaleShares(loanBal, P2, pledged, costRate, taxRate, basis2),
-  "8e": netPerShare(P2, costRate, taxRate, basis2),
+  "8d": forcedSaleShares(loanBal, P2, pledged, costRate),
+  "8e": netPerShare(P2, costRate),
   "9": saleTax({ shares: 100000, price: 150, basis: 1.35 }).tax,
 };
 

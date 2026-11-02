@@ -67,7 +67,7 @@ export const GLOSSARY = {
   },
   "Maintenance call": {
     short: "A demand from the lender to add collateral or repay when loan-to-value goes above the limit.",
-    long: "In the game you get 3 business days. You can post cash to bring loan-to-value back to 25%, sell shares if the window is open, or let the bank sell. If the ratio is still above 35% at that day's close, the bank sells enough pledged shares to bring the loan to 25% of what remains, ignoring the trading window, and the sale is taxable."
+    long: "In the game you get 3 trading days, through the deadline day's close. You can post cash to bring loan-to-value back to 25%, sell shares if the window is open, or let the bank sell. If the ratio is still above 35% at the next day's close, the bank sells enough pledged shares to bring the loan to 25% of what remains, ignoring the trading window, and the sale is taxable."
   },
   "Exchange fund": {
     short: "A private fund where many holders swap concentrated stock for shares in a diversified pool, without tax at the swap.",

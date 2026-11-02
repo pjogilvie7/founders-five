@@ -12,7 +12,7 @@ Open `tests/golden.xlsx` in Excel, Numbers, Google Sheets or LibreOffice. Start 
 | `T3_XIRR` | 3 | `=XIRR(...)` = 10.00% (730 days; Excel uses a 365-day year). A closed-form row and an NPV-at-the-rate row check it. |
 | `T4_Sharpe` | 4 | `AVERAGE / STDEV.S * SQRT(252)` = 3.9549, shown as 3.95 in the PRD. |
 | `T5_MaxDrawdown` | 5 | Running-peak and drawdown columns; the minimum is -25.00%. |
-| `T8_Loan` | 8 | Worked example: 1,000,000 shares at $100 pledged, loan $25M (25% LTV). Fall to the 35% call = 28.57%. After a 30% fall (price $70) the cure is $7.5M. Forced sale at $70 with $1 basis, 0.25% cost, 23.8% tax: 208,655 shares (rounded up from the closed form `n = (L - 0.25 C) / (a - 0.25 P)`). |
+| `T8_Loan` | 8 | Worked example: 1,000,000 shares at $100 pledged, loan $25M (25% LTV). Fall to the 35% call = 28.57%. After a 30% fall (price $70) the cure is $7.5M. Forced sale at $70 with a 0.25% cost (tax is the client's bill, not withheld): 143,335 shares (rounded up from the closed form `n = (L - 0.25 C) / (a - 0.25 P)`, `a = P(1 - cost)`). |
 | `T9_Tax` | 9 | 100,000 shares at $150, basis $1.35, 23.8% = $3,537,870. |
 
 Blue text on a yellow fill marks an inputs cell; change one and everything downstream recalculates. The `JS value` column on `Summary` is the only pasted data in the workbook.

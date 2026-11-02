@@ -15,7 +15,7 @@ export const TAB_DEFS = [
 ];
 export const START_UNLOCKED = ['stock', 'cash'];
 // What the tab itself says. The full name stays on the tab as its title and accessible name, and in lessons.
-const TAB_SHORT = { plan: '10b5-1', credit: 'Credit', cash: 'Cash', exchange: 'Exchange' };
+const TAB_SHORT = { plan: '10b5-1', credit: 'Credit', cash: 'Cash', put: 'Put', exchange: 'Exchange' };
 
 const GLYPH = {
   stock: '<path d="M3 17V9M8 17V5M13 17v-6M18 17V3" /><path d="M2 19h18"/>',
@@ -194,7 +194,7 @@ export function createPaper(el, ctx) {
     cancelAnimationFrame(countRaf);
     if (reduced() || from === to) { el.textContent = int(to); return; }
     el.textContent = int(from);
-    const t0 = performance.now() + 380, D = 950;
+    const t0 = performance.now() + 180, D = 560;
     const tick = (t) => {
       if (!el.isConnected) return;
       const p = Math.min(1, Math.max(0, (t - t0) / D)), e = 1 - Math.pow(1 - p, 3);
@@ -206,38 +206,45 @@ export function createPaper(el, ctx) {
   const lockable = () => el.querySelectorAll('.tabbar, .panel-wrap, .ticker');
   function momentHtml(list) {
     const items = list.map((n) => ({ ...n, kind: n.kind || n.type || 'note' }));
-    const lead = items.slice().sort((a, b) => (KIND_RANK[a.kind] ?? 9) - (KIND_RANK[b.kind] ?? 9))[0];
-    const rest = items.filter((n) => n !== lead);
-    const notes = [];
+    const rels = items.filter((n) => n.kind === 'release' && n.shares != null);
+    let lead = items.slice().sort((a, b) => (KIND_RANK[a.kind] ?? 9) - (KIND_RANK[b.kind] ?? 9))[0];
+    if (rels.length > 1) {   // two releases landing together read as one card
+      const ids = new Set(rels.flatMap((r) => r.idx || []));
+      lead = { ...rels[0], shares: rels.reduce((a, r) => a + r.shares, 0), pct: rels.reduce((a, r) => a + r.pct, 0), idx: [...ids].sort((a, b) => a - b), text: rels.map((r) => r.text).join(' ') };
+    }
+    const rest = items.filter((n) => n !== lead && !(lead.kind === 'release' && rels.includes(n)));
+    const notes = [], fine = [];
     let head = '', kick = '', body = '', pips = '', hero = '';
     if (lead.kind === 'release' && lead.shares != null) {
       const ix = lead.idx || [];
-      kick = ix.length && lead.total ? `Release ${ix.length > 1 ? `${ix[0]} to ${ix[ix.length - 1]}` : ix[0]} of ${lead.total}` : 'Release';
+      kick = ix.length && lead.total ? `${ix.length > 1 ? 'Releases' : 'Release'} ${ix.length > 1 ? `${ix[0]} to ${ix[ix.length - 1]}` : ix[0]} of ${lead.total}` : 'Release';
       head = `${lead.pct}% of your shares are now free`;
-      const extra = String(lead.text || '').replace(/^\d+% of your shares are free\.\s*/, '');
+      const extra = String(lead.text || '').replace(/\d+% of your shares are free\.\s*/g, '').trim();
       if (extra) notes.push(extra);
       pips = `<div class="m-pips" aria-hidden="true">${(lead.pips || []).map((p, i) => `<span class="pip ${p.void ? 'void' : p.state}" style="--i:${i}"><span class="num">${p.void ? '' : esc(p.pct)}</span></span>`).join('')}</div>`;
-      hero = `<div class="m-hero"><div class="m-free"><span class="num m-count" data-from="${lead.free - lead.shares}" data-to="${lead.free}">${int(lead.free)}</span><span class="m-unit">free shares</span></div>
-        <div class="m-delta num">+${int(lead.shares)}<span>just released</span></div></div>
-        ${lead.locked != null ? `<p class="m-left"><span class="num">${int(lead.locked)}</span> shares are still locked.</p>` : ''}`;
+      const lower = lead.free != null && lead.free < lead.shares;   // only when shares were sold on the release day itself
+      hero = `<div class="m-hero"><div class="m-free"><span class="num m-count" data-from="0" data-to="${lead.shares}">${int(lead.shares)}</span><span class="m-unit">shares released</span></div></div>
+        ${lead.free != null ? `<p class="m-left"><span class="num">${int(lead.free)}</span> free now${lower ? ', after a sale on the same day' : ''} · <span class="num">${int(lead.locked)}</span> still locked</p>` : ''}`;
     } else {
       const k = MOMENT_HEAD[lead.kind];
       const t = String(lead.text || ''), cut = t.search(/[.:]\s/), first = cut > 0 ? t.slice(0, cut) : t, tail = cut > 0 ? t.slice(cut + 1).trim() : '';
       kick = k ? k[0] : 'Notice'; head = k ? k[1] : first;
       body = k ? `<p class="m-body">${esc(t)}</p>` : (tail ? `<p class="m-body">${esc(tail)}</p>` : '');
     }
-    for (const n of rest) notes.push(n.text);
+    for (const n of rest) (n.kind === 'never' ? fine : notes).push(n.text);
+    const shown = notes.slice(0, 2); fine.push(...notes.slice(2));
     return { kick, head, html: `<p class="m-kick">${esc(kick)}</p><h2 class="m-head">${esc(head)}</h2>${pips}${hero}${body}
-      ${notes.length ? `<ul class="m-notes">${notes.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}` };
+      ${shown.length ? `<ul class="m-notes">${shown.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+      ${fine.length ? `<p class="m-fine">${fine.map(esc).join(' ')}</p>` : ''}` };
   }
 
   function setNotices(list) {
-    const key = JSON.stringify(list.map((n) => n.text));
+    const key = JSON.stringify(list.map((n) => [n.text, n.free, n.locked, n.idx]));
     if (key === noticeKey) return; noticeKey = key;
     cancelAnimationFrame(countRaf);
     if (!list.length) { notices.innerHTML = ''; lockable().forEach((e) => e.removeAttribute('inert')); return; }
     const m = momentHtml(list);
-    notices.innerHTML = `<div class="notice moment-scrim"><div class="moment" role="group" aria-label="${esc(m.kick + ': ' + m.head)}"><div class="m-body-wrap">${m.html}</div><button class="btn primary m-go" data-a="go">Continue</button></div></div>`;
+    notices.innerHTML = `<div class="notice moment-scrim"><div class="moment" role="group" aria-label="${esc(m.kick + ': ' + m.head)}"><div class="m-body-wrap">${m.html}</div><button class="btn m-go" data-a="go">Continue</button></div></div>`;
     lockable().forEach((e) => e.setAttribute('inert', ''));
     const c = notices.querySelector('.m-count'); if (c) countUp(c, Number(c.dataset.from), Number(c.dataset.to));
     const b = notices.querySelector('.m-go'); b.addEventListener('click', () => h.onContinue());

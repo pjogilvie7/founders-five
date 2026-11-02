@@ -60,6 +60,35 @@ const SEAL_SVG = (pct) => `<svg viewBox="0 0 24 24" aria-hidden="true">
   <path class="half r" d="M12 2A10 10 0 0 1 12 22L13.5 17.5 10.5 14 13.5 10 10.5 6.5Z"/>
   <text x="12" y="15.2" text-anchor="middle" class="pct">${pct}</text></svg>`;
 
+// engraved line icons for the drawer badges (stroke only, inherit colour)
+const ICONS = {
+  ach: '<svg viewBox="0 0 20 20"><path d="M10 2.5l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 7.8l5-.7z"/></svg>',
+  port: '<svg viewBox="0 0 20 20"><path d="M3 6.5h14v9.5H3zM7 6.5V4.5h6v2M3 10.5h14"/></svg>',
+  rules: '<svg viewBox="0 0 20 20"><path d="M10 3v13M5 16.5h10M4 6.5h12M4 6.5l-2 5h4zM16 6.5l-2 5h4z"/></svg>',
+};
+
+// the hero certificate plate: cut-corner paper with a double engraved rule, a drawdown tint and a hairline crack.
+// Drawn on a fixed 308x150 box and stretched to the rail; the CSS decides what shows.
+function platesvg(W = 308, H = 150) {
+  const cut = (i, c) => `M${i + c} ${i}H${W - i - c}L${W - i} ${i + c}V${H - i - c}L${W - i - c} ${H - i}H${i + c}L${i} ${H - i - c}V${i + c}Z`;
+  const dia = (x, y) => `M${x} ${y - 3.2}L${x + 3.2} ${y}L${x} ${y + 3.2}L${x - 3.2} ${y}Z`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" focusable="false">
+    <defs>
+      <linearGradient id="rc-paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:#f8f3e6"/><stop offset=".55" style="stop-color:var(--paper)"/><stop offset="1" style="stop-color:var(--paper-2)"/></linearGradient>
+      <linearGradient id="rc-sheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <clipPath id="rc-clip"><path d="${cut(1, 14)}"/></clipPath>
+    </defs>
+    <path class="plate" d="${cut(1, 14)}"/>
+    <path class="tint" d="${cut(1, 14)}"/>
+    <path class="rule1" d="${cut(6, 10)}"/>
+    <path class="rule2" d="${cut(9.5, 7)}"/>
+    <path class="gem" d="${dia(W / 2, 6)} ${dia(W / 2, H - 6)} ${dia(6, H / 2)} ${dia(W - 6, H / 2)}"/>
+    <path class="crack" d="M236 6L229 26L240 41L227 62L238 79L225 101L233 120L224 144"/>
+    <path class="crack c2" d="M240 41L256 50L262 66M227 62L211 70L206 88"/>
+    <g clip-path="url(#rc-clip)"><rect class="sheen" x="-90" y="0" width="80" height="${H}" fill="url(#rc-sheen)"/></g>
+  </svg>`;
+}
+
 export function createRail(el, h) {
   el.innerHTML = `
   <aside class="rail" aria-label="Your position">
@@ -76,35 +105,35 @@ export function createRail(el, h) {
       </div>
       <div class="yearbar" role="progressbar" aria-label="Progress through the card" aria-valuemin="0" aria-valuemax="100"><i class="fill"></i><span class="marks"></span></div>
       <div class="lamp-row"><span class="lamp" aria-hidden="true"></span><span class="lamp-text">Window</span></div>
-      <div class="nw">
-        <div class="nw-head"><span class="lbl">Net worth</span>
-          <span class="seg" role="group" aria-label="Show"><button data-mode="wealth" aria-pressed="true">Wealth</button><button data-mode="profit" aria-pressed="false">Profit</button></span></div>
-        <span class="val num nwv">—</span>
-        <div class="nw-delta"><i class="nw-arr" aria-hidden="true"></i><span class="num dv">—</span><span class="since">since the start</span></div>
-      </div>
     </div>
-    <div class="rcert">
-      <div class="cert-border" aria-hidden="true">${art('certificateBorder', { width: 308, height: 300, color: '#8c6d31' })}</div>
+    <div class="rcert" data-dd="0">
+      <div class="cert-border" aria-hidden="true">${platesvg()}</div>
       <div class="cert-in">
         <p class="cert-head">Certificate of shares</p>
-        <div class="cert-vig"></div>
         <p class="cert-name"></p>
+        <div class="cert-vig" aria-hidden="true"></div>
         <p class="cert-shares"><span class="num count">0</span> <span class="u">shares</span></p>
-        <p class="cert-sub num"></p>
         <div class="seals" role="list"></div>
+        <p class="cert-sub num"></p>
         <div class="stamps"></div>
       </div>
     </div>
-    <div class="money">
+    <div class="nw">
+      <div class="nw-head"><span class="lbl">Net worth</span>
+        <span class="seg" role="group" aria-label="Show"><button data-mode="wealth" aria-pressed="true">Wealth</button><button data-mode="profit" aria-pressed="false">Profit</button></span></div>
+      <span class="val num nwv">—</span>
+      <div class="nw-delta"><i class="nw-arr" aria-hidden="true"></i><span class="num dv">—</span><span class="since">since the start</span></div>
       <div class="cashrow"><span class="lbl">Cash</span><span class="val num cash">—</span></div>
+    </div>
+    <div class="money">
       <button class="rivals-toggle" aria-expanded="false" aria-controls="rail-more"><span>Rivals</span> <b class="rk"></b></button>
     </div>
     <div class="rail-more" id="rail-more">
       <section class="rivals" aria-label="Rivals"><h3><span class="lbl">Rivals</span> <b class="rank-flag" aria-hidden="true"></b><span class="gapnote">gap to you</span></h3><ol></ol></section>
       <div class="drawers">
-      <details class="drawer" data-d="ach"><summary><span class="s-t">Achievements</span><span class="pips" aria-hidden="true"></span><span class="cnt"></span></summary><ul class="ach"></ul></details>
-      <details class="drawer" data-d="port"><summary>Portfolio</summary><dl class="port"></dl></details>
-      <details class="drawer" data-d="rules"><summary>Rules</summary><dl class="rules">${RULES.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl><p class="more"><a href="#/method">Every rule, with its source</a></p></details>
+      <details class="drawer" data-d="ach"><summary><span class="ico" aria-hidden="true">${ICONS.ach}</span><span class="s-t">Seals</span><span class="cnt"></span></summary><ul class="ach"></ul></details>
+      <details class="drawer" data-d="port"><summary><span class="ico" aria-hidden="true">${ICONS.port}</span><span class="s-t">Holdings</span></summary><dl class="port"></dl></details>
+      <details class="drawer" data-d="rules"><summary><span class="ico" aria-hidden="true">${ICONS.rules}</span><span class="s-t">Rules</span></summary><dl class="rules">${RULES.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl><p class="more"><a href="#/method">Every rule, with its source</a></p></details>
       </div>
     </div>
   </aside>`;
@@ -112,9 +141,9 @@ export function createRail(el, h) {
   const q = {
     root: $('.rail'), card: $('.clock-card'), day: $('.daylabel'), pause: $('.pause'), speeds: $('.speeds'),
     bar: $('.yearbar'), fill: $('.yearbar .fill'), marks: $('.marks'), lamp: $('.lamp'), lampText: $('.lamp-text'),
-    vig: $('.cert-vig'), name: $('.cert-name'), count: $('.rcert .count'), sub: $('.cert-sub'), seals: $('.seals'), stamps: $('.stamps'),
+    cert: $('.rcert'), vig: $('.cert-vig'), name: $('.cert-name'), count: $('.rcert .count'), sub: $('.cert-sub'), seals: $('.seals'), stamps: $('.stamps'),
     cash: $('.cash'), nw: $('.nwv'), nwLbl: $('.nw .lbl'), dv: $('.nw-delta .dv'), since: $('.nw-delta .since'), arr: $('.nw-arr'), delta: $('.nw-delta'), rivals: $('.rivals ol'), flag: $('.rank-flag'), rk: $('.rivals-toggle .rk'),
-    ach: $('.ach'), achCnt: $('[data-d=ach] .cnt'), pips: $('[data-d=ach] .pips'), port: $('.port'), more: $('#rail-more'), drawers: $('.drawers'),
+    ach: $('.ach'), achCnt: $('[data-d=ach] .cnt'), port: $('.port'), more: $('#rail-more'), drawers: $('.drawers'),
   };
   const sealEls = new Map(), rivalEls = new Map(), markEls = new Map(), stampEls = new Map();
   let last = {}, prevBroken = null, prevRank = null, prevNW = null, prevDelta = null, prevMode = null, prevRanks = new Map(), built = '', prevWinOpen = null, firstUpdate = true;
@@ -136,6 +165,13 @@ export function createRail(el, h) {
     }
   });
 
+  // brief state-driven cues on the certificate: a sheen when a tranche breaks, a glow when the rank moves
+  function certCue(cls, ms = 1100) {
+    if (reduced()) return;
+    q.cert.classList.remove(cls); void q.cert.offsetWidth; q.cert.classList.add(cls);
+    clearTimeout(q.cert['_' + cls]); q.cert['_' + cls] = setTimeout(() => q.cert.classList.remove(cls), ms);
+  }
+
   function build(v) {
     // (re)build static parts for a new game
     const key = v.gameKey; if (built === key) return; built = key; firstUpdate = true; prevBroken = null; prevRank = null; prevNW = null; prevDelta = null; prevRanks = new Map(); prevWinOpen = null;
@@ -144,10 +180,11 @@ export function createRail(el, h) {
     q.name.textContent = v.certName;
     q.vig.innerHTML = v.vignette ? `<img src="${esc(v.vignette)}" alt="" onerror="this.parentNode.classList.add('nofig');this.remove()">` : '';
     q.vig.classList.toggle('nofig', !v.vignette);
-    if (!v.vignette) q.vig.innerHTML = art('rosette', { size: 120, rings: 5, color: '#B08A3E' });
-    q.seals.innerHTML = ''; sealEls.clear();
+    if (!v.vignette) q.vig.innerHTML = art('rosette', { size: 150, rings: 6, color: '#B08A3E' });
+    q.seals.innerHTML = ''; sealEls.clear(); q.seals.classList.remove('in'); void q.seals.offsetWidth; q.seals.classList.add('in');
     for (const t of v.tranches) {
       const s = document.createElement('span'); s.className = 'seal'; s.setAttribute('role', 'listitem'); s.innerHTML = SEAL_SVG(t.void ? '×' : t.pct);
+      s.style.setProperty('--i', String(sealEls.size));
       q.seals.appendChild(s); sealEls.set(t.id, s);
     }
     q.marks.innerHTML = ''; markEls.clear();
@@ -161,7 +198,6 @@ export function createRail(el, h) {
       q.rivals.appendChild(li); rivalEls.set(r.id, li);
     }
     q.rivals.style.height = v.rivals.length * ROW + 'px';
-    q.pips.innerHTML = ACHIEVEMENTS.map(() => '<i></i>').join('');
     q.ach.innerHTML = ACHIEVEMENTS.map(([id, n, d]) => `<li data-id="${id}"><span class="mk" aria-hidden="true"></span><span><b>${esc(n)}</b><small>${esc(d)}</small></span></li>`).join('');
     stampEls.clear(); q.stamps.innerHTML = '';
   }
@@ -198,14 +234,19 @@ export function createRail(el, h) {
     const heldN = locked + free + (sh.collared || 0) + (sh.pledged || 0);
     q.count.textContent = int(heldN);
     q.sub.textContent = `${int(free)} free · ${int(locked)} locked`;
+    // drawdown tint and crack: a display state only, read off the engine's own since-start profit
+    const startW = s.W - s.profit;
+    const dd = s.profit < -0.5 ? (startW > 0 && s.profit < -0.1 * startW ? 2 : 1) : 0;
+    q.cert.dataset.dd = String(dd);
     const broken = new Set(v.tranches.filter((t) => t.released).map((t) => t.id));
+    const nextT = v.tranches.find((t) => !t.released && !t.void);
     for (const t of v.tranches) {
       const e = sealEls.get(t.id); if (!e) continue;
       const isB = broken.has(t.id);
-      e.classList.toggle('broken', isB); e.classList.toggle('void', !!t.void);
+      e.classList.toggle('broken', isB); e.classList.toggle('void', !!t.void); e.classList.toggle('next', !!nextT && nextT.id === t.id);
       e.title = t.void ? `${t.pct}% · never releases` : `${t.pct}% · ${isB ? 'released' : 'releases'} ${dateLabel(v.dctx, t.date)}`;
       e.setAttribute('aria-label', e.title);
-      if (isB && prevBroken && !prevBroken.has(t.id) && !reduced()) { e.classList.add('cracking'); setTimeout(() => e.classList.remove('cracking'), 900); }
+      if (isB && prevBroken && !prevBroken.has(t.id) && !reduced()) { e.classList.add('cracking'); setTimeout(() => e.classList.remove('cracking'), 900); certCue('released', 1300); }
     }
     prevBroken = broken;
     const stamps = [];
@@ -217,6 +258,7 @@ export function createRail(el, h) {
       q.stamps.dataset.k = key;
       q.stamps.innerHTML = stamps.map((t) => `<span class="stamp s-${slug(t)}${stampEls.has(t) ? '' : ' new'}">${esc(t)}</span>`).join('');
       stampEls.clear(); stamps.forEach((t) => stampEls.set(t, 1));
+      q.cert.dataset.stamped = String(stamps.length);
     }
     // money
     tween(q.cash, s.cash, moneyFull);
@@ -240,6 +282,9 @@ export function createRail(el, h) {
     // rivals
     const sorted = [...v.rivals].sort((a, b) => b.W - a.W);
     const youW = (v.rivals.find((r) => r.you) || {}).W;
+    const level = v.rivals.every((r) => r.you || Math.abs(r.W - youW) < 0.5);
+    q.root.classList.toggle('all-level', level);
+    q.root.querySelector('.gapnote').textContent = level ? 'level at start' : 'gap to you';
     sorted.forEach((r, k) => {
       const li = rivalEls.get(r.id); if (!li) return;
       li.style.transform = `translateY(${k * ROW}px)`;
@@ -249,8 +294,9 @@ export function createRail(el, h) {
       if (r.you) { gap.textContent = ''; gap.className = 'num gap'; }
       else {
         const d = r.W - youW;
-        gap.textContent = Math.abs(d) < 0.5 ? 'level' : signedMoney(d, { compact: true });
+        gap.textContent = Math.abs(d) < 0.5 ? (level ? '' : 'level') : signedMoney(d, { compact: true });
         gap.className = 'num gap ' + (Math.abs(d) < 0.5 ? 'lv' : d > 0 ? 'ahead' : 'behind');
+        gap.setAttribute('aria-label', Math.abs(d) < 0.5 ? 'Level with you' : (d > 0 ? 'Ahead of you by ' : 'Behind you by ') + moneyFull(Math.abs(d)));
         gap.title = d > 0 ? 'Ahead of you' : d < 0 ? 'Behind you' : 'Level with you';
       }
       const was = prevRanks.get(r.id), mv = li.querySelector('.mv');
@@ -266,6 +312,7 @@ export function createRail(el, h) {
     if (prevRank != null && you !== prevRank && !firstUpdate) {
       q.flag.textContent = you < prevRank ? '▲ up' : '▼ down';
       q.flag.className = 'rank-flag show ' + (you < prevRank ? 'up' : 'down');
+      certCue(you < prevRank ? 'pulse-up' : 'pulse-down', 1400);
       clearTimeout(q.flag._t); q.flag._t = setTimeout(() => { q.flag.className = 'rank-flag'; }, 2200);
     }
     prevRank = you;
@@ -273,8 +320,12 @@ export function createRail(el, h) {
     const earned = new Set([...(v.achievements || [])].map((x) => canonicalId(x) || slug(x)));
     let n = 0;
     q.ach.querySelectorAll('li').forEach((li) => { const on = earned.has(canonicalId(li.dataset.id) || li.dataset.id); if (on) n++; li.classList.toggle('on', on); });
-    q.achCnt.textContent = `${n} of ${ACHIEVEMENTS.length}`;
-    q.pips.querySelectorAll('i').forEach((p, k) => p.classList.toggle('on', k < n));
+    const cntKey = `${n}/${ACHIEVEMENTS.length}`;
+    if (q.achCnt.dataset.k !== cntKey) {
+      q.achCnt.dataset.k = cntKey;
+      q.achCnt.classList.toggle('has', n > 0);
+      q.achCnt.innerHTML = `<span class="vh">${n} of ${ACHIEVEMENTS.length} achievements unlocked</span><span aria-hidden="true">${cntKey}</span>`;
+    }
     // portfolio
     const rows = [
       ['Share price', `$${s.close.toFixed(2)}`], ['Locked', int(locked)], ['Free', int(free)], ['Collared', int(sh.collared || 0)], ['Pledged', int(sh.pledged || 0)], ['Sold', int(sh.sold || 0)],

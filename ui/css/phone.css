@@ -68,11 +68,14 @@
   .rail-host .rail .rcert .seal{flex:0 1 20px;width:20px;height:20px;min-width:9px}
   .rail-host .rail .rcert .stamps{display:none}
 
-  /* progress: the banknote band along the bottom edge of the header fills with gold as the card runs (no ticks) */
-  .rail-host .rail{padding-bottom:15px}
-  .rail-host .rail .rail-top::after{z-index:0;left:0;right:0}
-  .rail-host .yearbar{position:absolute;left:0;right:0;bottom:0;height:7px;margin:0;border:0;border-radius:0;background:transparent;z-index:1;pointer-events:none}
-  .rail-host .yearbar .fill{background:linear-gradient(180deg,#e0bf74,var(--gold) 45%,#7c5f25);box-shadow:0 -1px 0 #f3d78f,0 1px 0 #4d3a14;transition:width .12s linear}
+  /* progress: a plain gold fuse along the foot of the header; a small diamond rides its head (no hatching, no ticks) */
+  .rail-host .rail{padding-bottom:14px}
+  .rail-host .rail .rail-top::after{content:none}
+  .rail-host .yearbar{position:absolute;left:14px;right:14px;bottom:5px;height:3px;margin:0;border:0;border-radius:2px;
+    background:color-mix(in srgb,var(--rail-line) 80%,transparent);z-index:1;pointer-events:none}
+  .rail-host .yearbar .fill{position:relative;height:100%;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 55%,#000),var(--gold));transition:width .12s linear}
+  .rail-host .yearbar .fill::after{content:"";position:absolute;right:-5px;top:50%;width:9px;height:9px;transform:translateY(-50%) rotate(45deg);
+    background:#e0bf74;border:1px solid #4d3a14;box-shadow:0 0 0 2px var(--rail)}
   .rail-host .marks{display:none}
 
   /* the rivals / rules sheet drops straight from under the header */
@@ -81,12 +84,14 @@
   @keyframes phoneDrop{from{opacity:0;transform:translateY(-8px)}}
 
   /* ---------------------------------------------------------------- paper */
-  .paper{--nav-h:58px;--tick-h:40px;--toast-h:56px;--safe:env(safe-area-inset-bottom,0px);display:flex;flex-direction:column}
+  .paper{--nav-h:52px;--tick-h:34px;--toast-h:56px;--safe:env(safe-area-inset-bottom,0px);display:flex;flex-direction:column}
   .paper .banner-slot{order:0}
 
   /* the board: the wrap scrolls; the toast slot is carved out of its bottom edge instead of floating over it */
   .paper .panel-wrap{order:1;flex:1 1 0;min-height:0;position:static;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
-  .paper .panel{max-width:none;padding:10px 12px 14px}
+  .paper .panel{max-width:none;padding:10px 12px 18px}
+  /* content that runs under the news strip fades out instead of being sliced */
+  .paper .panel-wrap::after{content:"";display:block;position:sticky;bottom:0;height:16px;margin-top:-16px;pointer-events:none;background:linear-gradient(transparent,var(--paper))}
   .paper .toasts{position:absolute;left:0;right:0;bottom:calc(var(--nav-h) + var(--safe) + var(--tick-h));height:var(--toast-h);max-width:none;
     display:grid;align-content:center;justify-items:stretch;gap:0;padding:0 10px;background:var(--paper);border-top:1px solid var(--paper-line);pointer-events:auto;z-index:5}
   .paper .toasts:not(:has(.toast)){display:none}
@@ -99,29 +104,37 @@
   .paper .toast.ach{border-left-color:var(--ink)}
   .paper .toast:not(:last-child){display:none}
 
-  .paper .ticker{order:2;flex:none;height:var(--tick-h);min-height:0;padding:0 50px 0 14px;gap:10px;align-items:center;font-size:13px;border-top:1px solid var(--paper-line);background:var(--paper-2)}
-  .paper .tk-lbl{font-size:10px}
+  .paper .ticker{order:2;flex:none;height:var(--tick-h);min-height:0;padding:0 46px 0 14px;gap:10px;align-items:center;font-size:12.5px;border-top:1px solid var(--paper-line);background:var(--paper-2);white-space:nowrap}
+  .paper .tk-lbl{font-size:9.5px;letter-spacing:.16em}
+  .paper .tk-text{flex:1 1 auto;min-width:0;color:var(--muted)}
+  .paper .tk-text .when{font-size:11.5px}
 
-  /* bottom nav: every tool, equal width, icon over label */
-  .paper .tabbar{order:3;flex:none;display:flex;align-items:stretch;gap:0;padding:0 0 var(--safe);height:calc(var(--nav-h) + var(--safe));
+  /* bottom nav: the tools you can use, equal width, icon over label. Sealed tools fold into one 'Locked' chip
+     (the first sealed tool; tap it to read why and when, or press its number key). */
+  .paper .tabbar{order:3;flex:none;position:relative;display:flex;align-items:stretch;gap:0;padding:0 0 var(--safe);height:calc(var(--nav-h) + var(--safe));
     border-top:1px solid var(--ink);border-bottom:0;background:var(--paper-2)}
-  .paper .tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);margin:0;overflow:visible}
-  .paper .tab{flex-direction:column;justify-content:center;gap:3px;min-height:0;min-width:0;margin:0;padding:6px 1px 5px;border:0;border-radius:0;
-    background:transparent;color:var(--muted);font-size:10px;font-weight:600;line-height:1.12;text-align:center;white-space:normal;position:relative;
+  .paper .tabs{display:flex;flex:1 1 auto;margin:0;overflow:visible}
+  .paper .tab{flex:1 1 0;flex-direction:column;justify-content:center;gap:2px;min-height:0;min-width:0;margin:0;padding:5px 5px 4px;border:0;border-radius:0;
+    background:transparent;color:var(--muted);font-size:10px;font-weight:600;line-height:1.12;text-align:center;white-space:nowrap;position:relative;overflow:hidden;
     box-shadow:none;transition:background .15s,color .15s}
   .paper .tab+.tab::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:var(--paper-line)}
-  .paper .tab .lbl{display:block;max-width:100%;text-wrap:balance;overflow-wrap:anywhere}
-  .paper .tab .ico,.paper .tab .ico img,.paper .tab .gl{width:22px;height:22px}
+  .paper .tab .lbl{display:block;max-width:100%;overflow:hidden;text-overflow:clip;letter-spacing:-.01em;padding-inline:1px}
+  .paper .tab .ico,.paper .tab .ico img,.paper .tab .gl{width:20px;height:20px}
   .paper .tab:hover{background:color-mix(in srgb,var(--paper) 60%,var(--paper-2))}
   .paper .tab.active{background:var(--paper);color:var(--ink);box-shadow:inset 0 3px 0 var(--gold);border:0}
   .paper .tab.active::before,.paper .tab.active+.tab::before{opacity:0}
   .paper .tab:active{background:var(--paper)}
   .paper .tab:focus-visible{outline-offset:-3px}
-  .paper .tab.locked .lbl{color:var(--muted);opacity:.8}
   .paper .tab kbd{display:none}
-  /* the ? refresher floats at the right end of the news bar, not in the nav */
-  .paper .help{position:absolute;right:7px;bottom:calc(100% + 2px);flex:none;width:36px;height:36px;margin:0;z-index:6;
-    font-size:16px;box-shadow:none;border-color:var(--paper-line);background:var(--paper);color:var(--muted)}
+  .paper .tab.locked{display:none}
+  .paper .tab.locked:not(.tab.locked~.tab.locked){display:flex;flex:0 0 76px;color:var(--muted)}
+  .paper .tab.locked .lbl{font-size:0;opacity:1}
+  .paper .tab.locked .lbl::after{content:"Locked";font-size:10px;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+  .paper .tab.locked .ico,.paper .tab.locked .gl{width:18px;height:18px}
+  /* the ? refresher sits inside the news strip, at its right end */
+  .paper .help{position:absolute;right:8px;bottom:calc(100% + 3px);flex:none;width:28px;height:28px;margin:0;z-index:6;
+    font-size:14px;box-shadow:none;border-color:var(--paper-line);background:var(--paper);color:var(--muted)}
+  .paper .help::before{content:"";position:absolute;inset:-8px}
   .paper .help:hover{color:var(--ink);border-color:var(--ink)}
   .paper .help:active{transform:scale(.92);box-shadow:none}
 
@@ -150,24 +163,79 @@
   .panel .tool.stock .t-lede{display:none}
   .panel .t-stamp{right:12px;font-size:24px}
 
+  /* ------------------------------------------------ the stock board: numbers, then the one verb, then the chart
+     .lower is dissolved so the Sell card can sit directly under the three numbers; the chart takes what is left. */
+  .panel .tool.stock{gap:8px;padding-bottom:4px}
+  .panel .tool.stock>.plate{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);padding:0;border:0;white-space:nowrap}
+  .panel .tool.stock>.bigs{order:1}
+  .panel .tool.stock>.t-chart{order:2}
+  .panel .tool.stock>.keys{order:3}
+  .panel .tool.stock .lower{display:contents}
+  .panel .tool.stock .sellbox{order:4}
+  .panel .tool.stock .lower>.box:not(.sellbox){order:5;margin-top:22px}
+
   /* three numbers as one ledger strip */
-  .panel .tool.stock .bigs{grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:8px 0;border:1px solid var(--paper-line);
+  .panel .tool.stock .bigs{grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:7px 0 8px;border:1px solid var(--paper-line);
     background:color-mix(in srgb,var(--paper) 70%,#fff)}
   .panel .tool.stock .big{padding:0 10px;gap:1px}
   .panel .tool.stock .big+.big{border-left:1px solid var(--paper-line)}
-  .panel .tool.stock .big .k{font-size:9.5px;letter-spacing:.12em}
-  .panel .tool.stock .big .v{font-size:17px;line-height:1.2}
-  .panel .tool.stock .big .sub{font-size:11px;line-height:1.3}
-  .panel .tool.stock .big [data-s=offer],.panel .tool.stock .big [data-s=free]{display:none}
+  .panel .tool.stock .big .k{font-size:9.5px;letter-spacing:.12em;white-space:nowrap}
+  .panel .tool.stock .big .v{font-size:19px;line-height:1.2}
+  .panel .tool.stock .big .sub{display:none}
   .panel .bigs{gap:10px 14px}
   .panel .big .v{font-size:23px}
 
-  /* the chart is the game */
+  /* the Sell card: a small engraved slip with a large pressable plate under it */
+  .panel .tool.stock .sellbox{padding:9px 10px 10px;border-color:var(--ink);background:color-mix(in srgb,var(--paper) 70%,#fff);
+    box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--paper-line)}
+  .panel .tool.stock .sellbox>h3{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);margin:0;white-space:nowrap}
+  .panel .tool.stock .aform{gap:7px}
+  .panel .tool.stock .fld{gap:3px}
+  .panel .tool.stock .fld-l{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase}
+  .panel .tool.stock .fld-in{min-height:46px;font-size:20px}
+  .panel .tool.stock .fld-row .max{min-height:46px;min-width:60px}
+  .panel .tool.stock .fld-max:empty{display:none}
+  .panel .tool.stock .gate{font-size:12.5px;line-height:1.35;padding:6px 10px}
+  .panel .tool.stock .gate .lockdot{margin-top:4px}
+  .panel .tool.stock .pv{padding:7px 10px;gap:6px 10px;margin:0;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .panel .tool.stock .pv dd{font-size:14px}
+  .panel .tool.stock .pv dt{font-size:9.5px;letter-spacing:.1em}
+  .panel .tool.stock .t-hint{font-size:12px;line-height:1.4}
+  .panel .tool.stock .t-prev>.t-hint:only-child{display:none}
+  .panel .tool.stock .fld-max{margin:0;font-size:11.5px;line-height:1.3;color:var(--muted)}
+  .panel .tool.stock .t-res{padding:6px 10px;font-size:13px;line-height:1.4}
+  /* the verb: a tall engraved oxblood plate, pressed by a soft inner shadow rather than a hard foot */
+  .panel .tool.stock .t-go{min-height:54px;font-size:16px;letter-spacing:.05em;border:1px solid #3a0b08;border-radius:5px;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--seal) 88%,#fff),var(--seal) 55%,color-mix(in srgb,var(--seal) 88%,#000));
+    box-shadow:inset 0 0 0 2px #0000,inset 0 0 0 3px rgb(241 236 223 / .5),0 6px 12px -6px #3a0b08aa;margin-bottom:2px;
+    transition:transform .1s var(--ease-out),filter .12s,box-shadow .12s}
+  .panel .tool.stock .t-go:active{transform:scale(.985);filter:brightness(.9);box-shadow:inset 0 0 0 3px rgb(241 236 223 / .4),inset 0 2px 6px #0007}
+  .panel .tool.stock .t-go[aria-disabled=true]{opacity:1;background:color-mix(in srgb,var(--paper-2) 80%,var(--paper-line));color:var(--muted);
+    border-color:var(--paper-line);box-shadow:inset 0 0 0 2px var(--paper-2),inset 0 0 0 3px var(--paper-line)}
+  .panel .tool.stock .t-go[aria-disabled=true]:active{transform:none;filter:none}
+  .panel .tool.stock .t-go.ready{animation:phoneReady 2.4s ease-in-out 2}
+  @keyframes phoneReady{50%{box-shadow:inset 0 0 0 3px rgb(241 236 223 / .5),0 0 0 4px color-mix(in srgb,var(--seal) 24%,transparent)}}
+
+  /* nothing to sell yet: the whole form folds to one line that states the reason. It opens again the moment the
+     engine lets you sell (no gate), or as soon as a number is typed. */
+  .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown){display:flex;align-items:center;gap:0;padding:0;border:1px solid var(--paper-line);
+    background:var(--paper-2);box-shadow:none;border-radius:3px;overflow:hidden}
+  .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown)::before{content:"Sell";flex:none;align-self:stretch;display:flex;align-items:center;padding:0 12px;
+    font:600 10px/1 var(--f-label,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);border-right:1px solid var(--paper-line)}
+  .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown) .aform{flex:1 1 auto;min-width:0;display:block}
+  .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown) :is(.fld,.t-go,.t-head,.t-prev,.t-res){display:none}
+  .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown) .gate{border:0;background:transparent;padding:10px 12px;font-size:13px;align-items:center}
+  .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown) .gate .lockdot{margin-top:0}
+
+  /* the chart is the game: it takes every pixel the rest of the board leaves. Sell form open: leave room for it. */
   .panel .t-chart{height:clamp(220px,38vh,460px);height:clamp(220px,38dvh,460px);padding:4px 4px 2px;flex:none}
-  .panel .keys{flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:14px;margin:-2px 0 0;padding-bottom:2px;font-size:11.5px;scrollbar-width:none;
-    -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
-  .panel .keys::-webkit-scrollbar{display:none}
-  .panel .keys li{flex:none}
+  .panel .tool.stock>.t-chart{height:clamp(190px,calc(100vh - 560px),360px);height:clamp(190px,calc(100dvh - 560px),360px)}
+  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown)>.t-chart{height:clamp(200px,calc(100vh - 448px),420px);height:clamp(200px,calc(100dvh - 448px),420px)}
+  /* legend: the four marks every card uses, in one row that wraps instead of clipping; the rest appear on the desktop board */
+  .panel .keys{flex-wrap:wrap;overflow:visible;white-space:normal;gap:3px 12px;margin:0;padding:0 2px;font-size:11px}
+  .panel .keys li{flex:none;gap:5px}
+  .panel .keys i{width:14px}
+  .panel .keys li:nth-child(n+5){display:none}
 
   /* paper-side plates: a double keyline, no hard offset */
   .panel .btn{border-radius:4px;box-shadow:inset 0 0 0 2px var(--paper),inset 0 0 0 3px color-mix(in srgb,var(--ink) 30%,transparent)}
@@ -207,3 +275,6 @@
 @media (max-width:899px) and (prefers-reduced-motion:reduce){
   .rail-host .pause.paused,.rail-host .rail.more-open .rail-more{animation:none}
 }
+
+/* Cash tab glyph: a short stack of coins in the same single-weight engraved line as the other tabs (replaces the columned building) */
+.tab#tab-cash .ico img{content:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32' fill='none' stroke='%2318262F' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cellipse cx='12' cy='24' rx='8' ry='3'/%3E%3Cpath d='M4 24v-4M20 24v-4'/%3E%3Cellipse cx='12' cy='20' rx='8' ry='3'/%3E%3Cpath d='M4 20v-4M20 20v-4'/%3E%3Cellipse cx='12' cy='16' rx='8' ry='3'/%3E%3Ccircle cx='23' cy='10' r='5.5'/%3E%3Cpath d='M23 7.200v5.600M21.300 8.600c.4-.8 3.400-.9 3.600.4.200 1.400-3.400.9-3.400 2.300 0 1.100 3.100 1.100 3.600.2'/%3E%3C/svg%3E")}

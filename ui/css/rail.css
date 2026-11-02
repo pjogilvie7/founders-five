@@ -10,16 +10,15 @@
     var(--rail);
   scrollbar-gutter: stable;
 }
-.rail .lbl { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--rail-muted); }
+.rail { --rail-muted: #B9C3C8; }
+.rail .lbl { font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--rail-muted); }
 
-/* banknote strip: ruled gold edges with a fine cross-hatch between them */
+/* plate foot: a double engraved rule (two fine gold lines), no hatch band */
 .rail .rail-top::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 7px;
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px;
   background:
-    linear-gradient(var(--gold), var(--gold)) top / 100% 1px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) bottom / 100% 1px no-repeat,
-    repeating-linear-gradient(135deg, transparent 0 2px, color-mix(in srgb, var(--gold) 70%, transparent) 2px 3px),
-    repeating-linear-gradient(45deg, transparent 0 2px, color-mix(in srgb, var(--gold) 38%, transparent) 2px 3px),
+    linear-gradient(color-mix(in srgb, var(--gold) 90%, transparent), color-mix(in srgb, var(--gold) 90%, transparent)) top / 100% 1px no-repeat,
+    linear-gradient(color-mix(in srgb, var(--gold) 45%, transparent), color-mix(in srgb, var(--gold) 45%, transparent)) bottom / 100% 1px no-repeat,
     var(--rail);
 }
 
@@ -114,9 +113,8 @@
 /* ---------- rivals: gap to you, rank arrows */
 .rail .rail-more { gap: 14px; }
 .rail .rivals h3 { font-family: var(--f-body); display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; letter-spacing: 0; text-transform: none; }
-.rail .rivals h3 .lbl { font-size: 11px; }
-.rail .rivals .gapnote { margin-left: auto; font-size: 11px; color: var(--rail-muted); letter-spacing: .04em; }
-.rail .rank-flag { font-size: 11px; font-weight: 600; letter-spacing: .06em; }
+.rail .rivals .gapnote { margin-left: auto; font-size: 12px; color: var(--rail-muted); letter-spacing: .04em; }
+.rail .rank-flag { font-size: 12px; font-weight: 600; letter-spacing: .06em; }
 .rail .rivals li {
   height: 32px; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 0 10px 0 6px;
   background: var(--rail-2); border: 1px solid var(--rail-line); font-size: 14px;
@@ -144,10 +142,6 @@
 /* ---------- drawers */
 .rail .drawer summary { gap: 10px; }
 .rail .drawer summary .s-t { margin-right: 0; }
-.rail .drawer summary .pips { margin-right: auto; display: inline-flex; gap: 3px; flex-wrap: wrap; }
-.rail .pips i { width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid var(--rail-muted); display: block; }
-.rail .pips i.on { background: var(--gold); border-color: var(--gold); }
-.rail .drawer .cnt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0; }
 .rail .drawer summary { position: relative; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -176,33 +170,206 @@
   .rail .rivals li { height: 32px; }
 }
 
-/* ---------- short desktops (1280x800 and the like): certificate becomes a strip */
-@media (min-width: 900px) and (max-height: 999px) {
-  .rail { gap: 9px; }
-  .rail .rail-top { padding: 12px 16px 14px; gap: 7px; }
-  .rail .nw { padding-top: 8px; }
-  .rail .nwv { font-size: 30px; }
-  .rail .rcert {
-    margin-top: 8px; padding: 9px 14px 9px; text-align: left;
-    clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
-    filter: drop-shadow(2px 2px 0 var(--gold));
+/* ================= round 4: hierarchy and fit =================
+   order of weight: net worth (40px) > cash (24px) > day / rivals / drawers > everything else (12px floor) */
+.rail .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.rail .drawer summary { display: flex; align-items: center; gap: 10px; text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 600; color: var(--rail-text); }
+.rail .drawer summary .s-t { margin-right: auto; }
+.rail .drawer summary::after { display: none; }
+.rail .drawer .ico { margin: 0; flex: none; width: 26px; height: 26px; display: grid; place-items: center; color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 70%, transparent); background: color-mix(in srgb, var(--gold) 9%, var(--rail-2)); clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px); }
+.rail .drawer .ico svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.rail .drawer .cnt { margin: 0; flex: none; font-family: var(--f-num); font-size: 12px; font-weight: 600; line-height: 1; padding: 4px 7px 3px; border: 1px solid var(--rail-line); color: var(--rail-muted); border-radius: 10px; transition: background .3s, color .3s, border-color .3s; }
+.rail .drawer .cnt.has { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+/* open / shut mark: a plus whose upright stroke folds away */
+.rail .drawer summary::before { content: ""; order: 5; flex: none; width: 12px; height: 12px; margin: 0 4px 0 2px; background:
+    linear-gradient(var(--gold), var(--gold)) center / 100% 1.5px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) center / 1.5px 100% no-repeat; transition: background-size .2s var(--ease-out), transform .2s var(--ease-out); }
+.rail .drawer[open] summary::before { background-size: 100% 1.5px, 1.5px 0; transform: rotate(180deg); }
+.rail .drawer summary:hover .s-t { color: var(--gold); }
+.rail .drawer[open] summary .s-t { color: var(--gold); }
+.rail ul.ach { gap: 10px; margin: 2px 0 12px; }
+.rail ul.ach li { font-size: 14px; }
+.rail ul.ach li small { font-size: 12.5px; color: var(--rail-muted); }
+.rail ul.ach li.on small { color: var(--rail-text); }
+.rail ul.ach li:not(.on) b { color: #cdd5d9; }
+.rail .port, .rail .rules { font-size: 13.5px; }
+.rail .more { font-size: 13px; }
+
+@media (min-width: 900px) {
+  .rail { gap: 10px; }
+  /* clock row: day readout left, transport right */
+  .rail .rail-top { gap: 8px; padding-bottom: 14px; }
+  .rail .yearbar { margin-top: 5px; }
+  .rail .clock-row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+  .rail .clock-card { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rail .daylabel .dr { display: none; }
+  .rail .daylabel .dk { font-size: 12px; }
+  .rail .transport { gap: 5px; }
+  .rail .speeds { gap: 4px; }
+  .rail .btn.sm { min-width: 34px; padding: 5px 8px; min-height: 34px; }
+  .rail .lamp-text { font-size: 13px; color: var(--rail-text); }
+  .rail .lamp-text b { font-size: 12.5px; }
+  .rail .lamp-text em { font-size: 12px; }
+
+  /* net worth: the single largest thing in the rail */
+  .rail .nw { container-type: inline-size; padding-top: 0; gap: 0; border-top: 0; margin-top: 0; }
+  .rail .nw-head { min-height: 30px; }
+  .rail .seg button { font-size: 12px; padding: 5px 10px; min-height: 28px; color: var(--rail-muted); }
+  .rail .nwv { font-size: min(44px, 12.6cqi); line-height: 1.12; margin-top: 2px; letter-spacing: -.035em; }
+  .rail .nw-delta { min-height: 26px; gap: 8px; font-size: 13px; margin-top: 2px; }
+  .rail .nw-delta .dv { font-size: 16px; }
+
+  /* cash: the second figure, on its own plate */
+
+  /* rivals */
+  .rail .rivals h3 { margin-bottom: 7px; }
+  .rail .rivals li { height: 32px; font-size: 14.5px; grid-template-columns: 22px minmax(0, 1fr) auto auto; }
+  .rail .rivals li .rk { font-size: 13px; }
+  .rail .rivals li .gap { font-size: 14px; }
+  .rail .rivals li .gap.lv { font-size: 14px; font-family: var(--f-num); font-weight: 500; }
+  .rail .rivals li .w { font-size: 13px; color: var(--rail-text); opacity: .78; min-width: 58px; }
+  .rail .rivals li.you .w { font-size: 14px; opacity: 1; }
+
+  /* drawers: a fixed region that scrolls, with a scrollbar you can see */
+  .rail .drawers { min-height: 150px; padding-right: 2px; scrollbar-width: auto; scrollbar-color: auto; border-top: 1px solid var(--rail-line); }
+  /* "more below" cue that does not rely on a native scrollbar: a fade plus a bobbing caret, pinned to the bottom edge */
+  .rail .drawers::after { content: ""; position: sticky; bottom: 0; display: block; height: 30px; margin-top: -30px; pointer-events: none; opacity: 0; transition: opacity .2s;
     background:
-      linear-gradient(var(--gold), var(--gold)) 14px 3px / calc(100% - 28px) 1px no-repeat,
-      linear-gradient(var(--gold), var(--gold)) 14px calc(100% - 4px) / calc(100% - 28px) 1px no-repeat,
-      linear-gradient(165deg, #f6f1e4, var(--paper) 50%, var(--paper-2));
+      linear-gradient(135deg, transparent 45%, var(--gold) 45% 55%, transparent 55%) calc(50% - 4px) 17px / 8px 8px no-repeat,
+      linear-gradient(225deg, transparent 45%, var(--gold) 45% 55%, transparent 55%) calc(50% + 4px) 17px / 8px 8px no-repeat,
+      linear-gradient(to bottom, transparent, var(--rail) 85%); }
+  .rail .drawers.more-below::after { opacity: 1; animation: moreBob 1.6s ease-in-out infinite; }
+  @keyframes moreBob { 50% { translate: 0 2px; } }
+  .rail .drawer { border-top: 0; border-bottom: 1px solid var(--rail-line); }
+  .rail .drawer summary { min-height: 46px; padding: 8px 2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail .drawer summary::before, .rail .drawer .cnt { transition: none; }
+  .rail .drawers.more-below::after { animation: none; }
+}
+
+
+/* ================= round 5: the certificate is the hero =================
+   order of weight: certificate (150px, centred, engraved) > net worth (cash folded in as a quiet line) > rivals > drawers.
+   The plate is an SVG with a cut-corner outline, so the glow and the offset shadow follow its shape.
+   Under 900px phone.css owns the rail; everything here is desktop only. */
+.rail .cert-border svg .plate, .rail .cert-border svg .tint, .rail .cert-border svg .crack, .rail .cert-border svg .sheen { display: none; }
+
+@media (min-width: 900px) {
+  .rail .rcert {
+    height: 150px; margin: 2px 0 0; padding: 0; background: none; text-align: center; clip-path: none;
+    filter: drop-shadow(2px 3px 0 var(--gold));
+    transform-origin: 50% 60%;
   }
-  .rail .rcert .cert-border, .rail .rcert .cert-head, .rail .rcert .cert-vig { display: none; }
+  .rail .rcert .cert-border { position: absolute; inset: 0; display: block; }
+  .rail .cert-border svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .rail .cert-border svg .plate { display: inline; fill: url(#rc-paper); }
+  .rail .cert-border svg .tint { display: inline; fill: var(--seal); opacity: 0; transition: opacity .9s var(--ease-out); }
+  .rail .cert-border svg .rule1 { fill: none; stroke: var(--gold); stroke-width: 1.3; vector-effect: non-scaling-stroke; }
+  .rail .cert-border svg .rule2 { fill: none; stroke: var(--gold); stroke-width: 1; opacity: .55; vector-effect: non-scaling-stroke; }
+  .rail .cert-border svg .gem { fill: var(--gold); }
+  .rail .cert-border svg .crack { display: inline; fill: none; stroke: #6b1d17; stroke-width: 1.2; stroke-linejoin: round; opacity: 0; stroke-dasharray: 400; stroke-dashoffset: 400; transition: stroke-dashoffset 1.1s var(--ease-out), opacity .4s; }
+  .rail .cert-border svg .crack.c2 { stroke-width: .8; stroke-dasharray: 160; stroke-dashoffset: 160; }
+  .rail .cert-border svg .sheen { display: inline; opacity: 0; }
+  .rail .rcert[data-dd="1"] .tint { opacity: .08; }
+  .rail .rcert[data-dd="2"] .tint { opacity: .12; }
+  .rail .rcert[data-dd="2"] .crack { opacity: .8; stroke-dashoffset: 0; }
+
   .rail .rcert .cert-in {
-    grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name shares" "seals seals" "sub stamps";
-    gap: 6px 10px; align-items: center; justify-items: stretch;
+    position: absolute; inset: 0; z-index: 1; padding: 14px 24px 13px;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 0;
   }
-  .rail .rcert .cert-name { grid-area: name; font-size: 13px; letter-spacing: .14em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .rail .rcert .cert-shares { grid-area: shares; justify-self: end; gap: 5px; }
-  .rail .rcert .cert-shares .count { font-size: 21px; line-height: 1; }
-  .rail .rcert .cert-shares .u { font-size: 10.5px; letter-spacing: .12em; }
-  .rail .rcert .seals { grid-area: seals; justify-content: flex-start; gap: 5px; margin: 0; flex-wrap: nowrap; }
-  .rail .rcert .seal { width: 22px; height: 22px; flex: none; }
-  .rail .rcert .cert-sub { grid-area: sub; font-size: 11.5px; white-space: nowrap; }
-  .rail .rcert .stamps { grid-area: stamps; justify-content: flex-end; gap: 5px; margin: 0; min-height: 0; flex-wrap: nowrap; }
-  .rail .rcert .stamp { font-size: 9.5px; letter-spacing: .14em; padding: 0 5px; border-width: 1.5px; transform: none; }
+  .rail .rcert .cert-in > * { position: relative; z-index: 1; }
+  .rail .rcert .cert-head { font-family: var(--f-body); font-size: 12px; font-weight: 600; letter-spacing: .24em; line-height: 1.1; color: var(--muted); }
+  .rail .rcert .cert-name { font-size: 15px; letter-spacing: .16em; line-height: 1; margin-top: -2px; }
+  .rail .rcert .cert-vig { position: absolute; z-index: 0; inset: 12px 18px; height: auto; width: auto; margin: 0; display: grid; place-items: center; overflow: hidden; opacity: .26; }
+  .rail .rcert .cert-vig svg { height: 100%; width: auto; }
+  .rail .rcert .cert-vig img { opacity: .7; filter: grayscale(1) sepia(.55) contrast(.9); }
+  .rail .rcert .cert-shares { display: flex; align-items: baseline; gap: 7px; transition: transform .35s var(--ease-out); }
+  .rail .rcert .cert-shares .count { font-size: 38px; font-weight: 500; line-height: 1; letter-spacing: -.02em; color: var(--ink); }
+  .rail .rcert .cert-shares .u { font-size: 12px; letter-spacing: .16em; }
+  .rail .rcert .seals { flex-wrap: nowrap; gap: 5px; margin: 0; justify-content: center; }
+  .rail .rcert .seal { width: 26px; height: 26px; flex: none; filter: drop-shadow(0 1px 0 #0003); }
+  .rail .rcert .cert-sub { font-size: 12px; line-height: 1.2; color: #3f4c54; }
+
+  /* seals stamp in when a card starts; the next one to release carries a ring */
+  .rail .rcert .seals.in .seal { animation: sealIn .55s var(--ease-pop) both; animation-delay: calc(var(--i, 0) * 60ms + 120ms); }
+  @keyframes sealIn { 0% { opacity: 0; scale: 1.9; rotate: -24deg; } 55% { opacity: 1; } 100% { opacity: 1; scale: 1; rotate: 0deg; } }
+  .rail .rcert .seal.next::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--gold); pointer-events: none; animation: ringBeat 2.4s ease-out infinite; }
+  @keyframes ringBeat { 0% { scale: .86; opacity: .95; } 70%, 100% { scale: 1.22; opacity: 0; } }
+  .rail.is-paused .rcert .seal.next::after { animation-play-state: paused; }
+  .rail .rcert .seal.cracking svg { animation: crack .8s var(--ease-out); }
+
+  /* stamps: rubber stamps over the plate, beside the share count */
+  .rail .rcert .stamps { position: absolute; z-index: 2; right: 14px; top: 46px; margin: 0; min-height: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
+  .rail .rcert .stamp { font-size: 14px; letter-spacing: .18em; line-height: 1.2; padding: 2px 8px 1px 10px; border-width: 2px; background: color-mix(in srgb, var(--paper) 72%, transparent); outline: 1px solid currentColor; outline-offset: -5px; mix-blend-mode: multiply; opacity: .9; }
+  .rail .rcert .stamp.s-pledged { transform: rotate(-7deg); }
+  .rail .rcert .stamp.s-collared { transform: rotate(5deg); }
+  .rail .rcert[data-stamped]:not([data-stamped="0"]) .cert-shares { transform: translateX(-34px); }
+
+  /* state cues: a sheen across the plate when a tranche breaks, a glow when your rank moves */
+  .rail .rcert.released { animation: certGlowUp 1.2s var(--ease-out); }
+  .rail .rcert.released .sheen { animation: sheen 1.1s ease-out; }
+  .rail .rcert.pulse-up { animation: certGlowUp 1.3s var(--ease-out); }
+  .rail .rcert.pulse-down { animation: certGlowDown 1.3s var(--ease-out); }
+  @keyframes certGlowUp {
+    0% { filter: drop-shadow(2px 3px 0 var(--gold)) drop-shadow(0 0 0 #0000); }
+    28% { filter: drop-shadow(2px 3px 0 var(--gold)) drop-shadow(0 0 16px #f0d38a); scale: 1.012; }
+    100% { filter: drop-shadow(2px 3px 0 var(--gold)) drop-shadow(0 0 0 #0000); }
+  }
+  @keyframes certGlowDown {
+    0% { filter: drop-shadow(2px 3px 0 var(--gold)) drop-shadow(0 0 0 #0000); }
+    28% { filter: drop-shadow(2px 3px 0 var(--gold)) drop-shadow(0 0 16px #d6564a); translate: -2px 0; }
+    42% { translate: 2px 0; }
+    56% { translate: -1px 0; }
+    100% { filter: drop-shadow(2px 3px 0 var(--gold)) drop-shadow(0 0 0 #0000); translate: 0 0; }
+  }
+  @keyframes sheen { 0% { opacity: 0; translate: 0 0; } 12% { opacity: .85; } 100% { opacity: 0; translate: 430px 0; } }
+
+  /* ---------- net worth block, cash folded in */
+  .rail { gap: 9px; }
+  .rail .rail-top { padding-bottom: 13px; gap: 7px; }
+  .rail .nw { padding-top: 2px; }
+  .rail .nwv { font-size: min(42px, 12cqi); }
+  .rail .nw-delta { min-height: 24px; }
+  .rail .nw .cashrow {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+    margin-top: 7px; padding: 8px 0 0; border: 0; border-top: 1px solid var(--rail-line); background: none;
+  }
+  .rail .nw .cashrow .lbl { font-size: 12px; letter-spacing: .16em; }
+  .rail .nw .cashrow .val { font-size: 16px; font-weight: 500; letter-spacing: 0; color: color-mix(in srgb, var(--rail-text) 88%, var(--rail-muted)); }
+
+  /* ---------- rivals: a level start reads once, not four times */
+  .rail .rivals h3 { margin-bottom: 6px; }
+  .rail .rivals .gapnote { font-size: 12px; }
+  .rail.all-level .rivals .gapnote { color: var(--gold); font-style: italic; }
+  .rail.all-level .rivals li .gap { display: none; }
+  .rail.all-level .rivals li .w, .rail.all-level .rivals li.you .w { grid-column: 3 / 5; }
+  .rail .rivals li .gap.lv { font-size: 12px; font-family: var(--f-body); letter-spacing: .06em; }
+
+  /* ---------- drawers: a visible scroll track, thumb and fade */
+  .rail .drawers { min-height: 128px; }
+  .rail .drawer summary { min-height: 42px; padding: 6px 2px; }
+  .rail .drawers::-webkit-scrollbar { width: 11px; }
+  .rail .drawers::-webkit-scrollbar-track { background: color-mix(in srgb, var(--rail-2) 80%, #000); border-left: 1px solid var(--rail-line); }
+  .rail .drawers::-webkit-scrollbar-thumb { background: var(--gold); border: 2.5px solid color-mix(in srgb, var(--rail-2) 80%, #000); min-height: 36px; }
+  .rail .drawers::-webkit-scrollbar-thumb:hover { background: #d3ac5c; }
+  .rail .drawers.more-below::after { height: 36px; margin-top: -36px; }
+  .rail .drawer[open] > summary { box-shadow: 0 1px 0 var(--rail-line); }
+}
+@supports not selector(::-webkit-scrollbar) {
+  @media (min-width: 900px) { .rail .drawers { scrollbar-width: thin; scrollbar-color: var(--gold) var(--rail-2); } }
+}
+
+@media (min-width: 900px) and (min-height: 1000px) {
+  .rail .rcert { height: 176px; }
+  .rail .rcert .cert-in { padding: 18px 24px 16px; }
+  .rail .rcert .cert-shares .count { font-size: 44px; }
+  .rail .rcert .cert-vig { opacity: .34; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail .rcert, .rail .rcert .sheen, .rail .rcert .seal, .rail .rcert .seal.next::after, .rail .rcert .stamp { animation: none !important; }
+  .rail .rcert .cert-shares, .rail .cert-border svg .tint, .rail .cert-border svg .crack { transition: none; }
 }

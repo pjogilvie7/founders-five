@@ -13,10 +13,10 @@ import { maxAdvance, ltv, callCure, forcedSaleShares, fallToCall, netPerShare } 
 import { coolingOff, rule144 } from "./rules.js";
 import {
   createGame, tick, act, canDo, gates, snapshot, runToEnd, runWithPolicy, replay, score, normalizeCard, wealthParts,
-  getCtx, collarQuote, COST, SPEND, HOUSE,
+  getCtx, collarQuote, terminalTax, COST, SPEND, HOUSE, AUTO_INVEST_KEEP,
 } from "./sim.js";
 import { BOTS, runBot, botPolicy } from "./bots.js";
-import { debrief, achievements, ACHIEVEMENTS } from "./debrief.js";
+import { debrief, achievements, ACHIEVEMENTS, compare } from "./debrief.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const load = (f) => JSON.parse(fs.readFileSync(path.join(here, "fixtures", f), "utf8"));
@@ -227,7 +227,7 @@ test("7c: founder plan in the sim uses the card's reports; sales start after coo
   while (s.plan && !s.done) {
     const t = tick(s); s = t.state;
     for (const e of t.events) if (e.type === "planSale" && e.data.n !== 0 && !e.data.ended) sales.push(e.d);
-    if (s.pendingEvent) s = ok(act(s, { type: "house", choice: "skip" }));
+    if (s.pendingEvent) s = ok(act(s, { type: "house", choice: "cash" }));
   }
   assert.equal(sales[0], want.firstTradeOn);
   const ftdom = getCtx(s).ftdom;
@@ -312,11 +312,13 @@ test("8b: maintenance call: exact copy, amounts, 'post' cures with cash", () => 
   s = r.state;
   assert.equal(s.i, 61);
   assert.ok(s.pendingEvent && s.pendingEvent.type === "marginCall");
-  assert.match(r.event.text, /^Maintenance call\. Loan-to-value is 3\d\.\d%; the limit is 35%\. Post \$\d\.\dM by \w{3} \w{3} \d+, or the bank sells about [\d,]+ shares at that day's close\. The sale is taxable\.$/);
+  assert.match(r.event.text, /^Maintenance call\. Loan-to-value is 3\d\.\d%; the limit is 35%\. Post \$\d\.\dM by \w{3} \w{3} \d+, the third trading day\. If the loan is still above 35% after that day's close, the bank sells about [\d,]+ shares at the close of \w{3} \w{3} \d+\. The sale is taxable\.$/);
   const debt = s.loan.balance + s.loan.accrued;
   const coll = s.shares.pledged * 70;
   near(s.loan.call.toPost, debt - 0.25 * coll, 1e-6);
-  assert.equal(s.loan.call.deadline, "2020-03-31".slice(0, 0) + addBusiness(s.d, 3));
+  assert.equal(s.loan.call.deadline, addBusiness(s.d, 3)); // the card has no holidays: 3 trading days = 3 weekdays
+  assert.equal(s.loan.call.sellOn, addBusiness(s.d, 4));
+  assert.equal(snapshot(s).loan.call.daysLeft, 3);
   assert.equal(tick(s).blocked, true); // the clock waits for an answer
   const cash0 = s.cash;
   s = ok(act(s, { type: "marginCall", choice: "post" }));
@@ -328,17 +330,32 @@ test("8b: maintenance call: exact copy, amounts, 'post' cures with cash", () => 
 });
 function addBusiness(d, n) { let x = d; while (n > 0) { x = addCalendarDays(x, 1); if (weekday(x) !== 0 && weekday(x) !== 6) n--; } return x; }
 
-test("8c: ignoring the call: the bank sells at the deadline close to 25%, taxed, window ignored, lesson text, no achievement", () => {
+test("8c: ignoring the call: pause on the deadline day, then the bank sells at the next close to 25%, taxed, window ignored, lesson text, no achievement", () => {
   let { s } = marginScenario();
   s = tickUntilEvent(s, "marginCall").state;
   const call = s.loan.call;
   s = ok(act(s, { type: "marginCall", choice: "wait" }));
   const realized0 = s.tax.realized;
   const total = s.total;
+  // two quiet days, then the deadline day: the clock pauses with "Last day to meet the call"; nothing is sold yet
+  const last = tickUntilEvent(s, "marginCall");
+  assert.ok(last.event, "last-day pause");
+  s = last.state;
+  assert.equal(s.d, call.deadline);
+  assert.equal(last.event.pause, true);
+  assert.equal(last.event.data.lastDay, true);
+  assert.match(last.event.text, /^Last day to meet the call\. /);
+  assert.equal(s.stats.forced.length, 0);
+  assert.equal(s.tax.realized, realized0);
+  assert.equal(s.pendingEvent.type, "marginCall");
+  assert.equal(tick(s).blocked, true);
+  // the player can still act through the deadline day's close, so wait again and let it run
+  s = ok(act(s, { type: "marginCall", choice: "wait" }));
   const t = tickUntilEvent(s, "forcedSale");
   assert.ok(t.event, "forced sale happened");
   s = t.state;
-  assert.equal(s.d, call.deadline);
+  assert.equal(s.d, call.sellOn); // the close of the next trading day
+  assert.ok(s.d > call.deadline);
   assert.equal(s.loan.call, null);
   const coll = s.shares.pledged * 70;
   const l = ltv(s.loan.balance + s.loan.accrued, coll);
@@ -352,10 +369,45 @@ test("8c: ignoring the call: the bank sells at the deadline close to 25%, taxed,
   const sh = s.shares;
   assert.equal(sh.locked + sh.free + sh.collared + sh.pledged + sh.sold + sh.exchanged, total);
   assert.equal(sh.sold, t.event.data.shares);
-  // matches the closed form: the bank sold exactly forcedSaleShares of the loan at the deadline
-  assert.ok(t.event.data.shares > 0 && t.event.data.shares < 1_000_000);
+  // the closed form: the fewest shares so that loan - n * 70 * (1 - 0.0025) <= 0.25 * (pledged - n) * 70, with all proceeds on the loan
+  const n = t.event.data.shares, a = 70 * (1 - COST);
   near(t.event.data.price, 70, 1e-9);
+  // the tax on the gain is the client's bill (ledger), not withheld from the loan repayment
+  near(t.event.data.toLoan, n * a, 1e-6);
+  near(s.tax.realized - realized0, n * a - n * 1, 1e-6);
+  const debtBefore = s.loan.balance + s.loan.accrued + t.event.data.toLoan, pledgedBefore = s.shares.pledged + n;
+  assert.ok(debtBefore - n * a <= 0.25 * (pledgedBefore - n) * 70 + 1e-6, "n shares are enough");
+  assert.ok(debtBefore - (n - 1) * a > 0.25 * (pledgedBefore - n + 1) * 70, "n - 1 shares are not");
   assert.equal(s.flags.achievements.filter((a) => /forced|margin/i.test(a)).length, 0);
+});
+
+test("8c2: the deadline counts trading days from the card's own dates: a holiday is not a trading day", () => {
+  // Remove Fri Mar 6 2020 from the series: a call on Wed Mar 4 has the deadline Wed Mar 11, not Mon Mar 9
+  const card = flatCard({ n: 120, close: (d) => (d >= "2020-03-04" ? 70 : 100) });
+  card.prices = card.prices.filter((r) => r[0] !== "2020-03-06");
+  let s = tickToIdx(game(card), 2);
+  s = ok(act(s, { type: "pledge", shares: s.shares.free }));
+  s = ok(act(s, { type: "draw", amount: canDo(s, "draw").max }));
+  const r = tickUntilEvent(s, "marginCall");
+  assert.equal(r.event.d, "2020-03-04");
+  assert.equal(r.state.loan.call.deadline, "2020-03-10"); // Mar 5, Mar 9, Mar 10
+  assert.equal(r.state.loan.call.sellOn, "2020-03-11");
+});
+
+test("8c3: a founder's bank sale is recorded in the Rule 144 volume ledger", () => {
+  const card = flatCard({ n: 160, close: (d, i) => (i <= 100 ? 100 : 70), sharesOutPost: 100_000_000 });
+  let s = tickToIdx(game(card, "founder"), 95);
+  s = ok(act(s, { type: "pledge", shares: s.shares.free }));
+  s = ok(act(s, { type: "draw", amount: canDo(s, "draw").max }));
+  const r = tickUntilEvent(s, "marginCall");
+  s = ok(act(r.state, { type: "marginCall", choice: "wait" }));
+  s = tickUntilEvent(s, "marginCall").state;
+  s = ok(act(s, { type: "marginCall", choice: "wait" }));
+  const t = tickUntilEvent(s, "forcedSale");
+  assert.ok(t.event);
+  assert.equal(t.state.sales144.length, 1);
+  assert.equal(t.state.sales144[0].shares, t.event.data.shares);
+  assert.equal(t.state.sales144[0].d, t.state.d);
 });
 
 test("8d: sell to cure needs an open window; with a closed window it explains why", () => {
@@ -459,7 +511,7 @@ test("tax: engine sale matches saleTax; selling 100,000 shares at $150 with $1.3
 
 test("quarterly tax: paid on the last trading day of the quarter; unpaid tax is a liability in W", () => {
   const card = flatCard({ n: 120 });
-  let s = tickToIdx(game(card), 2);
+  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2); // proceeds stay in cash, so the tax is paid from cash
   s = ok(act(s, { type: "sell", shares: 100_000 }));
   const owed = RATE * (100_000 * 100 * (1 - COST) - 100_000 * 1);
   near(wealthParts(s).tax, owed, 1e-6);
@@ -494,7 +546,8 @@ test("gates: every blocked control says why and when", () => {
   // closed window with free shares
   s = tickTo(s, "2026-09-21");
   const c = gates(s);
-  assert.equal(c.sell.reason, "Window closed until Oct 22: a 10b5-1 plan can still sell");
+  assert.equal(c.sell.reason, "Window closed until Oct 22."); // no plan, so no plan claim
+  assert.equal(c.adoptPlan.reason, "Window closed until Oct 22: a plan can be adopted then");
   assert.equal(c.sell.opensOn, "2026-10-22");
   assert.equal(c.collar.reason, "Window closed until Oct 22: a new collar can be set up then");
   assert.equal(c.pledge.allowed, true);
@@ -558,9 +611,9 @@ test("act rejects what the rules forbid and never mutates its input", () => {
 
 // ================================================================ collars
 test("collar: opens at zero cost inside the band; settles with max(Kp-S,0) - max(S-Kc,0); taxed; shares return to free", () => {
-  const exp = "2020-07-03";
+  const exp = "2020-07-30";
   const card = flatCard({ n: 200, close: (d) => (d >= exp ? 70 : 100) });
-  let s = tickToIdx(game(card), 1);
+  let s = tickToIdx(game(card), 20); // options need 20 trading days of history
   const q = canDo(s, "collar", { shares: 500_000, tenorMonths: 6, putPct: 0.85 });
   assert.equal(q.allowed, true, q.reason);
   assert.ok(q.quote.Kc >= 110);
@@ -576,7 +629,7 @@ test("collar: opens at zero cost inside the band; settles with max(Kp-S,0) - max
   // golden zero-cost call against the pricing module's own check
   assert.ok(c.Kc > 110 && c.Kc < 200);
   // expiry
-  s = tickTo(s, "2020-07-02");
+  s = tickTo(s, "2020-07-29");
   assert.equal(s.collars.length, 1);
   const cash0 = s.cash, real0 = s.tax.realized;
   const t = tick(s);
@@ -606,12 +659,12 @@ test("collar: opens at zero cost inside the band; settles with max(Kp-S,0) - max
 });
 
 test("collar: call side loses when the stock ends above the cap", () => {
-  const exp = "2020-07-03";
+  const exp = "2020-07-30";
   const card = flatCard({ n: 200, close: (d) => (d >= exp ? 160 : 100) });
-  let s = tickToIdx(game(card), 1);
+  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 20); // no index fund, so paying the loss realizes nothing else
   s = ok(act(s, { type: "collar", shares: 500_000, tenorMonths: 6, putPct: 0.85 }));
   const Kc = s.collars[0].Kc;
-  s = tickTo(s, "2020-07-02");
+  s = tickTo(s, "2020-07-29");
   const real0 = s.tax.realized;
   const t = tick(s);
   const e = t.events.find((x) => x.type === "collarExpiry");
@@ -621,37 +674,37 @@ test("collar: call side loses when the stock ends above the cap", () => {
 });
 
 test("collar: roll at expiry obeys the trading window; shares return to free; canDo gives the reason with the reopen date", () => {
-  const exp = "2020-07-03";
-  const card = flatCard({ n: 200, earnings: [{ d: "2020-07-20" }] }); // window closed Jun 20 to Jul 21
-  let s = tickToIdx(game(card), 1);
+  const exp = "2020-07-30";
+  const card = flatCard({ n: 200, earnings: [{ d: "2020-08-10" }] }); // window closed Jul 11 to Aug 11
+  let s = tickToIdx(game(card), 20);
   s = ok(act(s, { type: "collar", shares: 400_000, tenorMonths: 6, putPct: 0.85 }));
-  s = tickTo(s, "2020-07-02");
+  s = tickTo(s, "2020-07-29");
   const t = tick(s);
   s = t.state;
   const e = t.events.find((x) => x.type === "collarExpiry");
   assert.equal(s.d, exp);
   assert.equal(s.shares.free, 1_000_000);
   assert.equal(e.data.canRoll, false);
-  assert.equal(e.data.rollReason, "Window closed until Jul 22: a new collar can be set up then");
-  assert.equal(canDo(s, "collar").reason, "Window closed until Jul 22: a new collar can be set up then");
-  assert.equal(canDo(s, "collar").opensOn, "2020-07-22");
+  assert.equal(e.data.rollReason, "Window closed until Aug 12: a new collar can be set up then");
+  assert.equal(canDo(s, "collar").reason, "Window closed until Aug 12: a new collar can be set up then");
+  assert.equal(canDo(s, "collar").opensOn, "2020-08-12");
   const bad = act(s, { type: "collarExpiry", choice: "roll" });
-  assert.equal(bad.error, "Window closed until Jul 22: a new collar can be set up then");
+  assert.equal(bad.error, "Window closed until Aug 12: a new collar can be set up then");
   s = ok(act(s, { type: "collarExpiry", choice: "end" }));
-  s = tickTo(s, "2020-07-22");
+  s = tickTo(s, "2020-08-12");
   assert.equal(canDo(s, "collar", { shares: 400_000, tenorMonths: 12, putPct: 0.85 }).allowed, true);
 });
 
 test("collar: band rule, early unwind at model value less 1% of notional, collared shares cannot be sold or pledged", () => {
   const card = flatCard({ n: 120 });
-  let s = tickToIdx(game(card), 1);
+  let s = tickToIdx(game(card), 20);
   assert.match(canDo(s, "collar", { shares: 10, tenorMonths: 6, putPct: 0.95 }).reason, /80%, 85% or 90%/);
   assert.match(canDo(s, "collar", { shares: 10, tenorMonths: 7, putPct: 0.85 }).reason, /6, 12 or 24/);
   s = ok(act(s, { type: "collar", shares: 1_000_000, tenorMonths: 12, putPct: 0.9 }));
   assert.equal(canDo(s, "sell").allowed, false);
   assert.match(canDo(s, "sell").reason, /^Collared shares are held until the collar ends on /);
   assert.equal(canDo(s, "pledge").allowed, false);
-  s = tickToIdx(s, 5);
+  s = tickToIdx(s, 25);
   const c = s.collars[0];
   const mark = snapshot(s).collars[0].mark;
   const cash0 = s.cash, real0 = s.tax.realized;
@@ -679,16 +732,16 @@ test("collar: last SpaceX data day uses the options smile; flat vol otherwise", 
 
 // ================================================================ puts and exchange fund (should-haves)
 test("put: premium from cash, free shares stay sellable, settles to cash with premium as a loss", () => {
-  const exp = "2020-07-03";
+  const exp = "2020-07-30";
   const card = flatCard({ n: 200, close: (d) => (d >= exp ? 60 : 100) });
-  let s = tickToIdx(game(card), 1);
+  let s = tickToIdx(game(card), 20);
   const cash0 = s.cash + wealthParts(s).index;
   s = ok(act(s, { type: "buyPut", shares: 100_000, putPct: 0.85, tenorMonths: 6 }));
   const prem = s.puts[0].premium;
   assert.ok(prem > 0);
   near(cash0 - (s.cash + wealthParts(s).index), prem, 1e-6);
   assert.equal(s.shares.free, 1_000_000);
-  s = tickTo(s, "2020-07-02");
+  s = tickTo(s, "2020-07-29");
   const t = tick(s);
   near(t.state.tax.realized - s.tax.realized, 100_000 * 25 - prem, 1e-6);
   assert.equal(t.state.puts.length, 0);
@@ -722,24 +775,32 @@ function houseScenario() {
   return { s: r.state, event: r.event, card };
 }
 
-test("house: five-year cards only, month 18, 'This $10M due in 30 days', four choices", () => {
+test("house: five-year cards only, month 18, the exact copy, three choices as {choice, label}, no skip", () => {
   const { s, event } = houseScenario();
-  assert.equal(event.text, "$10M due in 30 days.");
+  assert.equal(event.text, "$10M is due for the family's house in 30 days. Choose how to pay.");
   assert.equal(event.pause, true);
-  assert.deepEqual(event.data.choices, ["cash", "credit", "sell", "skip"]);
+  assert.deepEqual(event.data.choices, [
+    { choice: "cash", label: "Pay from cash and the index fund" },
+    { choice: "credit", label: "Draw the credit line" },
+    { choice: "sell", label: "Sell shares" },
+  ]);
   assert.equal(s.d, "2021-07-02");
   assert.equal(s.pendingEvent.type, "house");
   assert.equal(tick(s).blocked, true);
+  assert.match(act(s, { type: "house", choice: "skip" }).error, /Choose cash, credit or sell/);
+  assert.ok(!/no effect on your score|score effect/i.test(event.text));
   // never on the live card
   const live = runToEnd(game(spcxLike));
   assert.equal(live.flags.houseDone, false);
 });
 
-test("house: cash (cash then index), credit (needs headroom), sell (needs allowance), skip (flagged, no spend)", () => {
+test("house: cash (cash then index, overdraft if short), credit (needs headroom), sell (needs allowance)", () => {
   const { s } = houseScenario();
-  const hist = s.history.length;
   // credit with no pledged shares
   assert.match(act(s, { type: "house", choice: "credit" }).error, /^The credit line has \$0 of room/);
+  assert.equal(canDo(s, "house", { choice: "credit" }).allowed, false);
+  assert.equal(canDo(s, "house", { choice: "sell" }).allowed, true);
+  assert.equal(canDo(s, "house", { choice: "cash" }).allowed, true);
   // cash: cash then index
   const a = ok(act(s, { type: "house", choice: "cash" }));
   assert.equal(a.pendingEvent, null);
@@ -747,6 +808,7 @@ test("house: cash (cash then index), credit (needs headroom), sell (needs allowa
   assert.equal(a.history[a.history.length - 1].S, a.spentToday);
   near(a.spentToday - s.spentToday, HOUSE, 1e-6);
   near(wealthParts(a).W - wealthParts(s).W, -HOUSE, 1e-3); // paid with real money: W falls by 10M (S_t adds it back)
+  assert.equal(a.overdraft, 0);
   // credit with pledged shares
   let c = ok(act(s, { type: "pledge", shares: 400_001 }));
   c = ok(act(c, { type: "house", choice: "credit" }));
@@ -756,15 +818,14 @@ test("house: cash (cash then index), credit (needs headroom), sell (needs allowa
   const P = 100;
   assert.equal(sl.shares.sold, 400_000 + Math.ceil(HOUSE / (P * (1 - COST))));
   assert.equal(sl.flags.houseDone, true);
-  // skip
-  const sk = ok(act(s, { type: "house", choice: "skip" }));
-  assert.equal(sk.flags.houseSkipped, true);
-  near(sk.spentToday, s.spentToday, 1e-9);
-  near(wealthParts(sk).W, wealthParts(s).W, 1e-9);
-  const sc = score(sk);
-  const dd = debrief(sk, sc, {});
-  assert.match(dd.paragraphs[1], /skipped the house/);
-  assert.ok(s.history.length === hist);
+  // cash when cash and the index fund fall short: the rest goes on the overdraft
+  const poor = { ...s, cash: 1_000_000, index: { units: 0, cost: 0 } };
+  const o = ok(act(poor, { type: "house", choice: "cash" }));
+  near(o.overdraft, HOUSE - 1_000_000, 1e-6);
+  assert.equal(o.flags.houseDone, true);
+  const dd = debrief(a, score(a), {});
+  assert.match(dd.paragraphs[1], /paid for the house/);
+  assert.ok(!dd.paragraphs.join(" ").includes("skipped"));
 });
 
 test("house: 'sell' while the window is closed gives the reason and the reopen date", () => {
@@ -773,7 +834,8 @@ test("house: 'sell' while the window is closed gives the reason and the reopen d
   s = ok(act(s, { type: "sell", shares: 100_000 }));
   const r = tickUntilEvent(s, "house");
   assert.equal(r.event.data.canSell, false);
-  assert.equal(act(r.state, { type: "house", choice: "sell" }).error, "Window closed until Jul 22: a 10b5-1 plan can still sell");
+  assert.equal(act(r.state, { type: "house", choice: "sell" }).error, "Window closed until Jul 22.");
+  assert.equal(canDo(r.state, "house", { choice: "sell" }).reason, "Window closed until Jul 22.");
 });
 
 // ================================================================ events, snapshot
@@ -802,11 +864,11 @@ test("events: window copy, news on its date, plan live, card end", () => {
   const all = [];
   while (!s.done) {
     const t = tick(s); s = t.state; all.push(...t.events);
-    if (s.pendingEvent) s = ok(act(s, { type: "house", choice: "skip" }));
+    if (s.pendingEvent) s = ok(act(s, { type: "house", choice: "cash" }));
   }
   const closes = all.filter((e) => e.type === "windowClose");
   assert.ok(closes.length >= 15);
-  assert.match(closes[0].text, /^The trading window is closed until day \d+\. Plans keep selling\.$/);
+  assert.match(closes[0].text, /^The trading window is closed until day \d+\.$/); // no plan, so no plan claim
   assert.equal(all.filter((e) => e.type === "news").length, 1);
   assert.equal(all[all.length - 1].type, "cardEnd");
   for (const e of all) { assert.ok(!e.text.includes("!"), e.text); assert.ok(!/recommended/i.test(e.text)); assert.ok(typeof e.pause === "boolean"); assert.ok(e.d); }
@@ -814,7 +876,7 @@ test("events: window copy, news on its date, plan live, card end", () => {
   let l = game(spcxLike); const le = [];
   while (!l.done) { const t = tick(l); l = t.state; le.push(...t.events); }
   const wc = le.find((e) => e.type === "windowClose");
-  assert.equal(wc.text, "The trading window is closed until Aug 6. Plans keep selling.");
+  assert.equal(wc.text, "The trading window is closed until Aug 6.");
   assert.equal(wc.d, "2026-07-06");
 });
 
@@ -882,6 +944,8 @@ function invariants(state, label) {
   assert.ok(state.overdraft >= -1e-6 && state.loan.balance >= -1e-6);
   const collared = state.collars.reduce((a, c) => a + c.shares, 0);
   assert.equal(collared, sh.collared, `${label} collar shares ${state.d}`);
+  // no hedge is opened while a 10b5-1 plan is active (a collar set earlier the same day, before the plan, may stay)
+  if (state.plan) for (const c of state.collars) assert.ok(c.start <= state.plan.adoptedOn, `${label} collar ${c.id} opened ${c.start} under the plan adopted ${state.plan.adoptedOn}`);
   // W recomputes from parts
   const p = wealthParts(state);
   const P = ctx.close[state.i];
@@ -943,7 +1007,7 @@ function chaos(seed) {
       }
     },
     respond(s, e) {
-      if (e.type === "house") return { type: "house", choice: pick(["cash", "credit", "sell", "skip"]) };
+      if (e.type === "house") return { type: "house", choice: pick(["cash", "credit", "sell"]) };
       if (e.type === "marginCall") return { type: "marginCall", choice: pick(["post", "sell", "wait"]) };
       return { type: "collarExpiry", choice: pick(["roll", "end"]) };
     },
@@ -978,13 +1042,13 @@ test("bots: sensible behaviour on the five-year card; scores have every field", 
   assert.equal(res.holder.state.loan.balance, 0);
   assert.equal(res.holder.state.stats.collarCount, 0);
   assert.equal(res.seller.state.shares.locked + res.seller.state.shares.free, 0);
-  assert.ok(res.playbook.state.stats.collarCount >= 2);
+  assert.ok(res.playbook.state.stats.collarCount >= 1);
   assert.ok(res.playbook.state.stats.sells >= 1 || res.playbook.state.stats.planSells >= 1);
   // total spending: 59 months from the second month plus the house
   const months = res.holder.state.history.filter((r) => r.S === SPEND).length;
   assert.ok(months >= 55);
   assert.equal(res.holder.state.flags.houseDone, true);
-  assert.equal(res.seller.state.flags.houseSkipped, false);
+  assert.ok(!("houseSkipped" in res.seller.state.flags)); // the house cannot be skipped
   // after-tax wealth identity
   const sc = res.seller.score;
   near(sc.afterTaxWealth, sc.finalW - sc.unrealizedTax + sc.totalSpending, 1e-6);
@@ -1035,6 +1099,267 @@ test("bots run on the live SpaceX-like card and the engineer seat only", () => {
     assert.equal(r.state.flags.houseDone, false);
   }
   assert.throws(() => runBot("holder", spcxLike, "founder", market), /locked until June 12, 2027/);
+});
+
+// ================================================================ accuracy fixes (critics, 2026-11-02)
+const PLAN_RULE = "A 10b5-1 plan is active: a new hedge on the stock would void the plan's defense (Rule 10b5-1(c)(1)(i)(C)). Cancel the plan first, which starts a new cooling-off.";
+
+test("2: no new collar or put while a 10b5-1 plan is active, cooling-off included; existing hedges stay; cancelling frees the hedge tools", () => {
+  const card = flatCard({ n: 300 });
+  let s = tickToIdx(game(card), 21);
+  s = ok(act(s, { type: "collar", shares: 100_000, tenorMonths: 6, putPct: 0.85 })); // before the plan
+  s = ok(act(s, { type: "adoptPlan", pct: 5, months: 12 }));
+  assert.equal(snapshot(s).plan.status, "cooling-off");
+  for (const [type, p] of [["collar", { shares: 10_000, tenorMonths: 12, putPct: 0.85 }], ["buyPut", { shares: 10_000, putPct: 0.85, tenorMonths: 6 }]]) {
+    assert.equal(canDo(s, type, p).allowed, false, type);
+    assert.equal(canDo(s, type, p).reason, PLAN_RULE);
+    assert.equal(act(s, { type, ...p }).error, PLAN_RULE);
+  }
+  assert.equal(gates(s).collar.reason, PLAN_RULE);
+  assert.equal(gates(s).buyPut.reason, PLAN_RULE);
+  assert.equal(s.collars.length, 1); // the existing collar may stay
+  // a live plan blocks too
+  let live = tickTo(s, s.plan.firstTradeOn);
+  live = tickUntilEvent(live, "planSale").state;
+  assert.equal(snapshot(live).plan.status, "live");
+  assert.equal(canDo(live, "collar").reason, PLAN_RULE);
+  // cancel the plan: hedging is allowed again (window open)
+  const c = ok(act(s, { type: "cancelPlan" }));
+  assert.equal(canDo(c, "collar", { shares: 10_000, tenorMonths: 12, putPct: 0.85 }).allowed, true);
+  assert.equal(canDo(c, "buyPut", { shares: 10_000, putPct: 0.85, tenorMonths: 6 }).allowed, true);
+});
+
+test("2b: a collar rolled at expiry is a new hedge: blocked while a plan is active", () => {
+  const card = flatCard({ n: 300 });
+  let s = tickToIdx(game(card), 20);
+  s = ok(act(s, { type: "collar", shares: 100_000, tenorMonths: 6, putPct: 0.85 }));
+  s = ok(act(s, { type: "adoptPlan", pct: 2, months: 18 }));
+  const r = tickUntilEvent(s, "collarExpiry");
+  assert.ok(r.event);
+  assert.equal(r.event.data.canRoll, false);
+  assert.match(r.event.data.rollReason, /^A 10b5-1 plan is active/);
+  assert.match(act(r.state, { type: "collarExpiry", choice: "roll" }).error, /^A 10b5-1 plan is active/);
+  assert.ok(!/\.\./.test(r.event.text), r.event.text);
+  ok(act(r.state, { type: "collarExpiry", choice: "end" }));
+});
+
+test("2c: The Playbook collars its thirds first, adopts its plan only once nothing is left to collar, and never hedges under a plan", () => {
+  for (const [card, seat] of [[fiveYear, "engineer"], [fiveYear, "founder"], [spcxLike, "engineer"]]) {
+    const r = runBot("playbook", card, seat, market, spcxOptions);
+    const log = r.state.log;
+    const firstPlan = log.findIndex((a) => a.type === "adoptPlan");
+    const firstCollar = log.findIndex((a) => a.type === "collar");
+    assert.ok(firstCollar >= 0, `${card.id} ${seat} collars`);
+    assert.ok(firstPlan > firstCollar, `${card.id} ${seat}: the first collar comes before the first plan`);
+    // replay the log: no collar or put is ever accepted while a plan is active (the engine would have rejected it)
+    let plan = false;
+    for (const a of log) {
+      if (a.type === "adoptPlan") plan = true;
+      if (a.type === "cancelPlan") plan = false;
+      if (plan && (a.type === "collar" || a.type === "buyPut")) assert.fail(`${a.type} on ${a.d} under a plan`);
+    }
+    assert.ok(r.state.stats.collarCount >= 1);
+  }
+});
+
+test("7: collars and puts need 20 trading days of price history", () => {
+  const card = flatCard({ n: 60 });
+  let s = tickToIdx(game(card), 19);
+  const c = canDo(s, "collar", { shares: 10, tenorMonths: 12, putPct: 0.85 });
+  assert.equal(c.allowed, false);
+  assert.equal(c.reason, "Options need 20 trading days of price history to price. Collars open on Jan 30.");
+  assert.equal(c.opensOn, "2020-01-30");
+  assert.equal(canDo(s, "buyPut", { shares: 10, putPct: 0.85, tenorMonths: 6 }).reason, "Options need 20 trading days of price history to price. Puts open on Jan 30.");
+  assert.equal(act(s, { type: "collar", shares: 10, tenorMonths: 12, putPct: 0.85 }).error, c.reason);
+  s = tickToIdx(s, 20);
+  assert.equal(canDo(s, "collar", { shares: 10, tenorMonths: 12, putPct: 0.85 }).allowed, true);
+  assert.equal(canDo(s, "buyPut", { shares: 10, putPct: 0.85, tenorMonths: 6 }).allowed, true);
+  // blind cards name the day, not the date
+  const b = tickToIdx(game(fiveYear), 5);
+  assert.ok(b.shares.free === 0 || /day \d+|Locked/.test(canDo(b, "collar").reason));
+});
+
+test("6: terminal tax = 0.238 * max(0, G + U) - 0.238 * max(0, G); realized losses net against unrealized gains", () => {
+  // sell 1,000 shares at a loss (close 0.5 against a $1 basis), then the stock goes to $100
+  const card = flatCard({ n: 80, close: (d, i) => (i === 2 ? 0.5 : 100) });
+  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2);
+  s = ok(act(s, { type: "sell", shares: 1000 }));
+  const G = s.tax.realized;
+  assert.ok(G < 0);
+  s = tickToIdx(s, 30);
+  const tt = terminalTax(s);
+  const U = s.shares.free * (100 - 1) + (s.index.units * getCtx(s).spy[s.i] - s.index.cost);
+  near(tt.U, U, 1e-6); near(tt.G, G, 1e-9);
+  near(tt.unrealizedTax, RATE * (G + U), 1e-6); // the old formula charged RATE * U
+  assert.ok(tt.unrealizedTax < RATE * U);
+  near(score(s).unrealizedTax, tt.unrealizedTax, 1e-9);
+  near(snapshot(s).unrealizedTax, tt.unrealizedTax, 1e-9);
+  near(score(s).afterTaxWealth, score(s).finalW - tt.unrealizedTax + score(s).totalSpending, 1e-6);
+  // an open collar's mark (zero cost, so all gain or loss) counts in U
+  let c = tickToIdx(game(flatCard({ n: 80 }), "engineer", { opts: { autoInvest: false } }), 21);
+  c = ok(act(c, { type: "collar", shares: 500_000, tenorMonths: 12, putPct: 0.85 }));
+  c = tickToIdx(c, 40);
+  const mark = snapshot(c).collars[0].mark;
+  const base = RATE * (c.total * (100 - 1) + mark) - RATE * Math.max(0, c.tax.realized);
+  near(terminalTax(c).unrealizedTax, Math.max(-wealthParts(c).tax, base), 1e-6);
+  near(terminalTax(c).U, c.total * 99 + mark, 1e-6);
+});
+
+test("6b: never below what the ledger already owes: a crash after the tax is paid cannot create a refund", () => {
+  const card = flatCard({ n: 120, close: (d, i) => (i >= 90 ? 0.01 : 100) });
+  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2);
+  s = ok(act(s, { type: "sell", shares: 1000 }));
+  const owed0 = wealthParts(s).tax;
+  assert.ok(owed0 > 0);
+  // before the quarter-end payment the whole owed tax can be refunded against a collapse in the stock
+  s = tickToIdx(s, 30);
+  assert.ok(terminalTax(s).unrealizedTax <= 0 || Math.abs(terminalTax(s).unrealizedTax) > 0);
+  s = tickToIdx(s, 95); // paid on Mar 31, then the stock is at $0.01
+  assert.ok(s.tax.paid > 0);
+  assert.equal(wealthParts(s).tax, 0);
+  assert.equal(terminalTax(s).unrealizedTax, 0); // raw would be negative; floored at what the ledger owes (nothing)
+  // with the tax still unpaid, the refund stops at the ledger's liability
+  let t = tickToIdx(game(flatCard({ n: 40, close: (d, i) => (i >= 20 ? 0.01 : 100) }), "engineer", { opts: { autoInvest: false } }), 2);
+  t = ok(act(t, { type: "sell", shares: 1000 }));
+  t = tickToIdx(t, 25);
+  near(terminalTax(t).unrealizedTax, -wealthParts(t).tax, 1e-6);
+});
+
+// A flat $100 card whose adjusted close steps up on idx 30 as a $2 dividend would make it: close_{t-1} * adj_t/adj_{t-1} - close_t = 2.
+function dividendCard() {
+  const card = flatCard({ n: 120 });
+  let adj = 100;
+  card.prices = card.prices.map((r, i) => { if (i === 30) adj *= 102 / 100; return [r[0], r[1], adj, r[3]]; });
+  return card;
+}
+
+test("8: dividends: D_t from the adjusted series, paid on every share held (locked and pledged included) to cash, taxed at 23.8%, in W", () => {
+  const card = dividendCard();
+  const ctx0 = getCtx(game(card));
+  assert.equal(ctx0.div.filter((x) => x > 0).length, 1);
+  near(ctx0.div[30], 2, 1e-9);
+  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 5);
+  s = ok(act(s, { type: "pledge", shares: 200_000 }));
+  s = ok(act(s, { type: "sell", shares: 100_000 }));
+  const sold = 100_000;
+  s = tickToIdx(s, 29);
+  const cash0 = s.cash, real0 = s.tax.realized, W0 = wealthParts(s).W;
+  const t = tick(s);
+  const ev = t.events.find((e) => e.type === "dividend");
+  assert.ok(ev, "dividend event");
+  const held = 1_000_000 - sold; // free + pledged; sold shares earn nothing
+  near(ev.data.amount, held * 2, 1e-6);
+  const s2 = t.state;
+  near(s2.cash - cash0, held * 2 + (cash0 * dailyRf(getCtx(s2).dgs1mo[30])), 1e-3);
+  near(s2.tax.realized - real0, held * 2, 1e-6);
+  assert.ok(wealthParts(s2).W - W0 > held * 2 * (1 - RATE) - 5000, "the dividend is in W, net of the tax accrued on it");
+  assert.match(ev.text, /^Dividend of \$2\.00 a share on 900,000 shares: \$1\.8M paid to cash\./);
+  assert.equal(s2.stats.dividends, held * 2);
+  // locked shares earn it too: pay the dividend on day 30 while a tranche is still locked
+  const c2 = dividendCard();
+  c2.lockup.groups[0].tranches[0].trigger = { type: "date", date: c2.prices[60][0] };
+  c2.lockup.groups[0].tranches[0].resolvedDate = c2.prices[60][0];
+  c2.lockup.groups[1].tranches[0].trigger = { type: "date", date: c2.prices[60][0] };
+  c2.lockup.groups[1].tranches[0].resolvedDate = c2.prices[60][0];
+  let l = tickToIdx(game(c2, "engineer", { opts: { autoInvest: false } }), 30);
+  assert.equal(l.shares.locked, 1_000_000);
+  near(l.stats.dividends, 2_000_000, 1e-6);
+});
+
+test("8b: dividends on the shipped KE Holdings card (c3) come from its adjusted series; the Holder collects them", (t) => {
+  const f = path.join(here, "..", "data", "cards", "c3.json");
+  const mf = path.join(here, "..", "data", "market.json");
+  if (!fs.existsSync(f) || !fs.existsSync(mf)) return t.skip("c3 not built");
+  const card = JSON.parse(fs.readFileSync(f, "utf8"));
+  const mk = JSON.parse(fs.readFileSync(mf, "utf8"));
+  const r = runBot("holder", card, "engineer", mk);
+  const ctx = getCtx(r.state);
+  const days = ctx.dates.filter((d, i) => ctx.div[i] > 0);
+  assert.deepEqual(days, ["2023-09-14", "2024-04-04", "2025-04-09"]);
+  assert.ok(r.state.stats.dividends > 0);
+  // every other shipped card has adj == close: no dividends
+  for (const id of ["c1", "c2", "c4", "c5", "c6", "spcx"]) {
+    const cf = path.join(here, "..", "data", "cards", `${id}.json`);
+    if (!fs.existsSync(cf)) continue;
+    const c = JSON.parse(fs.readFileSync(cf, "utf8"));
+    const g = createGame({ card: c, seat: "engineer", market: mk });
+    assert.equal(getCtx(g).div.filter((x) => x > 0).length, 0, id);
+  }
+});
+
+test("9: auto-invest sweeps cash above $2M into the index fund on the first trading day of each month, never borrowed money", () => {
+  const card = flatCard({ n: 200 });
+  let s = tickToIdx(game(card), 2);
+  s = tickTo(s, "2020-02-03"); // first trading day of February: spend $166,667, then sweep
+  near(s.cash, AUTO_INVEST_KEEP, 1e-6);
+  assert.ok(s.index.cost > 800_000 && s.index.cost < 840_000, `swept ${s.index.cost}`);
+  near(s.index.cost, 3_000_000 - 166_667 - AUTO_INVEST_KEEP + (s.index.cost - (3_000_000 - 166_667 - AUTO_INVEST_KEEP)), 1e-6);
+  // with auto-invest off, nothing is swept
+  const off = tickTo(tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2), "2020-02-03");
+  assert.ok(off.cash > 2_800_000);
+  assert.equal(off.index.units, 0);
+  // borrowed cash is never swept: draw $10M against pledged shares (cash goes to ~13M); the sweep stops at cash = loan owed
+  let b = tickToIdx(game(card), 2);
+  b = ok(act(b, { type: "pledge", shares: 1_000_000 }));
+  b = ok(act(b, { type: "draw", amount: 10_000_000 }));
+  const idx0 = b.index.cost;
+  b = tickTo(b, "2020-02-03");
+  const owed = b.loan.balance + b.loan.accrued + b.overdraft + b.overdraftAccrued;
+  assert.ok(b.cash - owed >= -1e-6, `cash ${b.cash} owed ${owed}`);
+  near(b.cash, owed, 1); // swept down to exactly the borrowed amount
+  assert.ok(b.cash > AUTO_INVEST_KEEP);
+  assert.ok(b.index.cost > idx0);
+  // the deposit rule is unchanged: only cash above what you owe
+  assert.equal(canDo(b, "deposit").allowed, false);
+});
+
+test("10: gate copy claims a plan only when one exists: none, cooling-off, live", () => {
+  // no plan: the window text stands alone
+  let a = tickTo(game(spcxLike, "engineer"), "2026-09-21");
+  assert.equal(canDo(a, "sell").reason, "Window closed until Oct 22.");
+  assert.ok(!/plan/i.test(canDo(a, "sell").reason));
+  // plan adopted Sep 1 (window open): cooling-off to Oct 1 when the window closes on Sep 21
+  let c = tickTo(game(spcxLike, "engineer"), "2026-09-01");
+  c = ok(act(c, { type: "adoptPlan", pct: 5, months: 6 }));
+  assert.equal(c.plan.firstTradeOn, "2026-10-01");
+  const close = tickUntilEvent(c, "windowClose");
+  assert.equal(close.event.text, "The trading window is closed until Oct 22. Your plan starts selling Oct 1.");
+  assert.equal(canDo(close.state, "sell").reason, "Window closed until Oct 22, your plan starts selling Oct 1.");
+  // live plan: keeps selling
+  let l = tickTo(game(spcxLike, "engineer"), "2026-08-06");
+  l = ok(act(l, { type: "adoptPlan", pct: 10, months: 6 }));
+  const lc = tickUntilEvent(l, "windowClose");
+  assert.equal(lc.event.text, "The trading window is closed until Oct 22. Your 10b5-1 plan keeps selling.");
+  assert.equal(canDo(lc.state, "sell").reason, "Window closed until Oct 22, your 10b5-1 plan keeps selling.");
+});
+
+test("10b: the UI copy fixes: no score-effect claim, no state-tax toggle, no early-exit promise, the lesson title", () => {
+  const read = (f) => fs.readFileSync(path.join(here, "..", f), "utf8");
+  const pages = read("ui/pages.js"), exch = read("ui/tabs/exchange.js"), credit = read("ui/tabs/credit.js");
+  assert.ok(!/no score effect|no effect on (your|the) score/i.test(pages));
+  assert.ok(!/state-tax toggle/i.test(pages));
+  assert.ok(!/leave early and you get your own shares back/i.test(pages + exch));
+  assert.match(exch, /Leaving early \(returning your own shares\) is not modeled; the game holds the fund to the end\./);
+  assert.ok(!/Borrow instead of selling/.test(credit));
+  assert.match(credit, /Borrowing against your shares/);
+});
+
+test("13: compare() measures at the displayed precision, so near-ties are ties", () => {
+  const mk = (sharpe, dd, irr, w) => ({ sharpe, maxDrawdown: { pct: dd }, irr, afterTaxWealth: w });
+  const a = mk(0.5449, -0.4521, 0.0531, 123_410_000), b = mk(0.5001, -0.4524, 0.0534, 123_430_000);
+  const c = compare(a, b);
+  assert.deepEqual(c.wins, { sharpe: false, maxDrawdown: false, irr: false, afterTaxWealth: false });
+  assert.deepEqual(c.ties, { sharpe: true, maxDrawdown: true, irr: true, afterTaxWealth: true });
+  assert.equal(c.count, 0); assert.equal(c.tied, 4);
+  assert.equal(compare(b, a).count, 0);
+  // a real difference at display precision still wins
+  const d = compare(mk(0.70, -0.40, 0.07, 130_000_000), mk(0.50, -0.45, 0.05, 120_000_000));
+  assert.equal(d.count, 4);
+  assert.equal(compare(mk(0.70, -0.40, 0.07, 130_000_000), mk(0.50, -0.45, 0.05, 120_000_000)).tied, 0);
+  // drawdown: shallower wins; missing values lose
+  assert.equal(compare(mk(0.5, -0.30, 0.05, 1e8), mk(0.5, -0.35, 0.05, 1e8)).wins.maxDrawdown, true);
+  assert.equal(compare(mk(null, -0.3, null, 1e8), mk(0.1, -0.3, 0.02, 1e8)).wins.sharpe, false);
+  assert.equal(compare(mk(0.1, -0.3, 0.02, 1e8), mk(null, -0.3, null, 1e8)).wins.irr, true);
 });
 
 // ================================================================ the shipped data (skipped when absent)

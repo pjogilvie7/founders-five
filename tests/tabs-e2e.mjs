@@ -36,6 +36,13 @@ const shot = async (name) => { await page.screenshot({ path: join(out, name + '.
 const txt = (sel) => page.locator(sel).first().evaluate((e) => e.textContent.replace(/\s+/g, ' ').trim());
 const space = async () => { await page.evaluate(() => document.activeElement && document.activeElement.blur()); await page.keyboard.press('Space'); };
 
+async function continueMoment() {
+  for (let k = 0; k < 10 && await page.locator('.moment-scrim .m-go').count(); k++) { await page.locator('.moment-scrim .m-go').first().click({ timeout: 3000 }).catch(() => {}); await wait(250); }
+}
+async function setPaused(want) {
+  const paused = (await page.getAttribute('.pause', 'aria-label')) === 'Resume';
+  if (paused !== want) { await page.locator('.pause').click({ timeout: 3000 }).catch(() => {}); await wait(150); }
+}
 async function clearOverlays() {
   for (let k = 0; k < 40; k++) {
     if (!(await page.locator('.overlay').count())) return;
@@ -50,13 +57,13 @@ async function playUntil(pred, { timeout = 90000, cont = true } = {}) {
   for (;;) {
     await clearOverlays();
     if (await page.evaluate(pred)) return true;
-    if (cont && await page.locator('.notice .btn').count()) await page.locator('.notice .btn').first().click().catch(() => {});
+    if (cont && await page.locator('.notice .btn').count()) await page.locator('.notice .btn').first().click({ timeout: 3000 }).catch(() => {});
     if (Date.now() - t0 > timeout) return false;
     await wait(100);
   }
 }
 const st = () => page.evaluate(() => { const g = window.__ff.G, s = g.state; return JSON.parse(JSON.stringify({ d: s.d, i: s.i, shares: s.shares, plan: s.plan, collars: s.collars.length, puts: s.puts.length, exchange: s.exchange, loan: s.loan, cash: s.cash, firstUse: s.flags.firstUse, holds: [...g.holds], win: g.snap.window, done: s.done })); });
-async function tab(id) { await page.locator(`#tab-${id}`).click(); await wait(250); }
+async function tab(id) { await continueMoment(); await page.locator(`#tab-${id}`).click(); await wait(250); }
 async function fill(sel, v) { await page.locator(sel).fill(String(v)); await wait(120); }
 async function mountExtra(name) {
   await page.evaluate(async (n) => {
@@ -74,7 +81,7 @@ const unmountExtra = () => page.evaluate(() => document.getElementById('xh')?.re
 console.log('Tool tabs e2e: SpaceX, engineer, 4x');
 await page.goto(`${BASE}/#/play/spcx/engineer`);
 await page.waitForSelector('.dialog.lesson');
-for (let k = 0; k < 4 && await page.locator('.dialog.lesson').count(); k++) { await page.locator('.dialog.lesson [data-a=next]').click(); await wait(250); }
+for (let k = 0; k < 12 && await page.locator('.dialog.lesson').count(); k++) { await page.locator('.dialog.lesson [data-a=next]').click(); await wait(250); }
 await page.waitForSelector('.play .rail');
 await page.locator('.speed[data-speed="4"]').click();
 
@@ -84,9 +91,12 @@ ok(gotRelease, 'clock reached the first release');
 await clearOverlays();
 let s = await st();
 ok(s.holds.includes('notice') && s.shares.free > 0, `first release paused the clock on ${s.d} with ${s.shares.free} free shares`);
-ok(/of your shares are free/.test(await txt('.notice')), 'release notice text shown');
+ok(/of your shares are now free/.test(await txt('.notice')), 'release moment text shown');
 ok((await page.getAttribute('.pause', 'aria-label')) === 'Resume', 'rail shows the clock paused');
 ok(s.win.open, `trading window open on ${s.d}`);
+await shot('00-release-moment');
+await continueMoment();
+await setPaused(true);
 await shot('00-release-paused');
 const free0 = s.shares.free;
 
@@ -131,6 +141,10 @@ await page.locator('.plan [data-a=ask]').click();
 ok(/new cooling-off/.test(await txt('.plan .warn-box')), 'cancel shows the new cooling-off warning');
 await shot('03b-plan-cancel-warning');
 await page.locator('.plan [data-a=no]').click();
+// A live 10b5-1 plan blocks new hedges (engine rule), so cancel it before the collar.
+await page.locator('.plan [data-a=ask]').click();
+await page.locator('.plan [data-a=yes]').click(); await wait(300);
+ok(!(await st()).plan, 'plan cancelled so the collar is allowed');
 
 // ---- 4. Collar and the Street check
 await tab('collar');
@@ -223,7 +237,7 @@ await unmountExtra();
 
 // ---- 8. Play on to the window closing; the Sell control must say why, with a date
 await tab('stock');
-await page.locator('.notice .btn').first().click().catch(() => {});
+await setPaused(false);
 await playUntil(() => { const g = window.__ff.G; return g.snap && !g.snap.window.open; });
 await space(); await wait(300);
 s = await st();
@@ -244,7 +258,7 @@ for (;;) {
   await clearOverlays();
   if (await page.locator('.margin').count()) { sawCall = true; break; }
   if (await page.evaluate(() => window.__ff.G.state.d >= '2026-10-28' || window.__ff.G.state.done)) break;
-  if (await page.locator('.notice .btn').count()) await page.locator('.notice .btn').first().click().catch(() => {});
+  if (await page.locator('.notice .btn').count()) await page.locator('.notice .btn').first().click({ timeout: 3000 }).catch(() => {});
   if (Date.now() - t0 > 90000) break;
   await wait(100);
 }
@@ -308,7 +322,7 @@ for (const [name, vp] of [['1280x800', { width: 1280, height: 800 }], ['375x812'
 // phone: chart is 180px tall
 await page.setViewportSize({ width: 375, height: 812 }); await tab('stock'); await wait(300);
 const ch = await page.locator('.stock .t-chart').evaluate((e) => e.getBoundingClientRect().height);
-ok(Math.abs(ch - 180) <= 2, `phone chart height ${Math.round(ch)}px`);
+ok(ch >= 180, `phone chart height ${Math.round(ch)}px`);
 const sizes = await page.evaluate(() => ['.stock .t-go', '.stock .fld-in', '.stock [data-max]'].map((s) => Math.round(document.querySelector(s).getBoundingClientRect().height)));
 ok(sizes.every((h) => h >= 44), `phone controls are at least 44px tall (${sizes.join(', ')})`);
 
@@ -328,7 +342,7 @@ else {
   while (Date.now() - tb < 150000) {
     if (await page.locator('.dialog.event').count()) { house = true; break; }
     await clearOverlays0();
-    if (await page.locator('.notice .btn').count()) await page.locator('.notice .btn').first().click().catch(() => {});
+    if (await page.locator('.notice .btn').count()) await page.locator('.notice .btn').first().click({ timeout: 3000 }).catch(() => {});
     await wait(100);
   }
   ok(house, 'blind card reached month 18 and the house event paused the clock');

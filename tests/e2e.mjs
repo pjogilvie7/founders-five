@@ -47,7 +47,7 @@ try {
 
     const t0 = Date.now();
     await page.click('button[data-a="watch"]');
-    await page.waitForSelector('.sc-v', { timeout: 60000 });
+    await page.waitForSelector('#sc-big', { state: 'visible', timeout: 60000 });
     const secs = (Date.now() - t0) / 1000;
     check(`${tag} Watch a finished run reaches the scoreboard in under 60 s`, secs < 60, `${secs.toFixed(1)} s`);
     await page.waitForTimeout(1500);

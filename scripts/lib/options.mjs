@@ -2,6 +2,7 @@ import { bsPrice, impliedVol, zeroCostCall } from './bs.mjs';
 import { parseOption } from './cboe.mjs';
 import { daysBetween, addDays } from './io.mjs';
 
+export const MIN_STRIKES = 5;
 const R4 = (x) => Math.round(x * 1e4) / 1e4;
 const mid = (o) => (o.bid > 0 && o.ask > 0 && o.ask >= o.bid ? (o.bid + o.ask) / 2 : null);
 
@@ -30,7 +31,13 @@ function group(chain, spot, asOf, r) {
     if (!byExp.has(p.expiry)) byExp.set(p.expiry, { T, calls: [], puts: [] });
     byExp.get(p.expiry)[p.type === 'call' ? 'calls' : 'puts'].push({ K: p.strike, mid: m, iv });
   }
-  for (const g of byExp.values()) { g.calls.sort((a, b) => a.K - b.K); g.puts.sort((a, b) => a.K - b.K); }
+  for (const [expiry, g] of byExp) {
+    g.calls.sort((a, b) => a.K - b.K); g.puts.sort((a, b) => a.K - b.K);
+    // The informative side is out of the money: puts at or below spot, calls above it. An expiry with fewer than MIN_STRIKES
+    // usable strikes there (such as 2027-10-15, three) cannot support a smile or an interpolation in time: drop it.
+    const usableStrikes = g.puts.filter((p) => p.K <= spot).length + g.calls.filter((c) => c.K > spot).length;
+    if (usableStrikes < MIN_STRIKES) byExp.delete(expiry);
+  }
   return byExp;
 }
 

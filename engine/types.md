@@ -179,9 +179,11 @@ normalizeCard(card) -> card             // blind cards: price factor f = 100/off
 maxAdvance(collateralValue) = 0.25 * value     // collared pledged shares: 0.70 * put floor value (should-have)
 ltv(balance, collateralValue)
 callCure(balance, collateralValue) -> amount to repay so LTV = 25%
-forcedSaleShares(balance, price, pledgedShares, costRate, taxRate, basis) -> shares the bank sells so that loan after net proceeds = 25% of remaining collateral
+fallToCall(from = 0.25, to = 0.35) -> 1 - from/to (28.57%)
+netPerShare(price, costRate) -> price * (1 - costRate)   // cash applied to the loan per share sold; tax is NOT withheld
+forcedSaleShares(balance, price, pledgedShares, costRate) -> fewest whole shares n (capped at pledged) with balance - n*a <= 0.25*(pledged - n)*price, a = netPerShare; n = (balance - 0.25*C) / (a - 0.25*price)
 ```
-Rate SOFR + 2.00%, accrued daily as balance * rate * (calendar days since the previous trading day)/365, capitalized on the first trading day of each month. Call when LTV > 35%; deadline 3 business days; if still > 35% at that day's close, the bank sells (ignores windows), taxed.
+Rate SOFR + 2.00%, accrued daily as balance * rate * (calendar days since the previous trading day)/365, capitalized on the first trading day of each month. Call when LTV > 35%; deadline 3 business days; if still > 35% at that day's close, the bank sells (ignores windows). The sale's tax goes on the client's ledger like any sale; the bank applies proceeds net of the 0.25% cost only.
 
 ### bots.js (T7)
 ```

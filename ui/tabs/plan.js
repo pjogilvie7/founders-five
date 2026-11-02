@@ -5,7 +5,7 @@ import {
 
 const COOL = {
   engineer: '30 calendar days',
-  founder: 'the later of 90 days or 2 business days after the next 10-Q or 10-K, capped at 120 days',
+  founder: 'the later of 90 days or 2 business days after the 10-Q or 10-K for the quarter you adopt in, capped at 120 days',
 };
 
 function build(k, c) {
@@ -22,7 +22,7 @@ function build(k, c) {
       { name: 'months', label: 'For', options: [[6, '6 months'], [12, '12 months'], [18, '18 months']], def: 12 },
     ],
     resolve: (v) => ({ type: 'adoptPlan', params: { pct: v.pct, months: v.months } }),
-    head: (v, snap, api) => `<p class="t-hint">Cooling-off before the first sale: ${esc(COOL[api.state().seat] || COOL.engineer)}. Adopting is allowed only while the trading window is open.</p>`,
+    head: (v, snap, api) => `<p class="t-hint">Cooling-off before the first sale: ${esc(COOL[api.state().seat] || COOL.engineer)}. Adopting is allowed only while the trading window is open. While a plan is adopted you cannot open a new collar or put.</p>`,
     idle: (v) => `Adopt a ${v.pct}% a month plan for ${v.months} months`,
     confirm: (v) => `Adopt a ${v.pct}% a month plan for ${v.months} months`,
     word: () => 'ADOPTED',
@@ -66,6 +66,7 @@ function liveHTML(c, snap, api) {
       <div class="big"><span class="k">Sales done</span><span class="v num">${p.salesDone} of ${p.salesTotal}</span><span class="sub"><span class="dots2" role="img" aria-label="${p.salesDone} of ${p.salesTotal} sales done">${dots}</span></span></div>
     </div>
     ${cooling ? `<p class="t-hint">${esc(`Cooling-off: plan trades from ${dl(api, p.firstTradeOn)}.`)} Until then you can still sell by hand in an open window.</p>` : '<p class="t-hint">The plan sells on its dates even when the trading window is closed.</p>'}
+    <p class="t-hint">A new collar or put on the stock is blocked while the plan is adopted, cooling-off included: it would void the plan’s defense. Cancel the plan first to hedge.</p>
     ${cancel}`;
 }
 
@@ -91,8 +92,8 @@ export default {
   id: 'plan', label: '10b5-1 Plan', icon: 'assets/icons/plan.svg', hotkey: '2',
   lesson: [
     { title: 'A plan sells for you', body: 'A 10b5-1 plan sells a fixed percentage of your free shares each month. It keeps selling while the window is closed.' },
-    { title: 'Adopt it in an open window', body: 'You can adopt a plan only when the window is open. Cancelling it starts everything over.' },
-    { title: 'Cooling-off', body: 'The first sale waits out a cooling-off period, 30 days for an engineer. The tab shows the date the plan goes live.' },
+    { title: 'Adopt it in an open window', body: 'You can adopt a plan only when the window is open. Cancelling it starts everything over, and while a plan is adopted you cannot open a new collar or put.' },
+    { title: 'Cooling-off', body: 'The first sale waits out a cooling-off period: 30 days for an engineer, and for a founder the later of 90 days or two business days after the report for the quarter of adoption, at most 120. The tab shows the date the plan goes live.' },
   ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;

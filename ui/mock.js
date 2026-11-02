@@ -189,7 +189,7 @@ export function tick(state0) {
     ev.push({ type: 'windowOpen', d: s.d, pause: true, text: `The trading window is open until ${win.closesOn ? dateLabel(ctx, win.closesOn) : 'further notice'}.`, data: {} });
     if (s.flags.seenTranches.length) unlock(s, ev, 'plan', '10b5-1 Plan unlocked');
   }
-  if (!win.open && prevWin.open) ev.push({ type: 'windowClose', d: s.d, pause: false, text: `The trading window is closed until ${dateLabel(ctx, win.opensOn)}.${s.plan ? ' Plans keep selling.' : ''}`, data: {} });
+  if (!win.open && prevWin.open) ev.push({ type: 'windowClose', d: s.d, pause: false, text: `The trading window is closed until ${dateLabel(ctx, win.opensOn)}.${s.plan ? ' Your 10b5-1 plan keeps selling.' : ''}`, data: {} });
   // month start: spending, plan sale
   const newMonth = s.d.slice(0, 7) !== prevD.slice(0, 7);
   let spent = 0;

@@ -4,7 +4,7 @@ Orchestrator: Opus 5.5 session started 2026-11-02 00:21 ET. Builders: Sonnet sub
 Resume rule: this file alone is enough to continue. Statuses: todo, running, check, done, failed, cut.
 
 ## Now
-- Wave: 3 (01:40 ET), gauntlet round 1 and accuracy critics. Drawn blind cards (draw order): c1 ABNB, c2 PTON, c3 BEKE, c4 PINS, c5 AVTR, c6 MQ, c7 WMG, c8 LYFT, c9 OSCR, c10 REYN
+- Wave: 3-4 (02:00 ET): gauntlet rounds 3-4, engine fixes from critics (E1), submission PDF + demo (D1). Drawn blind cards (draw order): c1 ABNB, c2 PTON, c3 BEKE, c4 PINS, c5 AVTR, c6 MQ, c7 WMG, c8 LYFT, c9 OSCR, c10 REYN
 - Live URL: not yet (target https://pjogilvie7.github.io/founders-five/)
 - Higgsfield credits used: 28.5 of 150
 
@@ -32,10 +32,10 @@ Resume rule: this file alone is enough to continue. Statuses: todo, running, che
 | 2 | S1 Percentile, share code, compare runs | sonnet | engine/percentile.js, engine/sharecode.js, ui/compare.js, ui/scoreboard.* | done | histogram < 10 s; code round-trips | 152 tests; 500 strategies 1.2 s in a worker; share code replays to the cent |
 | 3 | Integration, e2e, grader path | orchestrator + sonnet | tests/e2e.spec.mjs | done | scoreboard < 60 s via Watch | tests/e2e.mjs 14/14: Watch -> scoreboard 4.5 s at 375 and 1280, no console errors, data fresh |
 | 3 | Accuracy critics: banker, quant | sonnet x2 | reports only | done | findings fixed or logged | banker 9 findings, quant 8 + clean core (W_t, metrics, no look-ahead); fixes accepted -> E1 running; house skip removed (panel RUN-6) |
-| 3 | Gauntlet x8 pieces vs Stax | sonnet builders + critics | per piece | running | wins blind or logged | see research/gauntlet/LOG.md: lesson WIN r1, title WIN r2; others in rounds 2-3 |
+| 3 | Gauntlet x8 pieces vs Stax | sonnet builders + critics | per piece | running | wins blind or logged | WON: lesson (r1), title (r2), scoreboard (r3). In progress: seat-intro r4, rail r4, collar r3, moments r4, phone r4. Log: research/gauntlet/LOG.md |
 | 4 | Repo, Pages, workflow run, live check | orchestrator | .github | todo | live URL passes no-login check | |
 | 4 | Should-haves in order | sonnet | | todo | | |
-| 4 | Demo video, submission PDF, REPORT, NEEDS-PJ | sonnet | submission/, REPORT.md | todo | | |
+| 4 | Demo video, submission PDF, REPORT, NEEDS-PJ | sonnet | submission/, REPORT.md | running | | |
 
 ## Open gaps
 - Universe candidate list partly from the builder's recall; XP and ACI excluded as 424B1 filers: Monday check.

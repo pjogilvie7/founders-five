@@ -24,7 +24,7 @@ export const DEFAULT_LESSONS = {
   credit: [
     { title: 'Borrow instead of selling', body: 'You can pledge free shares and borrow up to 25% of their value. Borrowing defers tax, but the loan costs interest.' },
     { title: 'The maintenance call', body: 'If the loan rises above 35% of the pledged value, the bank issues a call. You post cash, or shares are sold.' },
-    { title: 'The forced sale', body: 'If a call is still open after three business days, the bank sells enough shares at the close. That sale is taxed and ignores the window.' },
+    { title: 'The forced sale', body: 'You have three trading days to meet a call. If it is still open after the last one, the bank sells enough shares at the next close. That sale is taxed and ignores the window.' },
   ],
   cash: [
     { title: 'Cash', body: 'Cash earns the one-month Treasury rate. Your family’s spending comes out of it on the first trading day of each month.' },

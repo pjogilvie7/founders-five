@@ -2,7 +2,9 @@
    Goal: the whole move (pick tenor and floor, read three numbers, enter shares, confirm) fits one screen. */
 
 /* toasts must never sit on the input or the confirm button while this tab is open */
-.panel-wrap:has(.tool.collar) .toasts{top:10px;bottom:auto;right:10px;justify-items:end}
+.panel-wrap:has(.tool.collar) .toasts{top:8px;bottom:auto;right:8px;gap:6px;justify-items:end;max-width:min(480px,calc(100% - 16px))}
+.panel-wrap:has(.tool.collar) .toast{padding:6px 10px;font-size:12.5px;line-height:1.35;max-width:none;box-shadow:none}
+.panel-wrap:has(.tool.collar) .toast:nth-last-child(n+3){display:none}
 
 /* header plate: single rule, teal top edge and an engraved scale, no double frame */
 .collar{gap:12px}
@@ -86,7 +88,8 @@
 
 /* phone: one column, dock pinned to the bottom of the panel so it never needs a scroll */
 @media (max-width:899px){
-  .panel-wrap:has(.tool.collar) .toasts{top:6px;right:6px}
+  .panel-wrap:has(.tool.collar) .toasts{top:4px;right:4px}
+  .panel-wrap:has(.tool.collar) .toast:nth-last-child(n+2){display:none}
   .collar{gap:10px}
   .collar .plate{padding:8px 12px 14px}
   .collar .plate .tool-h h2{font-size:24px}

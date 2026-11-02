@@ -379,7 +379,7 @@ function unlockTool(id, lesson = true) {
 }
 
 const CHOICES = {
-  house: { kicker: 'Decision', title: 'The house', list: [['cash', 'Pay from cash and index fund', true], ['credit', 'Draw the credit line'], ['sell', 'Sell shares'], ['skip', 'Skip the house']] },
+  house: { kicker: 'Decision', title: 'The house', list: [['cash', 'Pay from cash and the index fund', true], ['credit', 'Draw the credit line'], ['sell', 'Sell shares']] },
   collarExpiry: { kicker: 'Decision', title: 'Your collar has expired', list: [['roll', 'Roll at today’s prices', true], ['end', 'Let it end']] },
 };
 // The cost, in large type, between the copy and the choices (the amount is the engine's own).
@@ -440,17 +440,24 @@ function saveAch() {
 }
 
 // Presentation data for one notice card. Every number comes from the engine event, the snapshot or the tranche list.
+// A release card stores only what the event itself said (which tranches, how many shares); the free / locked counts, the chip
+// strip and "Release k of N" are filled in by liveMoment() from the same snapshot the rail renders, so they cannot disagree.
 function momentFor(ev) {
-  const g = G, d = ev.data || {}, m = { text: ev.text, type: ev.type };
+  const d = ev.data || {}, m = { text: ev.text, type: ev.type };
   if (ev.type === 'release') {
-    if (Array.isArray(d.tranches) && d.shares != null && d.pct != null) {
-      const snap = g.engine.snapshot(g.state), ids = d.tranches;
-      m.kind = 'release'; m.pct = d.pct; m.shares = d.shares; m.free = snap.shares.free; m.locked = d.locked != null ? d.locked : snap.shares.locked;
-      m.total = g.tr.length; m.idx = ids.map((id) => g.tr.findIndex((t) => t.id === id) + 1).filter(Boolean).sort((a, b) => a - b);
-      m.pips = g.tr.map((t) => ({ pct: t.pct, void: t.void, state: ids.includes(t.id) ? 'new' : (t.date && t.date <= snap.d ? 'done' : 'wait') }));
-    } else m.kind = d.never ? 'never' : d.relocked ? 'relock' : 'release';
+    if (Array.isArray(d.tranches) && d.shares != null && d.pct != null) { m.kind = 'release'; m.pct = d.pct; m.shares = d.shares; m.ids = d.tranches.slice(); }
+    else m.kind = d.never ? 'never' : d.relocked ? 'relock' : 'release';
   } else m.kind = ev.type;
   return m;
+}
+function liveMoment(m, snap) {
+  if (m.kind !== 'release' || !m.ids) return m;
+  const g = G, dated = g.tr.filter((t) => t.date);   // a price tranche that never fired has no date and is not a release
+  return {
+    ...m, free: snap.shares.free, locked: snap.shares.locked, total: dated.length,
+    idx: m.ids.map((id) => dated.findIndex((t) => t.id === id) + 1).filter(Boolean).sort((a, b) => a - b),
+    pips: g.tr.map((t) => ({ pct: t.pct, void: t.void, state: m.ids.includes(t.id) ? 'new' : (t.date && t.date <= snap.d ? 'done' : 'wait') })),
+  };
 }
 
 function handleEvents(events, quiet) {
@@ -525,7 +532,7 @@ function refresh() {
     vignette: g.card.vignette || null,
     tranches: g.tr.map((t) => ({ ...t, released: !!t.date && t.date <= snap.d })), rivals, mode: g.mode,
     progress: Math.min(1, Math.max(0, daysBetween(g.first, snap.d) / g.span)), speeds: g.speeds, speed: g.speed,
-    running: !!running(), watch: g.watch, dctx: g.dctx, achievements: [...g.achievements], unlocked: g.unlocked, notices: shownNotices(),
+    running: !!running(), watch: g.watch, dctx: g.dctx, achievements: [...g.achievements], unlocked: g.unlocked, notices: shownNotices().map((m) => liveMoment(m, snap)),
     marginText: g.marginText, seat: g.seat, cardId: g.cardId,
   };
   g.rail.update(view); g.paper.update(view);

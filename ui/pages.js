@@ -205,7 +205,7 @@ function gameTerms() {
     ["Basis", `1% of the offer price per share (SpaceX $1.35). All gains are treated as ${term("Long-term capital gains", "long-term")}.`, "ASSUMPTION"],
     ["Starting cash", `$3,000,000, earning the 1-month Treasury yield (DGS1MO) daily.`, "ASSUMPTION"],
     ["Family spending", `$166,667 on the first trading day of each month ($2M a year). Paid from cash; if cash is short, drawn from the credit line if available; otherwise an emergency overdraft at SOFR + 4%.`, "ASSUMPTION"],
-    ["House event", `On five-year cards, at month 18: "$10M due in 30 days." You pay from cash and the index fund, draw the credit line, sell shares if allowed, or skip the house (no score effect, a note in the debrief). The clock pauses.`, "ASSUMPTION"],
+    ["House event", `On five-year cards, at month 18: "$10M is due for the family's house in 30 days. Choose how to pay." You pay from cash and then the index fund (any shortfall goes on the overdraft), draw the credit line, or sell shares if the rules allow it that day. There is no skip: the money is spent, and the rival bots pay for it too. The clock pauses.`, "ASSUMPTION"],
     ["Clock and settlement", `One tick is one trading day from the card's price series. Actions apply at that day's close. Triggers and strikes use raw closes; returns use adjusted closes.`, "ASSUMPTION"],
     ["Blind cards", `Blind cards are played with prices indexed so the offer is $100 and the stake is 1,000,000 shares. Returns are unchanged; company names, dates and tickers are hidden until the card is finished.`, "ASSUMPTION"],
     ["Sale cost", `0.25% of proceeds on every sale.`, "ASSUMPTION"],
@@ -213,15 +213,18 @@ function gameTerms() {
     ["Seats", `<strong>Early engineer:</strong> a non-affiliate employee who has held more than a year. Rules on: lockup, trading window, 30-day ${term("Cooling-off")}. <strong>Founder-CEO:</strong> an ${term("Affiliate")}. Rules on: lockup, trading window, officer and director cooling-off, ${term("Rule 144")} volume cap, no sales before IPO day 91.`, "ASSUMPTION"],
     ["Trading window", `Closed from 30 calendar days before each earnings release until the start of the second trading day after it. Discretionary sales and adoption of plans and hedges only when it is open. For the live card's next, unannounced release, the game projects it at the last release plus 91 days and labels it "projected". The rule is a game term; the dates are real 8-K Item 2.02 filing dates.`, "ASSUMPTION"],
     ["10b5-1 plan", `Adopt only in an open window. Sell P% of the shares that are free at each monthly sale date (P = 2, 5 or 10) for 6, 12 or 18 months, at the first trading day close of each month. Plan sales ignore blackouts. One plan at a time; changing or cancelling starts over with a new cooling-off.`, "ASSUMPTION"],
-    ["Cooling-off", `Early engineer: 30 days. Founder-CEO: the later of 90 days or 2 business days after the next 10-Q or 10-K, capped at 120 days.`, "VERIFIED rule text, 17 CFR 240.10b5-1(c)(1)(ii)(B)"],
-    ["Zero-cost collar", `On free shares only. Tenor 6, 12 or 24 months (default 12). Put strike 80, 85 or 90% of today's close (default 85). The call strike solves zero cost by bisection on [S, 5S] to $0.01. Band rule: put at most 90%, call at least 110%. Cash-settled at expiry: you receive max(Kp − S, 0) and pay max(S − Kc, 0) per share, and the gains and losses are taxed at settlement. At expiry the clock pauses: roll at today's prices or let it end. Early unwind at model value less 1% of notional. Collared shares cannot be sold until the collar ends or is unwound.`, "ASSUMPTION; no IRS safe harbor for collars"],
-    ["Credit line", `Collateral: free shares you pledge. Maximum advance 25% of the pledged shares' value (collared pledged shares count at 70% of the put floor value, where that tool is included). ${term("Maintenance call", "Maintenance call")} when loan ÷ collateral value exceeds 35%. Rate SOFR + 2.00% (5.94% at SOFR 3.94% on 2026-10-29), accrued daily, capitalized monthly. Uses: spending, taxes, collar settlements, the house; never securities. On a call you have 3 business days; if still above 35% on day 3 the bank sells pledged shares at the close, ignoring blackouts, until the loan is 25% of the remaining collateral. The sale is taxed.`, "ASSUMPTION on terms; FINRA facts SESSION A"],
-    ["Cash and index fund", `Cash earns DGS1MO. The index fund is SPY adjusted closes (total return). Deposits and withdrawals are free; index fund gains are taxed on withdrawal at 23.8% using average cost.`, "ASSUMPTION"],
+    ["Cooling-off", `Early engineer: 30 days. Founder-CEO: the later of 90 days after adoption or 2 business days after the 10-Q or 10-K that reports the fiscal quarter in which the plan was adopted, capped at 120 days. The game takes that quarter as the calendar quarter containing the adoption date, and its report as the first 10-Q or 10-K filed after that quarter ends. A plan adopted in January therefore waits for the May report (or the 120-day cap), not the report for the quarter before it. The first sale is the first trading day on or after the cooling-off date.`, "VERIFIED rule text, 17 CFR 240.10b5-1(c)(1)(ii)(B)"],
+    ["10b5-1 plan and hedges", `While a plan is adopted (cooling-off included), you cannot open a new collar or buy a new put on the stock: a new hedge would void the plan's defense. Cancel the plan first, which starts a new cooling-off. Hedges opened before the plan stay in place. The same holds for a collar roll at expiry, because a roll is a new hedge.`, "VERIFIED rule text, 17 CFR 240.10b5-1(c)(1)(i)(C)"],
+    ["Zero-cost collar", `On free shares only. Tenor 6, 12 or 24 months (default 12). Put strike 80, 85 or 90% of today's close (default 85). The call strike solves zero cost by bisection on [S, 5S] to $0.01. Band rule: put at most 90%, call at least 110%. Cash-settled at expiry: you receive max(Kp − S, 0) and pay max(S − Kc, 0) per share, and the gains and losses are taxed at settlement. At expiry the clock pauses: roll at today's prices or let it end. Early unwind at model value less 1% of notional. Collared shares cannot be sold until the collar ends or is unwound. Needs 20 trading days of price history to price, so collars and puts open from the 21st trading day. <strong>Stated game terms:</strong> collar and put settlements are taxed at 23.8% when they settle (in real life the treatment can be short-term, with the straddle rules deferring losses); both legs are struck at the model mid price with no dealer spread, so a collar costs nothing up front, although unwinding early costs 1%. On SpaceX, every day you can play uses the model vol (60-day realized vol × 1.10, with the skew above); the listed-option smile appears only in the Street check on the latest data day.`, "ASSUMPTION; no IRS safe harbor for collars"],
+    ["Credit line", `Collateral: free shares you pledge. Maximum advance 25% of the pledged shares' value (collared pledged shares count at 70% of the put floor value, where that tool is included). ${term("Maintenance call", "Maintenance call")} when loan ÷ collateral value exceeds 35%. Rate SOFR + 2.00% (5.94% at SOFR 3.94% on 2026-10-29), accrued daily, capitalized monthly. Uses: spending, taxes, collar settlements, the house; never securities. On a call the deadline is the third trading day after the call day, counted on the card's own price dates, and you can act through that day's close (the clock pauses on that day with "Last day to meet the call"). If the loan is still above 35% after the deadline day, the bank sells pledged shares at the close of the next trading day, ignoring blackouts. It sells the fewest shares that make the loan, less the sale proceeds after the 0.25% cost, at most 25% of the remaining pledged value. The tax on the gain is your bill, accrued in the tax ledger like any sale, not taken out of the loan repayment. For the founder seat the bank's sale counts toward the Rule 144 volume.`, "ASSUMPTION on terms; FINRA facts SESSION A"],
+    ["Cash and index fund", `Cash earns DGS1MO. The index fund is SPY adjusted closes (total return). Deposits and withdrawals are free; index fund gains are taxed on withdrawal at 23.8% using average cost. Auto-invest (on by default): sale proceeds go straight into the index fund, and on the first trading day of each month any cash above $2,000,000 (a year of spending) is moved in too, but never borrowed money: cash less the loan and the overdraft stays at or above zero.`, "ASSUMPTION"],
+    ["Dividends and total return", `Returns are total returns: price plus dividends. Cash dividends come from the dividend-adjusted price series: D<sub>t</sub> = close<sub>t−1</sub> × adj<sub>t</sub> / adj<sub>t−1</sub> − close<sub>t</sub>, counted when it exceeds 0.01% of the close. Each dividend is paid into cash on the day, on every share you hold (locked, collared and pledged shares included), taxed at 23.8% through the same ledger as a sale, and counted in net worth. Only KE Holdings (a blind card) pays dividends among the shipped cards.`, "ASSUMPTION; adjusted closes from Yahoo"],
+    ["Tax at the end", `At the last close the game charges the tax still to come: 23.8% × max(0, G + U) − 23.8% × max(0, G), where G is the gain already realized and U the unrealized gain on shares, the index fund and the exchange fund plus the mark of any open collars and the mark of open puts less their premium. Losses net against gains. The charge is never less than minus the tax the ledger already counts.`, "ASSUMPTION"],
     ["Protective put", `Where the build includes it: 80, 85 or 90% puts for 6 or 12 months on free shares, premium paid from cash.`, "ASSUMPTION"],
-    ["Exchange fund", `Where the build includes it: contribute free shares (minimum $1M) in an open window. Value follows SPY total return less 1% a year. Locked seven years; at card end it is valued at fund value less 23.8% tax on the gain over the carried-over basis, labeled "locked two more years; leave early and you get your own shares back".`, "SESSION C plus secondary sources; UNCONFIRMED at statute"],
+    ["Exchange fund", `Where the build includes it: contribute free shares (minimum $1M) in an open window. Value follows SPY total return less 1% a year. Locked seven years; at card end it is valued at fund value less 23.8% tax on the gain over the carried-over basis, labeled "locked two more years". Leaving early (returning your own shares) is not modeled; the game holds the fund to the end.`, "SESSION C plus secondary sources; UNCONFIRMED at statute"],
     ["The Holder (rival)", `Never sells except what spending and the house need, from released shares in open windows; no hedges, no loans.`, "ASSUMPTION"],
     ["The Seller (rival)", `Sells every released share at the first open-window close, and adopts a 10b5-1 plan at 10% a month at the first open window to sell through blackouts; proceeds go to the index fund.`, "ASSUMPTION"],
-    ["The Playbook (rival)", `At each release, sells a third, collars a third (85%, 12 months, rolled) and holds a third; adopts a 5% monthly 10b5-1 plan at the first open window. No bank states this plan.`, "ASSUMPTION; no bank's stated plan"],
+    ["The Playbook (rival)", `At each release, sells a third, collars a third (85%, 12 months, rolled) and holds a third. It collars first, and adopts its 5% monthly 10b5-1 plan only when it has no further collar to place at that release. It never hedges while its plan is active: if a later release comes while the plan runs, it sells a third and holds the rest, and a collar that expires while the plan runs is not rolled. No bank states this plan.`, "ASSUMPTION; no bank's stated plan"],
     ["SpaceX card prices", `Offer price $135 (pricing 2026-06-11); first close $160.95; peak $211.39 (06-16); low $108.27 (08-05); $134.72 at the 2026-10-30 close. The live card grows by one day each trading day, so these are figures through that date, and the card is not comparable with five-year cards.`, "VERIFIED 2026-10-31 and 2026-11-01, Yahoo"],
     ["SpaceX seat", `Early engineer only. All of the founder's shares are locked for 366 days, to June 12, 2027, with no early release provisions, so the founder seat is sealed: "The founder's shares are locked until June 12, 2027 (424B4)."`, "VERIFIED 2026-11-01, 424B4"],
     ["SpaceX 30% price trigger", `Tranche b releases only if the close was at least 30% above $135 ($175.50) on 5 of the 10 trading days ending on the First Earnings Release Date. The highest close in the window was $125.33 on 2026-08-04, so it did not fire.`, "VERIFIED 2026-11-01, Yahoo closes, computed"],
@@ -243,7 +246,7 @@ const F = {
   sharpe: "Sharpe = mean(R_t − rf_t) / sample stdev(R_t − rf_t) × √252",
   rf: "rf_t = (1 + DGS1MO_t/100)^(1/252) − 1",
   dd: "the largest peak-to-trough fall of the spending-adjusted wealth index V_t = V_{t−1} × (1 + R_t), V_0 = 1",
-  irr: "After-tax IRR = XIRR (365-day year, Newton with bisection fallback) on: −W_0 on day 0; +S_t on each spending date; +(W_T − 23.8% × unrealized gains on shares, index fund and exchange fund) on the last day",
+  irr: "After-tax IRR = XIRR (365-day year, Newton with bisection fallback) on: −W_0 on day 0; +S_t on each spending date; +(W_T − terminal tax) on the last day, where terminal tax = 23.8% × max(0, G + U) − 23.8% × max(0, G), G the realized gain and U the unrealized gains on shares, index fund and exchange fund plus the mark of open collars and puts",
   wealth: "After-tax family wealth = the final XIRR flow plus total spending",
   vol: "base vol = max(realized vol of daily log returns over the last 60 trading days (or since IPO if fewer, minimum 20 days), 30%) × 1.10"
 };
@@ -260,7 +263,7 @@ function formulasHtml() {
     `<div><dt>${term("IRR", "After-tax IRR")}</dt><dd><p>${fx(F.irr)}.</p><p>Day-0 wealth is taken after tax too: the day-0 flow is −(W<sub>0</sub> − 23.8% × shares × (close<sub>0</sub> − basis)), so both ends are after tax and the tax already embedded in the stake on day 0 is not charged to your decisions. <span class="tag">[ASSUMPTION, build decision 2026-11-02]</span></p></dd></div>` +
     `<div><dt>After-tax family wealth</dt><dd><p>${fx(F.wealth)}.</p></dd></div>` +
     `</dl>` +
-    `<p>Display: the big number is after-tax family wealth. A table of four measures: You, The Holder, The Seller, The Playbook. A verdict line: "You beat The Seller on 3 of 4 measures." No composite grade. The measures are identical for you and the rival bots.</p>`
+    `<p>Display: the big number is after-tax family wealth. A table of four measures: You, The Holder, The Seller, The Playbook. A verdict line: "You beat The Seller on 3 of 4 measures." No composite grade. The measures are identical for you and the rival bots, and they are compared at the precision shown (Sharpe to one decimal, drawdown and IRR to 0.1 point, wealth to $0.1M), so two scores that look the same are a tie. Returns are total returns: price plus dividends.</p>`
   );
 }
 
@@ -270,7 +273,8 @@ function pricingHtml() {
     `<li>Black-Scholes, no dividends. Rate r = FRED DGS1 on the trade date, used as a continuous rate.</li>` +
     `<li>SpaceX on the latest data day: put and call each at their own strike's ${term("Implied volatility", "implied vol")}, interpolated from the one-year smile stored in <code>data/spcx-options.json</code>.</li>` +
     `<li>Every other date and card: ${fx(F.vol)}. Puts at base + 1.5 vol points, calls at base − 1.5. ${tag("ASSUMPTION; skew calibrated on SPCX 2026-10-30")}</li>` +
-    `<li>Before 20 trading days of history, collars are blocked anyway: the shares are locked.</li>` +
+    `<li>Collars and puts need 20 trading days of price history to price. Before that the game blocks them: "Options need 20 trading days of price history to price."</li>` +
+    `<li>Stated game terms: both legs are struck at the model mid price with no dealer spread, and SpaceX collars use this model vol on every day you can play.</li>` +
     `</ul>` +
     `<div class="pg-scroll"><div class="pg-bs" role="group" aria-label="Black-Scholes formulas">` +
     `<p><span class="pg-formula">Call = S·N(d<sub>1</sub>) − K·e<sup>−rT</sup>·N(d<sub>2</sub>)</span></p>` +
@@ -331,8 +335,14 @@ function rulesHtml() {
     },
     {
       rule: "10b5-1 cooling-off",
-      what: "Early engineer 30 days. Founder: the later of 90 days or 2 business days after the periodic report, at most 120 days.",
+      what: "Early engineer 30 days. Founder: the later of 90 days after adoption or 2 business days after the 10-Q or 10-K for the quarter in which the plan was adopted, at most 120 days.",
       src: [link(SRC.cfr10b51, "17 CFR 240.10b5-1(c)(1)(ii)(B)")],
+      tag: "VERIFIED 2026-11-01"
+    },
+    {
+      rule: "No new hedge under a plan",
+      what: "No new collar or put while a 10b5-1 plan is adopted, cooling-off included. Cancel the plan first.",
+      src: [link(SRC.cfr10b51, "17 CFR 240.10b5-1(c)(1)(i)(C)")],
       tag: "VERIFIED 2026-11-01"
     },
     {
@@ -355,7 +365,7 @@ function rulesHtml() {
     },
     {
       rule: "Single-stock lending",
-      what: "25% advance, 35% call, 3 business days, forced taxable sale.",
+      what: "25% advance, 35% call, deadline on the third trading day, forced taxable sale at the next close.",
       src: [`game terms; ${link(SRC.finra, "FINRA, securities-backed lines of credit")}`],
       tag: "ASSUMPTION; FINRA facts SESSION A"
     },
@@ -511,7 +521,7 @@ function leavesOutHtml() {
     ["Charitable remainder trusts", "trusts that pay an income stream and leave the remainder to charity"],
     ["Donor-advised funds", "gifts of appreciated shares to a charitable account"],
     ["QSBS (Section 1202)", "exclusion of some gain on qualified small business stock"],
-    ["State tax", "not included unless the state-tax toggle is on"],
+    ["State tax", "not included"],
     ["Straddle rules", "tax rules for offsetting positions"],
     ["Real dealer spreads", "a bank quoting a $100M block would charge more than the model price"]
   ];

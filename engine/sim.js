@@ -313,7 +313,7 @@ function terminalTaxOf(s, ctx) {
   for (const p of s.puts) U += p.shares * putMarkPerShare(s, ctx, p) - p.premium;
   const G = s.tax.realized;
   const raw = RATE * Math.max(0, G + U) - RATE * Math.max(0, G);
-  return { unrealizedTax: Math.max(-taxLiability(s), raw), U, G };
+  return { unrealizedTax: Math.max(-taxLiability(s), raw) || 0, U, G };
 }
 
 function pushRow(s, ctx, replace) {
