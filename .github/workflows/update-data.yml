@@ -1,0 +1,57 @@
+name: update-data
+
+# Nightly after the US close. GitHub's scheduler can run late; the app says "nightly", never an exact time.
+on:
+  schedule:
+    - cron: '30 23 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    outputs:
+      pushed: ${{ steps.commit.outputs.pushed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Fetch new data
+        run: node scripts/update-data.mjs
+      - name: Build cards
+        run: node scripts/build-cards.mjs
+      - name: Tests
+        run: node --test
+      - name: Commit data (tests passed)
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "data: nightly update $(date -u +%F)"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # A push made with GITHUB_TOKEN does not trigger pages.yml, so the deploy is called explicitly.
+  deploy:
+    needs: update
+    if: needs.update.outputs.pushed == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml

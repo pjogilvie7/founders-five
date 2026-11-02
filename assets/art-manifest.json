@@ -1,0 +1,39 @@
+{
+  "spcx": {
+    "vignette": "assets/vignettes/rocket.png",
+    "revealVignette": "assets/vignettes/rocket-orbit.png"
+  },
+  "neutral": [
+    "assets/vignettes/neutral-key.png",
+    "assets/vignettes/neutral-ship.png",
+    "assets/vignettes/neutral-bridge.png",
+    "assets/vignettes/neutral-scales.png",
+    "assets/vignettes/neutral-lighthouse.png",
+    "assets/vignettes/neutral-beehive.png"
+  ],
+  "revealByIndustry": {
+    "software": "assets/vignettes/reveal-software.png",
+    "consumer": "assets/vignettes/reveal-consumer.png",
+    "fintech": "assets/vignettes/reveal-fintech.png",
+    "health": "assets/vignettes/reveal-health.png",
+    "mobility": "assets/vignettes/reveal-mobility.png",
+    "travel": "assets/vignettes/reveal-travel.png",
+    "other": "assets/vignettes/reveal-other.png"
+  },
+  "title": "assets/title/medallion.png",
+  "rivals": {
+    "holder": "assets/rivals/holder.png",
+    "seller": "assets/rivals/seller.png",
+    "playbook": "assets/rivals/playbook.png"
+  },
+  "icons": {
+    "stock": "assets/icons/stock.svg",
+    "plan": "assets/icons/plan.svg",
+    "collar": "assets/icons/collar.svg",
+    "credit": "assets/icons/credit.svg",
+    "cash": "assets/icons/cash.svg",
+    "put": "assets/icons/put.svg",
+    "exchange": "assets/icons/exchange.svg",
+    "rules": "assets/icons/rules.svg"
+  }
+}

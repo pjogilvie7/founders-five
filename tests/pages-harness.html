@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pages harness</title>
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="../ui/pages.css">
+<style>body{background:var(--paper);color:var(--ink);margin:0}</style>
+</head>
+<body>
+<main id="root"></main>
+<script type="module">
+  // ?page=method|data|ai|glossary  &fx=1 uses tests/pages-fixtures.js instead of data/
+  import { renderPage } from "../ui/pages.js";
+  const q = new URLSearchParams(location.search);
+  let ctx = {};
+  if (q.get("fx") === "1") ctx = (await import("./pages-fixtures.js")).makeCtx();
+  try {
+    await renderPage(q.get("page") || "method", document.getElementById("root"), ctx);
+  } catch (e) {
+    window.__error = String(e);
+  }
+  window.__ready = true;
+</script>
+</body>
+</html>

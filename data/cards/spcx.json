@@ -1,0 +1,383 @@
+{
+  "id": "spcx",
+  "blind": false,
+  "live": true,
+  "name": "SpaceX",
+  "ticker": "SPCX",
+  "industry": "Aerospace",
+  "vignette": "assets/vignettes/rocket.png",
+  "revealVignette": "assets/vignettes/rocket-orbit.png",
+  "ipo": {
+    "offerPrice": 135,
+    "pricingDate": "2026-06-11",
+    "firstTrade": "2026-06-12",
+    "proceedsUSD": 74999999925,
+    "sharesOutPost": 7380196910,
+    "source": {
+      "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm",
+      "page": "cover; The Offering, p. 17"
+    }
+  },
+  "prices": [
+    ["2026-06-12",160.95,160.949997,519234800],
+    ["2026-06-15",192.5,192.5,256226600],
+    ["2026-06-16",211.39,211.389999,195401600],
+    ["2026-06-17",191.82,191.820007,201719500],
+    ["2026-06-18",185,185,272126800],
+    ["2026-06-22",154.6,154.600006,169183800],
+    ["2026-06-23",156.11,156.110001,155848100],
+    ["2026-06-24",154.54,154.539993,76101500],
+    ["2026-06-25",153,153,62212400],
+    ["2026-06-26",153.23,153.229996,126932900],
+    ["2026-06-29",164.19,164.190002,81443100],
+    ["2026-06-30",170.86,170.860001,82047500],
+    ["2026-07-01",157.54,157.539993,109317600],
+    ["2026-07-02",162,162,61257100],
+    ["2026-07-06",160.42,160.419998,188831300],
+    ["2026-07-07",149.47,149.470001,83779700],
+    ["2026-07-08",148.3,148.300003,60949400],
+    ["2026-07-09",152.16,152.160004,46468600],
+    ["2026-07-10",145.3,145.300003,46826000],
+    ["2026-07-13",139.14,139.139999,71456500],
+    ["2026-07-14",136.08,136.080002,46694800],
+    ["2026-07-15",135.27,135.270004,58040900],
+    ["2026-07-16",131.11,131.110001,58725600],
+    ["2026-07-17",123.99,123.989998,83706200],
+    ["2026-07-20",119.85,119.849998,57337300],
+    ["2026-07-21",123.54,123.540001,79718100],
+    ["2026-07-22",115.26,115.260002,92731800],
+    ["2026-07-23",118.24,118.239998,75246500],
+    ["2026-07-24",115.07,115.07,56786100],
+    ["2026-07-27",113.5,113.5,64540700],
+    ["2026-07-28",116.41,116.410004,81714300],
+    ["2026-07-29",112.55,112.550003,53995200],
+    ["2026-07-30",112.2,112.199997,56008000],
+    ["2026-07-31",108.37,108.370003,58835700],
+    ["2026-08-03",114.53,114.529999,70524000],
+    ["2026-08-04",125.33,125.330002,144130100],
+    ["2026-08-05",108.27,108.269997,208488400],
+    ["2026-08-06",114.92,114.919998,255176600],
+    ["2026-08-07",133.11,133.110001,242130700],
+    ["2026-08-10",138.74,138.740005,169934300],
+    ["2026-08-11",133.29,133.289993,108900600],
+    ["2026-08-12",146.15,146.149994,167236400],
+    ["2026-08-13",141.29,141.289993,120282200],
+    ["2026-08-14",140,140,96727800],
+    ["2026-08-17",146.23,146.229996,116675400],
+    ["2026-08-18",143.34,143.339996,84191000],
+    ["2026-08-19",139.65,139.649994,76612300],
+    ["2026-08-20",134,134,119813200],
+    ["2026-08-21",136.97,136.970001,78808300],
+    ["2026-08-24",135,135,60188400],
+    ["2026-08-25",137.95,137.949997,53075000],
+    ["2026-08-26",139.63,139.630005,61380500],
+    ["2026-08-27",140.87,140.869995,55268800],
+    ["2026-08-28",141.5,141.5,55111200],
+    ["2026-08-31",143.69,143.690002,63145000],
+    ["2026-09-01",142.23,142.229996,53808100],
+    ["2026-09-02",140.71,140.710007,49903700],
+    ["2026-09-03",149.74,149.740005,121333600],
+    ["2026-09-04",147.95,147.949997,49122400],
+    ["2026-09-08",153.47,153.470001,85840700],
+    ["2026-09-09",147.55,147.550003,120593500],
+    ["2026-09-10",148.18,148.179993,118598900],
+    ["2026-09-11",151.21,151.210007,79273400],
+    ["2026-09-14",148.15,148.149994,67861000],
+    ["2026-09-15",143.49,143.490005,72746800],
+    ["2026-09-16",150.88,150.880005,108770000],
+    ["2026-09-17",154.81,154.809998,83986400],
+    ["2026-09-18",152.71,152.710007,335670500],
+    ["2026-09-21",151.85,151.850006,82283700],
+    ["2026-09-22",154.72,154.720001,59197600],
+    ["2026-09-23",148.36,148.360001,60641600],
+    ["2026-09-24",148.03,148.029999,72721400],
+    ["2026-09-25",148.68,148.679993,54595200],
+    ["2026-09-28",145.47,145.470001,83516700],
+    ["2026-09-29",149.24,149.240005,80056700],
+    ["2026-09-30",150.86,150.860001,79614200],
+    ["2026-10-01",148.07,148.070007,69092500],
+    ["2026-10-02",158.96,158.960007,119859100],
+    ["2026-10-05",171.09,171.089996,135688900],
+    ["2026-10-06",171.92,171.919998,106952400],
+    ["2026-10-07",167.6,167.600006,77473000],
+    ["2026-10-08",160.57,160.570007,71897800],
+    ["2026-10-09",162.57,162.570007,93042600],
+    ["2026-10-12",163.42,163.419998,67434500],
+    ["2026-10-13",156.54,156.539993,69022500],
+    ["2026-10-14",152.16,152.160004,68781000],
+    ["2026-10-15",148.62,148.619995,101177100],
+    ["2026-10-16",146.03,146.029999,88552900],
+    ["2026-10-19",147.96,147.960007,74037800],
+    ["2026-10-20",147.79,147.789993,117204900],
+    ["2026-10-21",159.31,159.309998,220785200],
+    ["2026-10-22",144.75,144.75,197046500],
+    ["2026-10-23",147.49,147.490005,110617500],
+    ["2026-10-26",146.9,146.899994,103184900],
+    ["2026-10-27",148.58,148.580002,95845400],
+    ["2026-10-28",145.23,145.229996,98705800],
+    ["2026-10-29",143.89,143.889999,68364400],
+    ["2026-10-30",134.72,134.720001,121979900]
+  ],
+  "earnings": [
+    {"d":"2026-08-04","url":"https://www.sec.gov/Archives/edgar/data/1181412/000162828026052515/spcx-20260804.htm"},
+    {"d":"2026-10-20","url":"https://www.sec.gov/Archives/edgar/data/1181412/000162828026066482/spcx-20261020.htm"}
+  ],
+  "reports": [
+    {"d":"2026-08-04","form":"10-Q","url":"https://www.sec.gov/Archives/edgar/data/1181412/000162828026052535/spcx-20260630.htm"},
+    {"d":"2026-10-22","form":"10-Q","url":"https://www.sec.gov/Archives/edgar/data/1181412/000162828026066880/spcx-20260930.htm"}
+  ],
+  "lockup": {
+    "groups": [
+      {
+        "id": "engineer-180",
+        "seats": ["engineer"],
+        "label": "Early employee, not an officer or director (non-affiliate): 180-day lock-up with timed early releases",
+        "groupQuote": "All other outstanding shares of our common stock are subject to the Transfer restrictions described above until immediately after the close of the trading day on the 180th day after the date of this prospectus (such period of time, the “180-day lock-up period”), subject to the early release provisions described below.",
+        "groupPage": 272,
+        "groupNote": "The filing does not name who sits in the 180-day group; it says 'All other outstanding shares' are in it and only 'certain shares' of 'several of our shareholders' (not Mr. Musk) are in the longer 'extended lock-up period' (pp.271-272). An ordinary early employee is modelled as 'all other'. Both reads made the same assumption. Percentages are of the holder's locked shares; the filing gives them as percent of the group's shares (p.259 table).",
+        "tranches": [
+          {
+            "id": "e-earn1",
+            "pct": 20,
+            "trigger": {
+              "type": "afterEarnings",
+              "n": 1,
+              "tradingDaysAfter": 2
+            },
+            "quote": "on or after the second full trading day on Nasdaq immediately following the public release of our quarterly financial results (which for this purpose does not include “flash” numbers or preliminary, partial earnings) for the quarter ended June 30, 2026 (such date, the “First Earnings Release Date”), up to 20% of the shares may be Transferred;",
+            "page": 272,
+            "resolvedDate": "2026-08-06",
+            "readA": "20% on 2026-08-06: 8-K accepted 16:01 ET on 08-04, read as after-close; 2nd full trading day after = 08-06 (flagged 08-05 if pre-open).",
+            "readB": "20% on 2026-08-06: same reasoning (8-K 16:01 ET, webcast 4:30pm ET); 08-05 first, 08-06 second.",
+            "reconcilerNote": "Filing wording settles the counting: the shares are free 'on or after the second full trading day ... following the public release' (p.272); the extended-lock-up sentence on p.271 says the same period runs 'until the beginning of the second full trading day', so the shares are free at the OPEN of that day. Release time is not in the filing; EDGAR shows the Item 2.02 8-K accepted 2026-08-04 16:01:05 ET, the press release announced a 4:30 p.m. ET webcast the same day, and the stock reaction landed the next session (SPCX closed 125.33 on 08-04 and 108.27 on 08-05), so the release was after the close of Tue 2026-08-04. First full trading day following = Wed 2026-08-05, second = Thu 2026-08-06. Both reads agree; confirmed. (PRD Fact 5 had this UNCONFIRMED; now resolved as after-close.)",
+            "reconciled": true,
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          },
+          {
+            "id": "e-price30",
+            "pct": 10,
+            "trigger": {
+              "type": "priceCondition",
+              "pct": 30,
+              "of": "offerPrice",
+              "daysMet": 5,
+              "window": 10,
+              "endsOn": "firstEarnings"
+            },
+            "quote": "if the reported closing price of our Class A common stock on Nasdaq is at least 30% greater than the public offering price set forth on the cover page of this prospectus for at least five of the ten consecutive trading days ending on, and including, the First Earnings Release Date, on or after the second full trading day immediately after the First Earnings Release Date, up to an additional 10% of the shares may be Transferred;",
+            "page": 272,
+            "resolvedDate": null,
+            "conditionMet": false,
+            "note": "condition not met; these shares release with the day-180 remainder",
+            "readA": "10% never released early (condition failed: 0 of 10 closes >= $175.50, max $125.33); resolvedDate null; flagged that the 10% really releases 2026-12-08.",
+            "readB": "Same: failed, null; fallbackDate 2026-12-08; says the filing does not forfeit the shares.",
+            "reconcilerNote": "Condition failed. Threshold 1.30 x $135.00 = $175.50. The ten trading days ending on and including the First Earnings Release Date 2026-08-04 (Jul 22 .. Aug 4) closed 115.26, 118.24, 115.07, 113.50, 116.41, 112.55, 112.20, 108.37, 114.53, 125.33; 0 of 10 at or above $175.50 (5 needed). A window ending 08-05 or 08-06 would also fail. Closes re-checked against data/src/spcx/base.json. The filing never forfeits these shares: they stay in the 180-day group and fall under item (e) 'all of the shares' (see e-rem), consistent with the p.259 table (up to 797.6M shares if the Additional Release Shares were not released vs 328.4M if they were). The engine must treat resolvedDate null on this tranche as 'folded into e-rem', not 'never released'.",
+            "reconciled": true,
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          },
+          {
+            "id": "e-d70",
+            "pct": 7,
+            "trigger": {
+              "type": "calendarDaysAfter",
+              "days": 70,
+              "from": "pricingDate",
+              "onOrAfter": true
+            },
+            "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+            "page": 272,
+            "resolvedDate": "2026-08-20",
+            "readA": "7% on 2026-08-20 (day 70, 'on or after').",
+            "readB": "7% on 2026-08-20 (day 70, 'on or after').",
+            "reconcilerNote": "Both reads agree. Filing words: 'on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026'. No 'after the close' qualifier on these dates (the p.258-259 table lists them under 'Earliest Date Available for Sale'), so the shares are free at the open of 2026-08-20, a Mon-Fri non-holiday trading day.",
+            "reconciled": true,
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          },
+          {
+            "id": "e-d90",
+            "pct": 7,
+            "trigger": {
+              "type": "calendarDaysAfter",
+              "days": 90,
+              "from": "pricingDate",
+              "onOrAfter": true
+            },
+            "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+            "page": 272,
+            "resolvedDate": "2026-09-09",
+            "readA": "7% on 2026-09-09 (day 90, 'on or after').",
+            "readB": "7% on 2026-09-09 (day 90, 'on or after').",
+            "reconcilerNote": "Both reads agree. Filing words: 'on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026'. No 'after the close' qualifier on these dates (the p.258-259 table lists them under 'Earliest Date Available for Sale'), so the shares are free at the open of 2026-09-09, a Mon-Fri non-holiday trading day.",
+            "reconciled": true,
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          },
+          {
+            "id": "e-d105",
+            "pct": 7,
+            "trigger": {
+              "type": "calendarDaysAfter",
+              "days": 105,
+              "from": "pricingDate",
+              "onOrAfter": true
+            },
+            "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+            "page": 272,
+            "resolvedDate": "2026-09-24",
+            "readA": "7% on 2026-09-24 (day 105, 'on or after').",
+            "readB": "7% on 2026-09-24 (day 105, 'on or after').",
+            "reconcilerNote": "Both reads agree. Filing words: 'on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026'. No 'after the close' qualifier on these dates (the p.258-259 table lists them under 'Earliest Date Available for Sale'), so the shares are free at the open of 2026-09-24, a Mon-Fri non-holiday trading day.",
+            "reconciled": true,
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          },
+          {
+            "id": "e-d120",
+            "pct": 7,
+            "trigger": {
+              "type": "calendarDaysAfter",
+              "days": 120,
+              "from": "pricingDate",
+              "onOrAfter": true
+            },
+            "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+            "page": 272,
+            "resolvedDate": "2026-10-09",
+            "readA": "7% on 2026-10-09 (day 120, 'on or after').",
+            "readB": "7% on 2026-10-09 (day 120, 'on or after').",
+            "reconcilerNote": "Both reads agree. Filing words: 'on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026'. No 'after the close' qualifier on these dates (the p.258-259 table lists them under 'Earliest Date Available for Sale'), so the shares are free at the open of 2026-10-09, a Mon-Fri non-holiday trading day.",
+            "reconciled": true,
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          },
+          {
+            "id": "e-d135",
+            "pct": 7,
+            "trigger": {
+              "type": "calendarDaysAfter",
+              "days": 135,
+              "from": "pricingDate",
+              "onOrAfter": true
+            },
+            "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+            "page": 272,
+            "resolvedDate": "2026-10-26",
+            "calendarDate": "2026-10-24",
+            "readA": "7% resolvedDate 2026-10-26 (Oct 24 is a Saturday, first trading day on or after).",
+            "readB": "7% resolvedDate 2026-10-24 (the filing's calendar date) plus firstTradingDay 2026-10-26.",
+            "reconcilerNote": "DIFFERENCE between reads: A put the trading day in resolvedDate, B put the calendar date. Settled: resolvedDate is the first trading day the shares are free. Filing: 'on or after ... October 24, 2026 (the dates that are ... 135 days ...)'; no close qualifier; Oct 24 2026 is a Saturday, so Monday 2026-10-26 is the first day they can be sold. calendarDate keeps 2026-10-24.",
+            "reconciled": true,
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          },
+          {
+            "id": "e-earn2",
+            "pct": 28,
+            "trigger": {
+              "type": "afterEarnings",
+              "n": 2,
+              "tradingDaysAfter": 2
+            },
+            "quote": "on or after the second full trading day on Nasdaq immediately following the public release of our quarterly financial results (which for this purpose does not include “flash” numbers or preliminary, partial earnings) for the quarter ended September 30, 2026, up to an additional 28% of the shares may be Transferred; and",
+            "page": 272,
+            "resolvedDate": "2026-10-22",
+            "readA": "28% on 2026-10-22: 8-K accepted 16:00 ET on 10-20, after-close; 2nd full trading day = 10-22.",
+            "readB": "28% on 2026-10-22: 8-K accepted 16:00:51 ET, webcast 4:30pm ET; 10-21 first, 10-22 second.",
+            "reconcilerNote": "Filing wording settles the counting: the shares are free 'on or after the second full trading day ... following the public release' (p.272); the extended-lock-up sentence on p.271 says the same period runs 'until the beginning of the second full trading day', so the shares are free at the OPEN of that day. Release time is not in the filing; EDGAR shows the Item 2.02 8-K accepted 2026-10-20 16:00:51 ET, the press release announced a 4:30 p.m. ET webcast the same day, and the stock reaction landed the next session (SPCX closed 147.79 on 10-20 and 159.31 on 10-21), so the release was after the close of Tue 2026-10-20. First full trading day following = Wed 2026-10-21, second = Thu 2026-10-22. Both reads agree; confirmed.",
+            "reconciled": true,
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          },
+          {
+            "id": "e-rem",
+            "pct": 7,
+            "trigger": {
+              "type": "remainder",
+              "days": 180,
+              "from": "pricingDate"
+            },
+            "quote": "on or after December 8, 2026 (the date that is 180 days after the date of this prospectus), all of the shares may be Transferred.",
+            "page": 272,
+            "resolvedDate": "2026-12-08",
+            "note": "The engine releases ALL still-locked shares on this date: 7% on its own plus the 10% from e-price30 (condition not met) = 17% of the holder's shares in total. 7% = 100 - (20+10+35+28).",
+            "readA": "7% (17% with the failed 10%) on 2026-12-08; flagged that 'after the close' could make the first sale day 2026-12-09.",
+            "readB": "7% (pctIfPriceConditionFailed 17) on 2026-12-08; no close issue raised.",
+            "reconcilerNote": "Orchestrator 2026-11-02: set to 2026-12-08. The specific release clause (p.272) reads \"on or after December 8, 2026 (the date that is 180 days after the date of this prospectus), all of the shares may be Transferred\" and the release table lists December 8, 2026; QUESTIONS fact 3 (binding) uses Dec 8. The general sentence \"until immediately after the close of the trading day on the 180th day\" (p.271) could imply Dec 9. Human check Monday.",
+            "reconciled": true,
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "founder-366",
+        "seats": ["founder"],
+        "label": "Founder-CEO (Mr. Musk; officer, director, affiliate): 366-day lock-up, no early release",
+        "groupQuote": "Our founder has agreed with the underwriters that all of the shares of our common stock owned by him are subject to the restrictions described above until immediately after the close of the trading day on the 366th day after the date of this prospectus. In addition, our founder may make Permitted Transfers (as defined in our charter), subject to the restrictions described in clauses (A), (B), and (D) of paragraph a. above. Our founder’s shares are not subject to any early release provisions during the lock-up period.",
+        "groupPage": 271,
+        "groupNote": "Not playable on the live card: the only release is 2027-06-14, after the card window.",
+        "tranches": [
+          {
+            "id": "f-366",
+            "pct": 100,
+            "trigger": {
+              "type": "calendarDaysAfter",
+              "days": 366,
+              "from": "pricingDate",
+              "onOrAfter": true
+            },
+            "quote": "Our founder has agreed with the underwriters that all of the shares of our common stock owned by him are subject to the restrictions described above until immediately after the close of the trading day on the 366th day after the date of this prospectus. In addition, our founder may make Permitted Transfers (as defined in our charter), subject to the restrictions described in clauses (A), (B), and (D) of paragraph a. above. Our founder’s shares are not subject to any early release provisions during the lock-up period.",
+            "page": 271,
+            "resolvedDate": "2027-06-14",
+            "calendarDate": "2027-06-12",
+            "readA": "100% on 2027-06-14 (Jun 12 is a Saturday; first trading day on or after); no early release.",
+            "readB": "100% resolvedDate 2027-06-12 (the filing's calendar date) plus firstTradingDay 2027-06-14; no early release.",
+            "reconciled": true,
+            "reconcilerNote": "DIFFERENCE between reads: A put the trading day in resolvedDate, B the calendar date. Settled: 2027-06-14. Filing: restrictions last 'until immediately after the close of the trading day on the 366th day' (p.271); the p.259 table dates it 'June 12, 2027 (366th day after the date of this prospectus)', a Saturday, so the first day shares can be sold is Monday 2027-06-14. 'Our founder's shares are not subject to any early release provisions during the lock-up period.' Single tranche. The card's price window ends before 2027-06-14, so groupForSeat should treat the founder seat as not playable: 'The founder's shares are locked until June 12, 2027 (424B4).' Rule 144 affiliate limits (p.261) apply after that date but are moot for the card.",
+            "human": {
+              "status": "pending",
+              "by": null,
+              "date": null
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "headlines": [],
+  "reveal": {
+    "text": "",
+    "numbersChecked": false
+  },
+  "notes": []
+}

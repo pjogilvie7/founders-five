@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Founder's Five art preview</title>
+<style>
+  :root{--rail:#121F29;--rail-2:#1A2C38;--rail-line:#2C4352;--rail-text:#E9E3D2;--rail-muted:#9AA7AE;
+        --paper:#F1ECDF;--paper-2:#E8E0CC;--paper-line:#D9CEB4;--ink:#18262F;--muted:#5B6870;--gold:#B08A3E;--seal:#9C2A23;--collar:#2E6E72}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--rail);color:var(--rail-text);font:14px/1.4 "IBM Plex Sans",system-ui,sans-serif}
+  h1,h2{font-family:"Cormorant SC",Georgia,serif;font-weight:600;margin:0}
+  h1{font-size:28px;padding:16px 24px 4px}
+  .sub{padding:0 24px 12px;color:var(--rail-muted)}
+  .panel{background:var(--paper);color:var(--ink);margin:0 24px 16px;padding:16px;border:1px solid var(--paper-line);border-radius:2px}
+  .rail{background:var(--rail-2);color:var(--rail-text);margin:0 24px 16px;padding:16px;border:1px solid var(--rail-line);border-radius:2px}
+  h2{font-size:18px;margin-bottom:8px;letter-spacing:.04em}
+  .grid{display:grid;gap:12px}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g6{grid-template-columns:repeat(6,1fr)}
+  .g8{grid-template-columns:repeat(8,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  figure{margin:0;text-align:center}
+  figure img,figure svg{max-width:100%;height:auto;display:block;margin:0 auto}
+  figcaption{font:11px "IBM Plex Mono",monospace;color:var(--muted);margin-top:4px}
+  .rail figcaption{color:var(--rail-muted)}
+  .row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .wavebox{position:relative;height:120px;overflow:hidden;border:1px solid var(--paper-line)}
+  .wavebox>svg{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
+  .railwave{border-color:var(--rail-line)}
+  .icon32{width:32px;height:32px}
+  .icon24{width:24px;height:24px}
+  .iconrow{display:flex;gap:12px;align-items:flex-end}
+  .darkicons img{filter:invert(.9) sepia(.15)}
+</style>
+</head>
+<body>
+<h1>Founder&rsquo;s Five art preview</h1>
+<div class="sub">Intaglio assets on paper (#F1ECDF) and on the dark rail (#121F29). All raster ink is #18262F on transparent.</div>
+
+<section class="panel"><h2>Title medallion and rival emblems</h2>
+  <div class="row">
+    <figure style="width:260px"><img id="title" alt="title medallion"><figcaption>title</figcaption></figure>
+    <figure style="width:180px"><img id="holder" alt=""><figcaption>holder</figcaption></figure>
+    <figure style="width:180px"><img id="seller" alt=""><figcaption>seller</figcaption></figure>
+    <figure style="width:180px"><img id="playbook" alt=""><figcaption>playbook</figcaption></figure>
+  </div>
+</section>
+
+<section class="panel"><h2>SpaceX vignettes</h2>
+  <div class="grid g3" style="grid-template-columns:1fr 1fr">
+    <figure><img id="spcx-v" alt=""><figcaption>spcx.vignette</figcaption></figure>
+    <figure><img id="spcx-r" alt=""><figcaption>spcx.revealVignette</figcaption></figure>
+  </div>
+</section>
+
+<section class="panel"><h2>Neutral blind-card vignettes</h2><div class="grid g3" id="neutral"></div></section>
+<section class="panel"><h2>Reveal vignettes by industry</h2><div class="grid g4" id="reveal"></div></section>
+
+<section class="panel"><h2>Tool icons on paper (32 px and 24 px)</h2><div class="row" id="icons-paper"></div></section>
+<section class="rail"><h2>Tool icons on the rail (inverted for dark; raster vignette on dark shown as-is)</h2>
+  <div class="row darkicons" id="icons-rail"></div>
+  <div class="row" style="margin-top:12px"><figure style="width:180px;background:var(--paper);padding:8px"><img id="rail-title" alt=""><figcaption style="color:var(--muted)">medallion in a paper plate on the rail</figcaption></figure></div>
+</section>
+
+<section class="panel"><h2>Guilloche: rosettes (paper)</h2><div class="row" id="rosettes"></div></section>
+<section class="rail"><h2>Guilloche: rosettes (rail, paper-coloured ink)</h2><div class="row" id="rosettes-rail"></div></section>
+<section class="panel"><h2>Guilloche: security wave</h2>
+  <div class="wavebox" id="wave-paper"></div>
+</section>
+<section class="rail"><h2>Guilloche: security wave (rail)</h2>
+  <div class="wavebox railwave" id="wave-rail"></div>
+</section>
+<section class="panel"><h2>Guilloche: seal rings</h2><div class="row" id="seals"></div></section>
+<section class="rail"><h2>Guilloche: seal rings (rail)</h2><div class="row" id="seals-rail"></div></section>
+<section class="panel"><h2>Guilloche: certificate border</h2><div class="row" id="border"></div></section>
+<section class="rail"><h2>Guilloche: certificate border (rail)</h2><div class="row" id="border-rail"></div></section>
+<div class="sub" id="stats"></div>
+
+<script type="module">
+import { rosette, securityWave, sealRing, certificateBorder } from '../ui/guilloche.js';
+const $ = (id) => document.getElementById(id);
+const m = await (await fetch('art-manifest.json')).json();
+const src = (p) => p.replace(/^assets\//, '');
+$('title').src = src(m.title); $('rail-title').src = src(m.title);
+for (const k of ['holder','seller','playbook']) $(k).src = src(m.rivals[k]);
+$('spcx-v').src = src(m.spcx.vignette); $('spcx-r').src = src(m.spcx.revealVignette);
+const fig = (p, cap) => `<figure><img src="${src(p)}" alt="" loading="lazy"><figcaption>${cap}</figcaption></figure>`;
+$('neutral').innerHTML = m.neutral.map((p, i) => fig(p, 'neutral[' + i + ']')).join('');
+$('reveal').innerHTML = Object.entries(m.revealByIndustry).map(([k, p]) => fig(p, k)).join('');
+const iconHtml = (cls) => Object.entries(m.icons).map(([k, p]) => `<figure><img class="${cls}" src="${src(p)}" alt=""><figcaption>${k}</figcaption></figure>`).join('');
+$('icons-paper').innerHTML = Object.entries(m.icons).map(([k, p]) =>
+  `<figure><div class="iconrow"><img class="icon32" src="${src(p)}" alt=""><img class="icon24" src="${src(p)}" alt=""></div><figcaption>${k}</figcaption></figure>`).join('') +
+  Object.entries(m.icons).map(([k, p]) => `<img src="${src(p)}" alt="" style="width:64px;height:64px">`).join('');
+$('icons-rail').innerHTML = Object.entries(m.icons).map(([k, p]) =>
+  `<figure><div class="iconrow"><img class="icon32" src="${src(p)}" alt=""><img class="icon24" src="${src(p)}" alt=""></div><figcaption>${k}</figcaption></figure>`).join('');
+
+const sizes = [];
+const add = (id, svg) => { sizes.push(svg.length); $(id).insertAdjacentHTML('beforeend', svg); };
+const row = (id, color) => {
+  add(id, `<figure>${rosette({ size: 220, petals: 12, rings: 7, stroke: 0.55, color })}<figcaption>12 petals / 7 rings</figcaption></figure>`);
+  add(id, `<figure>${rosette({ size: 160, petals: 7, rings: 5, stroke: 0.6, color })}<figcaption>7 / 5</figcaption></figure>`);
+  add(id, `<figure>${rosette({ size: 160, petals: 18, rings: 9, stroke: 0.45, color })}<figcaption>18 / 9</figcaption></figure>`);
+  add(id, `<figure>${rosette({ size: 64, petals: 9, rings: 4, stroke: 0.9, color })}<figcaption>64 px</figcaption></figure>`);
+};
+row('rosettes', '#18262F'); row('rosettes-rail', '#E9E3D2');
+add('wave-paper', securityWave({ width: 1200, height: 120, lines: 30, color: '#18262F', amplitude: 14 }));
+add('wave-rail', securityWave({ width: 1200, height: 120, lines: 30, color: '#9AA7AE', amplitude: 14 }));
+const seals = (id, color) => {
+  add(id, `<figure>${sealRing({ size: 180, text: 'Founder’s Five · Replay', color })}</figure>`);
+  add(id, `<figure>${sealRing({ size: 150, text: 'Rule 144 · Lockup · Rule 144', color: '#9C2A23' })}</figure>`);
+  add(id, `<figure>${sealRing({ size: 120, text: 'Collar · Credit line', color: id === 'seals' ? '#B08A3E' : '#B08A3E' })}</figure>`);
+  add(id, `<figure>${sealRing({ size: 64, text: 'Seal', color })}</figure>`);
+};
+seals('seals', '#18262F'); seals('seals-rail', '#E9E3D2');
+add('border', certificateBorder({ width: 520, height: 340, color: '#18262F' }));
+add('border', certificateBorder({ width: 320, height: 340, color: '#18262F' }));
+add('border-rail', certificateBorder({ width: 520, height: 340, color: '#9AA7AE' }));
+$('stats').textContent = 'guilloche SVG string sizes (bytes): ' + sizes.join(', ');
+document.body.dataset.ready = '1';
+</script>
+</body>
+</html>

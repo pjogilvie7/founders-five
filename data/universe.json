@@ -1,0 +1,789 @@
+{
+ "rule": "US-listed IPOs (NYSE or Nasdaq) priced 2019-01-01 to 2021-06-30 with a base deal of at least $1,000,000,000 (offer price x base shares offered by the company and any selling holders, excluding the underwriters' option and concurrent private placements), a Form 424B4 on SEC EDGAR confirming offer price and shares, and at least 1,260 trading days of Yahoo daily history from the first trade (first-trade bar present, 1,261 rows). Excluded: direct listings, SPACs and blank-check companies, and anything acquired or delisted before day 1,260. Foreign issuers listing on a US exchange that filed a 424B4 (e.g. ADS deals, GFL, Royalty Pharma) count; foreign issuers whose final prospectus is a 424B1 do not. Gross proceeds are read as the whole base deal (primary plus secondary), the way IPO sizes are quoted, not only the cash the company received. Pricing date is the date on the prospectus cover. Checked 2026-11-02.",
+ "seed": "founders-five-2026-11-01",
+ "seedInt": 791296242,
+ "method": "seedInt = FNV-1a 32-bit hash of the seed string (UTF-8). sortedTickers = included tickers sorted alphabetically (plain code-unit order). Fisher-Yates from i = n-1 down to 1 with j = floor(rand()*(i+1)), rand = Mulberry32(seedInt). drawOrder = the shuffled list. Card c{n} is drawOrder[n-1] for the first ten; the first six that pass the lockup double-read ship. Reproduce: node scripts/universe.mjs",
+ "sources": [
+  "stockanalysis.com IPO lists 2019, 2020, 2021",
+  "Renaissance Capital IPO coverage",
+  "SEC EDGAR 424B4 prospectuses (each included row links its own)",
+  "Yahoo Finance chart API (daily history)",
+  "SEC data.sec.gov submissions (listing status, Form 25 filings)"
+ ],
+ "sortedTickers": [
+  "ABNB",
+  "AFRM",
+  "AGL",
+  "APP",
+  "ARRY",
+  "AVTR",
+  "BEKE",
+  "BMBL",
+  "CHWY",
+  "CPNG",
+  "DASH",
+  "GDRX",
+  "GFL",
+  "LI",
+  "LU",
+  "LYFT",
+  "MQ",
+  "MRVI",
+  "OSCR",
+  "OTLY",
+  "PATH",
+  "PINS",
+  "PTON",
+  "REYN",
+  "RKT",
+  "RLX",
+  "RPRX",
+  "S",
+  "SHC",
+  "SNOW",
+  "TW",
+  "U",
+  "UBER",
+  "WMG",
+  "XPEV"
+ ],
+ "included": [
+  {
+   "ticker": "ABNB",
+   "name": "Airbnb, Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2020-12-09",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-12-10",
+   "offerPrice": 68,
+   "sharesOffered": 51323531,
+   "proceedsUSD": 3490000108,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1559720/000119312520315318/d81668d424b4.htm",
+   "yahooRows": 1479,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "AFRM",
+   "name": "Affirm Holdings, Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2021-01-12",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-01-13",
+   "offerPrice": 49,
+   "sharesOffered": 24600000,
+   "proceedsUSD": 1205400000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1820953/000110465921004276/tm2026663-21_s1a.htm",
+   "yahooRows": 1457,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "AGL",
+   "name": "agilon health, inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2021-04-14",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-04-15",
+   "offerPrice": 23,
+   "sharesOffered": 46600000,
+   "proceedsUSD": 1071800000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1831097/000119312521118203/d10763d424b4.htm",
+   "yahooRows": 1394,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "APP",
+   "name": "AppLovin Corporation",
+   "exchange": "Nasdaq",
+   "pricingDate": "2021-04-14",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-04-15",
+   "offerPrice": 80,
+   "sharesOffered": 25000000,
+   "proceedsUSD": 2000000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1751008/000119312521117730/d73804d424b4.htm",
+   "yahooRows": 1394,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "ARRY",
+   "name": "Array Technologies, Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2020-10-14",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-10-15",
+   "offerPrice": 22,
+   "sharesOffered": 47500000,
+   "proceedsUSD": 1045000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1820721/000119312520271135/d82970d424b4.htm",
+   "yahooRows": 1518,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "AVTR",
+   "name": "Avantor, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2019-05-16",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2019-05-17",
+   "offerPrice": 14,
+   "sharesOffered": 207000000,
+   "proceedsUSD": 2898000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1722482/000119312519150954/d698870d424b4.htm",
+   "yahooRows": 1875,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "BEKE",
+   "name": "KE Holdings Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2020-08-12",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-08-13",
+   "offerPrice": 20,
+   "sharesOffered": 106000000,
+   "proceedsUSD": 2120000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1809587/000104746920004582/a2242260z424b4.htm",
+   "yahooRows": 1562,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "BMBL",
+   "name": "Bumble Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2021-02-10",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-02-11",
+   "offerPrice": 43,
+   "sharesOffered": 50000000,
+   "proceedsUSD": 2150000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1830043/000119312521041904/d20761d424b4.htm",
+   "yahooRows": 1437,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "CHWY",
+   "name": "Chewy, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2019-06-13",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2019-06-14",
+   "offerPrice": 22,
+   "sharesOffered": 46500000,
+   "proceedsUSD": 1023000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1766502/000119312519174261/d665122d424b4.htm",
+   "yahooRows": 1856,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "CPNG",
+   "name": "Coupang, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2021-03-10",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-03-11",
+   "offerPrice": 35,
+   "sharesOffered": 130000000,
+   "proceedsUSD": 4550000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1834584/000162828021004565/coupang-424b4.htm",
+   "yahooRows": 1418,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "DASH",
+   "name": "DoorDash, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2020-12-08",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-12-09",
+   "offerPrice": 102,
+   "sharesOffered": 33000000,
+   "proceedsUSD": 3366000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1792789/000119312520313884/d752207d424b4.htm",
+   "yahooRows": 1480,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "GDRX",
+   "name": "GoodRx Holdings, Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2020-09-22",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-09-23",
+   "offerPrice": 33,
+   "sharesOffered": 34615384,
+   "proceedsUSD": 1142307672,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1809519/000119312520253358/d949310d424b4.htm",
+   "yahooRows": 1534,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "GFL",
+   "name": "GFL Environmental Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2020-03-02",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-03-03",
+   "offerPrice": 19,
+   "sharesOffered": 75000000,
+   "proceedsUSD": 1425000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1780232/000104746920001194/a2240859z424b4.htm",
+   "yahooRows": 1676,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "LI",
+   "name": "Li Auto Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2020-07-29",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-07-30",
+   "offerPrice": 11.5,
+   "sharesOffered": 95000000,
+   "proceedsUSD": 1092500000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1791706/000104746920004324/a2242162z424b4.htm",
+   "yahooRows": 1572,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "LU",
+   "name": "Lufax Holding Ltd",
+   "exchange": "NYSE",
+   "pricingDate": "2020-10-29",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-10-30",
+   "offerPrice": 13.5,
+   "sharesOffered": 175000000,
+   "proceedsUSD": 2362500000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1816007/000119312520282192/d934009d424b4.htm",
+   "yahooRows": 1507,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "LYFT",
+   "name": "Lyft, Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2019-03-28",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2019-03-29",
+   "offerPrice": 72,
+   "sharesOffered": 32500000,
+   "proceedsUSD": 2340000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1759509/000119312519091446/d721841d424b4.htm",
+   "yahooRows": 1909,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "MQ",
+   "name": "Marqeta, Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2021-06-08",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-06-09",
+   "offerPrice": 27,
+   "sharesOffered": 45454546,
+   "proceedsUSD": 1227272742,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1522540/000119312521187099/d64065d424b4.htm",
+   "yahooRows": 1356,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "MRVI",
+   "name": "Maravai LifeSciences Holdings, Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2020-11-19",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-11-20",
+   "offerPrice": 27,
+   "sharesOffered": 60000000,
+   "proceedsUSD": 1620000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1823239/000119312520301431/d73061d424b4.htm",
+   "yahooRows": 1492,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "OSCR",
+   "name": "Oscar Health, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2021-03-02",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-03-03",
+   "offerPrice": 39,
+   "sharesOffered": 37041026,
+   "proceedsUSD": 1444600014,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1568651/000119312521069713/d28906d424b4.htm",
+   "yahooRows": 1424,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "OTLY",
+   "name": "Oatly Group AB",
+   "exchange": "Nasdaq",
+   "pricingDate": "2021-05-19",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-05-20",
+   "offerPrice": 17,
+   "sharesOffered": 84376000,
+   "proceedsUSD": 1434392000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1843586/000119312521168012/d123209d424b4.htm",
+   "yahooRows": 1369,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "PATH",
+   "name": "UiPath, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2021-04-20",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-04-21",
+   "offerPrice": 56,
+   "sharesOffered": 23890777,
+   "proceedsUSD": 1337883512,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1734722/000119312521125014/d98556d424b4.htm",
+   "yahooRows": 1390,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "PINS",
+   "name": "Pinterest, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2019-04-17",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2019-04-18",
+   "offerPrice": 19,
+   "sharesOffered": 75000000,
+   "proceedsUSD": 1425000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1506293/000119312519111067/d697629d424b4.htm",
+   "yahooRows": 1895,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "PTON",
+   "name": "Peloton Interactive, Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2019-09-25",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2019-09-26",
+   "offerPrice": 29,
+   "sharesOffered": 40000000,
+   "proceedsUSD": 1160000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1639825/000119312519255124/d738839d424b4.htm",
+   "yahooRows": 1784,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "REYN",
+   "name": "Reynolds Consumer Products Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2020-01-30",
+   "pricingDateSource": "business day before first trade (prospectus date not machine-readable)",
+   "firstTrade": "2020-01-31",
+   "offerPrice": 26,
+   "sharesOffered": 47170000,
+   "proceedsUSD": 1226420000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1786431/000119312520021414/d769843d424b4.htm",
+   "yahooRows": 1697,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "RKT",
+   "name": "Rocket Companies, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2020-08-05",
+   "pricingDateSource": "business day before first trade (prospectus date not machine-readable)",
+   "firstTrade": "2020-08-06",
+   "offerPrice": 18,
+   "sharesOffered": 100000000,
+   "proceedsUSD": 1800000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1805284/000104746920004448/a2242208z424b4.htm",
+   "yahooRows": 1567,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "RLX",
+   "name": "RLX Technology Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2021-01-21",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-01-22",
+   "offerPrice": 12,
+   "sharesOffered": 116500000,
+   "proceedsUSD": 1398000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1828365/000104746921000170/a2242822z424b4.htm",
+   "yahooRows": 1451,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "RPRX",
+   "name": "Royalty Pharma plc",
+   "exchange": "Nasdaq",
+   "pricingDate": "2020-06-15",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-06-16",
+   "offerPrice": 28,
+   "sharesOffered": 77681670,
+   "proceedsUSD": 2175086760,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1802768/000119312520171165/d862976d424b4.htm",
+   "yahooRows": 1603,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "S",
+   "name": "SentinelOne, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2021-06-29",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2021-06-30",
+   "offerPrice": 35,
+   "sharesOffered": 35000000,
+   "proceedsUSD": 1225000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1583708/000162828021013240/sentineloneinc424b4.htm",
+   "yahooRows": 1341,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "SHC",
+   "name": "Sotera Health Company",
+   "exchange": "Nasdaq",
+   "pricingDate": "2020-11-19",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-11-20",
+   "offerPrice": 23,
+   "sharesOffered": 46600000,
+   "proceedsUSD": 1071800000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1822479/000119312520299567/d93452d424b4.htm",
+   "yahooRows": 1492,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "SNOW",
+   "name": "Snowflake Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2020-09-15",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-09-16",
+   "offerPrice": 120,
+   "sharesOffered": 28000000,
+   "proceedsUSD": 3360000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1640147/000162828020013667/snowflake424b4.htm",
+   "yahooRows": 1539,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "TW",
+   "name": "Tradeweb Markets Inc.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2019-04-03",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2019-04-04",
+   "offerPrice": 27,
+   "sharesOffered": 40000000,
+   "proceedsUSD": 1080000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1758730/000114420419018482/tv517881_424b4.htm",
+   "yahooRows": 1905,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "U",
+   "name": "Unity Software Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2020-09-17",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-09-18",
+   "offerPrice": 52,
+   "sharesOffered": 25000000,
+   "proceedsUSD": 1300000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1810806/000119312520249257/d908875d424b4.htm",
+   "yahooRows": 1537,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "UBER",
+   "name": "Uber Technologies, Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2019-05-09",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2019-05-10",
+   "offerPrice": 45,
+   "sharesOffered": 180000000,
+   "proceedsUSD": 8100000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1543151/000119312519144716/d647752d424b4.htm",
+   "yahooRows": 1880,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "WMG",
+   "name": "Warner Music Group Corp.",
+   "exchange": "Nasdaq",
+   "pricingDate": "2020-06-03",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-06-03",
+   "offerPrice": 25,
+   "sharesOffered": 77000000,
+   "proceedsUSD": 1925000000,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1319161/000119312520160812/d833365d424b4.htm",
+   "yahooRows": 1612,
+   "yahooLast": "2026-10-30"
+  },
+  {
+   "ticker": "XPEV",
+   "name": "XPeng Inc.",
+   "exchange": "NYSE",
+   "pricingDate": "2020-08-26",
+   "pricingDateSource": "prospectus date",
+   "firstTrade": "2020-08-27",
+   "offerPrice": 15,
+   "sharesOffered": 99733334,
+   "proceedsUSD": 1496000010,
+   "url424b4": "https://www.sec.gov/Archives/edgar/data/1810997/000119312520233600/d890887d424b4.htm",
+   "yahooRows": 1552,
+   "yahooLast": "2026-10-30"
+  }
+ ],
+ "excluded": [
+  {
+   "ticker": "XP",
+   "name": "XP Inc.",
+   "reason": "Final prospectus filed as Form 424B1 (2019-12-11), not a 424B4; fails the 424B4 test"
+  },
+  {
+   "ticker": "ACI",
+   "name": "Albertsons Companies, Inc.",
+   "reason": "Final prospectus filed as Form 424B1 (2020-06-29), not a 424B4; fails the 424B4 test"
+  },
+  {
+   "ticker": "SDC",
+   "name": "SmileDirectClub, Inc.",
+   "reason": "Delisted from Nasdaq after Chapter 11 (2023), before day 1,260; Yahoo carries only the OTC ticker SDCCQ"
+  },
+  {
+   "ticker": "DIDI",
+   "name": "DiDi Global Inc.",
+   "reason": "Delisted from NYSE in 2022, before day 1,260; now OTC (DIDIY)"
+  },
+  {
+   "ticker": "TSPH",
+   "name": "TuSimple Holdings Inc.",
+   "reason": "Delisted from Nasdaq (SEC Form 25 filed 2024-01-29), before day 1,260"
+  },
+  {
+   "ticker": "LOGC",
+   "name": "ContextLogic Inc. (Wish)",
+   "reason": "Delisted (SEC Form 25 filed 2025-06-09), before day 1,260; now OTC"
+  },
+  {
+   "ticker": "OZON",
+   "name": "Ozon Holdings PLC",
+   "reason": "Nasdaq trading suspended in 2022 and delisted before day 1,260; Yahoo returns no history"
+  },
+  {
+   "ticker": "PLTK",
+   "name": "Playtika Holding Corp.",
+   "reason": "Yahoo daily history starts 2021-01-19; the first trading day, 2021-01-15, is missing, so no 1,261-row window from the first trade (base deal $1,876.5M)"
+  },
+  {
+   "ticker": "SHLS",
+   "name": "Shoals Technologies Group, Inc.",
+   "reason": "Yahoo daily history starts 2021-01-28, one day after the first trade (prospectus dated 2021-01-26), so the first-day bar is missing (base deal $1,925M)"
+  },
+  {
+   "ticker": "YMM",
+   "name": "Full Truck Alliance Co. Ltd.",
+   "reason": "Yahoo daily history starts 2021-06-23, one day after the first trade (prospectus dated 2021-06-21), so the first-day bar is missing (base deal $1,567.5M)"
+  },
+  {
+   "ticker": "PPD",
+   "name": "PPD, Inc.",
+   "reason": "Acquired by Thermo Fisher (2021) before day 1,260; Yahoo returns no history"
+  },
+  {
+   "ticker": "MCFE",
+   "name": "McAfee Corp.",
+   "reason": "Taken private (Advent and Permira, 2022) before day 1,260; Yahoo returns no history"
+  },
+  {
+   "ticker": "XM",
+   "name": "Qualtrics International Inc.",
+   "reason": "Acquired by Silver Lake and CPP Investments (2023) before day 1,260; Yahoo returns no history"
+  },
+  {
+   "ticker": "OCDX",
+   "name": "Ortho Clinical Diagnostics Holdings plc",
+   "reason": "Merged into QuidelOrtho (2022) before day 1,260; Yahoo returns no history"
+  },
+  {
+   "ticker": "SGFY",
+   "name": "Signify Health, Inc.",
+   "reason": "Acquired by CVS Health (2023) before day 1,260; Yahoo returns no history"
+  },
+  {
+   "ticker": "DSEY",
+   "name": "Diversey Holdings, Ltd.",
+   "reason": "Acquired by Solenis (2023) before day 1,260; Yahoo returns no history"
+  },
+  {
+   "ticker": "TIXT",
+   "name": "TELUS International (Cda) Inc.",
+   "reason": "Taken private by TELUS in 2025, before day 1,260 (Feb 2026); Yahoo returns no history"
+  },
+  {
+   "ticker": "EDR",
+   "name": "Endeavor Group Holdings, Inc.",
+   "reason": "Taken private by Silver Lake (2025) before day 1,260; Yahoo returns no history"
+  },
+  {
+   "ticker": "DNB",
+   "name": "Dun & Bradstreet Holdings, Inc.",
+   "reason": "Taken private by Clearlake (2025); Yahoo returns no daily history, so the 1,260-day test cannot be met"
+  },
+  {
+   "ticker": "AZEK",
+   "name": "The AZEK Company Inc.",
+   "reason": "Acquired by James Hardie (2025); Yahoo returns no daily history, so the 1,260-day test cannot be met"
+  },
+  {
+   "ticker": "GTM",
+   "name": "ZoomInfo Technologies Inc. (priced as ZI)",
+   "reason": "Base deal $934.5M (44,500,000 sh x $21.00), below $1B"
+  },
+  {
+   "ticker": "WOOF",
+   "name": "Petco Health and Wellness Company, Inc.",
+   "reason": "Base deal $864.0M (48,000,000 sh x $18.00), below $1B"
+  },
+  {
+   "ticker": "LFST",
+   "name": "LifeStance Health Group, Inc.",
+   "reason": "Base deal $720.0M (40,000,000 sh x $18.00), below $1B"
+  },
+  {
+   "ticker": "TUYA",
+   "name": "Tuya Inc.",
+   "reason": "Base deal $915.4M (43,590,000 ADS x $21.00), below $1B"
+  },
+  {
+   "ticker": "BZ",
+   "name": "Kanzhun Limited",
+   "reason": "Base deal $912.0M (48,000,000 ADS x $19.00), below $1B"
+  },
+  {
+   "ticker": "ROOT",
+   "name": "Root, Inc.",
+   "reason": "Base deal $724.4M (26,830,845 sh x $27.00), below $1B"
+  },
+  {
+   "ticker": "DRVN",
+   "name": "Driven Brands Holdings Inc.",
+   "reason": "Base deal $700.0M (31,818,182 sh x $22.00), below $1B"
+  },
+  {
+   "ticker": "HAYW",
+   "name": "Hayward Holdings, Inc.",
+   "reason": "Base deal $684.7M (40,277,778 sh x $17.00), below $1B"
+  },
+  {
+   "ticker": "LEVI",
+   "name": "Levi Strauss & Co.",
+   "reason": "Base deal $623.3M, below $1B"
+  },
+  {
+   "ticker": "NVST",
+   "name": "Envista Holdings Corporation",
+   "reason": "Base deal $588.9M (26,768,000 sh x $22.00), below $1B"
+  },
+  {
+   "ticker": "BRBR",
+   "name": "BellRing Brands, Inc.",
+   "reason": "Base deal $480.0M (34,285,714 sh x $14.00), below $1B"
+  },
+  {
+   "ticker": "BSY",
+   "name": "Bentley Systems, Incorporated",
+   "reason": "Base deal $236.5M (10,750,000 sh x $22.00), below $1B"
+  },
+  {
+   "ticker": "LDI",
+   "name": "loanDepot, Inc.",
+   "reason": "Base deal $53.9M (3,850,000 sh x $14.00), below $1B"
+  },
+  {
+   "ticker": "WORK",
+   "name": "Slack Technologies, Inc.",
+   "reason": "Direct listing (2019-06-20), not an IPO"
+  },
+  {
+   "ticker": "PLTR",
+   "name": "Palantir Technologies Inc.",
+   "reason": "Direct listing (2020-09-30), not an IPO"
+  },
+  {
+   "ticker": "ASAN",
+   "name": "Asana, Inc.",
+   "reason": "Direct listing (2020-09-30), not an IPO"
+  },
+  {
+   "ticker": "RBLX",
+   "name": "Roblox Corporation",
+   "reason": "Direct listing (2021-03-10), not an IPO"
+  },
+  {
+   "ticker": "COIN",
+   "name": "Coinbase Global, Inc.",
+   "reason": "Direct listing (2021-04-14), not an IPO"
+  },
+  {
+   "ticker": "SQSP",
+   "name": "Squarespace, Inc.",
+   "reason": "Direct listing (2021-05-19), not an IPO"
+  }
+ ],
+ "drawOrder": [
+  "ABNB",
+  "PTON",
+  "BEKE",
+  "PINS",
+  "AVTR",
+  "MQ",
+  "WMG",
+  "LYFT",
+  "OSCR",
+  "REYN",
+  "AGL",
+  "ARRY",
+  "DASH",
+  "CPNG",
+  "S",
+  "AFRM",
+  "RKT",
+  "BMBL",
+  "LI",
+  "GFL",
+  "OTLY",
+  "RPRX",
+  "LU",
+  "MRVI",
+  "SHC",
+  "U",
+  "PATH",
+  "GDRX",
+  "UBER",
+  "RLX",
+  "XPEV",
+  "CHWY",
+  "TW",
+  "APP",
+  "SNOW"
+ ],
+ "drawn": [
+  "ABNB",
+  "PTON",
+  "BEKE",
+  "PINS",
+  "AVTR",
+  "MQ",
+  "WMG",
+  "LYFT",
+  "OSCR",
+  "REYN"
+ ],
+ "note": "Excluded spin-offs and SPAC mergers are not listed one by one. Candidate list was compiled from public IPO lists and press; an IPO missing from every list would be missing here."
+}

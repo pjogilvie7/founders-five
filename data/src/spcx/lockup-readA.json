@@ -1,0 +1,173 @@
+{
+  "reader": "A",
+  "source": {
+    "url": "https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm",
+    "fetchedAt": "2026-11-02T00:29:00-05:00"
+  },
+  "groups": [
+    {
+      "id": "employee-180",
+      "seats": [
+        "engineer"
+      ],
+      "label": "Early employee, not an officer or director (180-day lock-up with timed early releases)",
+      "groupQuote": "All other outstanding shares of our common stock are subject to the Transfer restrictions described above until immediately after the close of the trading day on the 180th day after the date of this prospectus (such period of time, the “180-day lock-up period”), subject to the early release provisions described below.",
+      "groupPage": 272,
+      "tranches": [
+        {
+          "id": "e-earn1",
+          "pct": 20,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 1,
+            "tradingDaysAfter": 2
+          },
+          "quote": "on or after the second full trading day on Nasdaq immediately following the public release of our quarterly financial results (which for this purpose does not include “flash” numbers or preliminary, partial earnings) for the quarter ended June 30, 2026 (such date, the “First Earnings Release Date”), up to 20% of the shares may be Transferred;",
+          "page": 272,
+          "resolvedDate": "2026-08-06"
+        },
+        {
+          "id": "e-price30",
+          "pct": 10,
+          "trigger": {
+            "type": "priceCondition",
+            "pct": 30,
+            "of": "offerPrice",
+            "daysMet": 5,
+            "window": 10,
+            "endsOn": "firstEarnings"
+          },
+          "quote": "if the reported closing price of our Class A common stock on Nasdaq is at least 30% greater than the public offering price set forth on the cover page of this prospectus for at least five of the ten consecutive trading days ending on, and including, the First Earnings Release Date, on or after the second full trading day immediately after the First Earnings Release Date, up to an additional 10% of the shares may be Transferred;",
+          "page": 272,
+          "resolvedDate": null,
+          "note": "Condition FAILED: 0 of the 10 trading days ending 2026-08-04 closed at or above $175.50 (130% of $135). Per the filing's own table the unreleased 10% is released with the remainder on 2026-12-08, so the engine should fold this 10% into the day-180 release."
+        },
+        {
+          "id": "e-d70",
+          "pct": 7,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 70,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+          "page": 272,
+          "resolvedDate": "2026-08-20"
+        },
+        {
+          "id": "e-d90",
+          "pct": 7,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 90,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+          "page": 272,
+          "resolvedDate": "2026-09-09"
+        },
+        {
+          "id": "e-d105",
+          "pct": 7,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 105,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+          "page": 272,
+          "resolvedDate": "2026-09-24"
+        },
+        {
+          "id": "e-d120",
+          "pct": 7,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 120,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+          "page": 272,
+          "resolvedDate": "2026-10-09"
+        },
+        {
+          "id": "e-d135",
+          "pct": 7,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 135,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "up to an additional 7% of the shares may be Transferred on or after each of August 20, 2026, September 9, 2026, September 24, 2026, October 9, 2026, October 24, 2026 (the dates that are 70 days, 90 days, 105 days, 120 days, and 135 days, respectively, after the date of this prospectus);",
+          "page": 272,
+          "resolvedDate": "2026-10-26",
+          "note": "Calendar date 2026-10-24 is a Saturday; first trading day on or after is Monday 2026-10-26."
+        },
+        {
+          "id": "e-earn2",
+          "pct": 28,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2
+          },
+          "quote": "on or after the second full trading day on Nasdaq immediately following the public release of our quarterly financial results (which for this purpose does not include “flash” numbers or preliminary, partial earnings) for the quarter ended September 30, 2026, up to an additional 28% of the shares may be Transferred; and",
+          "page": 272,
+          "resolvedDate": "2026-10-22"
+        },
+        {
+          "id": "e-rem",
+          "pct": 7,
+          "trigger": {
+            "type": "remainder",
+            "days": 180,
+            "from": "pricingDate"
+          },
+          "quote": "on or after December 8, 2026 (the date that is 180 days after the date of this prospectus), all of the shares may be Transferred.",
+          "page": 272,
+          "resolvedDate": "2026-12-08",
+          "note": "Becomes 17% (7% + the 10% price tranche) because the price condition failed."
+        }
+      ]
+    },
+    {
+      "id": "founder-366",
+      "seats": [
+        "founder"
+      ],
+      "label": "Founder-CEO (366-day lock-up, no early release)",
+      "tranches": [
+        {
+          "id": "f-366",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 366,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "Our founder has agreed with the underwriters that all of the shares of our common stock owned by him are subject to the restrictions described above until immediately after the close of the trading day on the 366th day after the date of this prospectus. Our founder’s shares are not subject to any early release provisions during the lock-up period.",
+          "page": 271,
+          "resolvedDate": "2027-06-14",
+          "note": "Calendar date 2027-06-12 is a Saturday; first trading day on or after is Monday 2027-06-14. No early release of any kind for the founder."
+        }
+      ]
+    }
+  ],
+  "affiliateNotes": "Pricing/prospectus date 2026-06-11 (cover: 'Prospectus Dated June 11, 2026'; 424B4 filed 2026-06-12; EFFECT 2026-06-11); first trade 2026-06-12 (Yahoo open $150.00 on that day). The engineer seat is modelled as a non-affiliate holder in the '180-day lock-up period' ('All other outstanding shares', p.272). The filing's release table (pp.258-260) says the 20%, 10% and first four-of-five 7% releases 'Exclude shares held by affiliates'; affiliate-held shares in the 180-day group are instead listed as 'Up to 59.1 million shares ... held by affiliates ... released ... prior to' September 10, 2026 (91st day), i.e. officers/directors/10%+ holders in that group do not get the early tranches on the same dates; they wait to day 91 and are then also limited by Rule 144 volume limits (greater of 1% of Class A, about 73.8 million shares, or average weekly volume per three months, p.261). Rule 144 for non-affiliates: 6 months holding and 90 days of reporting; Rule 701 lets non-affiliate employees sell 90 days after the effective date (2026-09-09), but the lock-up still governs until released (p.261-262). The founder (Mr. Musk) is NOT in the 180-day group: 366-day lock-up, 'not subject to any early release provisions', plus Permitted Transfers only (p.271). Lock-up exceptions that matter to an employee (p.270): sell-to-cover and net exercise/withholding for equity awards, with retained shares staying locked; shares bought in the 5% directed share program 'will not be subject to a lock-up restriction' (p.18 summary; p.274 Directed Share Program), and shares bought in the offering or open market by a non-officer/director are exempt.",
+  "doubts": [
+    "Which group an 'early employee' sits in is not stated outright. The filing says 'Several of our shareholders' are in a longer 'extended lock-up period' (until Q2-2027 results, with releases of 20/10/20/10/20/20%, p.271-272) and 'All other outstanding shares' are in the 180-day group (p.272). I put the engineer in the 180-day group on the reading that ordinary employees are 'all other'. Not confirmable from the filing alone.",
+    "Earnings timing: the Item 2.02 8-Ks (0001628280-26-052515 for Q2, 0001628280-26-066482 for Q3) were accepted at 16:01 and 16:00 New York time on 2026-08-04 and 2026-10-20, so I read the press releases as after the close. 'Second full trading day immediately following' then gives 2026-08-06 and 2026-10-22. The filing does not give a release time; if the releases were actually before the open the dates would be one trading day earlier (08-05, 10-21). I used the later date.",
+    "Price condition (10% tranche): 0 of the 10 trading days ending 2026-08-04 closed at or above $175.50; max close $125.33. The filing says shares not released early are released at day 180 (table: 'up to 797.6 million shares if the Additional Release Shares were not released'), so the tranche's resolvedDate is null per schema (no early release) but its 10% really releases on 2026-12-08 together with the 7% remainder (17% in total). The engine/reconciler must fold it; summing pct as 7 for the remainder under-counts if the null tranche is treated as never released.",
+    "Day-180 release: lock-up runs 'until immediately after the close of the trading day on the 180th day' (2026-12-08) but the release list says 'on or after December 8, 2026'. I used 2026-12-08 as the filing's stated date; a strict reading of 'after the close' could make the first sale day 2026-12-09.",
+    "Weekend days: 2026-10-24 (135th day) is a Saturday, resolved to Monday 2026-10-26. Founder 366th day 2027-06-12 is a Saturday, resolved to Monday 2027-06-14 (Juneteenth observed Friday 2027-06-18 is irrelevant). Schema rule 'onOrAfter' used for both.",
+    "Pages are the printed page footers of the 424B4 (Lock-up Agreements section runs pp.268-272; founder terms p.271; the 180-day release list p.272; Shares Eligible for Future Sale pp.258-261). The same 180-day release list is restated in the p.258-260 table, which agrees with p.272.",
+    "Yahoo's REST endpoint returned HTTP 429 to curl; the daily series was read through a browser session instead. The pull ended at 2026-10-23 although the meta timestamp suggested later data; irrelevant to the dates here (all price-test days are in July/August).",
+    "Quotes are exact except line-break hyphenation joined ('lock-up') and whitespace collapsed; each was machine-checked as a substring of the filing text for its stated page."
+  ]
+}
