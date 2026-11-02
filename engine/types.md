@@ -113,7 +113,7 @@ groupForSeat(card, seat) -> group | null                       // null => seat n
 
 ### sim.js (T7): the game
 ```
-createGame({card, seat:"engineer"|"founder", market, spcxOptions?, opts?:{autoInvest:true}}) -> state
+createGame({card, seat:"engineer"|"founder", market, spcxOptions?, opts?:{collaredLending:false}}) -> state
 tick(state) -> {state, events}          // advances one trading day; applies scheduled things; returns events for that day
 act(state, action) -> {state, events, error?}   // pure; never mutates input; error is a user-facing string if disallowed
 canDo(state, actionType, params?) -> {allowed, reason, opensOn}   // reason is plain English shown on the control; opensOn ISO date or null
@@ -133,7 +133,7 @@ normalizeCard(card) -> card             // blind cards: price factor f = 100/off
   cardId, seat, blind, live, i /* index into prices */, d /* date */, done,
   total, basis,                                   // shares at start, basis per share (1% of offer)
   shares:{locked, free, collared, pledged, sold, exchanged},   // a partition: sums to total every day
-  cash, overdraft, autoInvest,
+  cash, overdraft,                                // proceeds, dividends and the like land in cash; the index fund only grows by an explicit deposit
   index:{units, cost},                            // SPY adjClose units; average cost
   loan:{balance, accrued, call:null|{issuedOn, deadline, toPost, ltv}},
   collars:[{id, shares, Kp, Kc, start, expiry, tenorMonths, putPct}],
@@ -142,7 +142,7 @@ normalizeCard(card) -> card             // blind cards: price factor f = 100/off
   exchange:{value, basisShares, contributedOn}|null,
   tax:{realized, paid},
   log:[action...],                                // every accepted action with its date, for determinism and share codes
-  history:[{d, W, S, rf, close}],                 // one row per trading day played
+  history:[{d, W, S, rf, close, cash}],                 // one row per trading day played
   flags:{houseDone, seenTranches:[], firstUse:{}, achievements:[]},
   pendingEvent: null | event                      // set when the clock must pause for a choice (house, collar expiry, margin call)
 }
@@ -154,7 +154,7 @@ normalizeCard(card) -> card             // blind cards: price factor f = 100/off
 {type:"adoptPlan", pct:2|5|10, months:6|12|18}     {type:"cancelPlan"}
 {type:"collar", shares, tenorMonths:6|12|24, putPct:0.80|0.85|0.90}    {type:"unwindCollar", id}
 {type:"pledge", shares}  {type:"unpledge", shares}  {type:"draw", amount}  {type:"repay", amount}
-{type:"deposit", amount} {type:"withdraw", amount}  {type:"setAutoInvest", on}
+{type:"deposit", amount} {type:"withdraw", amount}   // the index fund is fully player-driven: nothing sweeps cash into it, and the old toggle action no longer exists (it is an unknown action; share codes carrying it are rejected as from an earlier version)
 {type:"house", choice:"cash"|"credit"|"sell"}   // no skip (decision RUN-6)
 {type:"marginCall", choice:"post"|"sell"|"wait"}    // post = repay from cash then index to bring LTV to 25%
 {type:"collarExpiry", choice:"roll"|"end"}
@@ -201,16 +201,20 @@ Formulas: PRD 4.8 verbatim. W_t: PRD 4.8. R_t = (W_t + S_t)/W_{t-1} - 1.
 
 ### debrief.js (T7)
 ```
-debrief(state, score, botScores) -> {paragraphs:[3 strings], verdict:"You beat The Seller on 3 of 4 measures."}
+debrief(state, score, botScores) -> {paragraphs:[3 strings], verdict:"You beat The Seller on 3 of 4 measures.", idleCash: null | {avg, cashEarned, indexWould, diff, days}}
 ```
+`score.idleCash` (sim.js `idleCash(state)`) is the average cash held above a year of spending (12 * SPEND) over the card, what that cash earned at the cash rate (`history[t].rf`), and what it would have earned in the index fund over the same days (SPY adjClose return, daily, not compounded, before tax); `diff` = indexWould - cashEarned. Each day's gain is on the previous day's idle balance. The debrief adds one plain fact to paragraph 2 when `avg` is over $250,000: "On average $4.1M sat in cash beyond a year of spending. It earned $0.2M as cash; in the index fund over the same days it would have ended about $0.6M higher, before tax." (or "lower"; "about the same" when the gap is under $5,000). No advice wording.
+
+### bots.js
+The Holder never deposits. The Seller and The Playbook, on the first trading day of each month (`getCtx(s).ftdom.has(s.i)`), deposit into the index fund cash above a year of spending, never borrowed money: `amount = min(cash - 12*SPEND, cash - (loan debt + overdraft + overdraftAccrued))`, when over $0.005 and `canDo(s, "deposit", {amount})` allows it. The Seller sizes it after the day's other actions (so a sale made that day is deposited too). The Seller adopts its 10b5-1 plan only once at least one tranche has released (`total - shares.locked > 0`); The Playbook adopts its plan only after its first release has been processed.
 
 ---
 
 ## 3. Game rules the sim enforces (summary; PRD 4 is the source)
 
-- Start: shares = round(100,000,000 / offerPrice) (all locked); basis = 1% of offer; cash $3,000,000; autoInvest on.
+- Start: shares = round(100,000,000 / offerPrice) (all locked); basis = 1% of offer; cash $3,000,000; the index fund starts empty and only an explicit deposit fills it.
 - Each trading day i: interest on cash (DGS1MO, daily rf), loan accrual, releases, spending (first trading day of each month: $166,667 from cash -> credit line if pledged headroom -> overdraft at SOFR+4%), plan sales, collar/put expiries, margin checks, quarter-end tax, house (five-year cards, first trading day on/after firstTrade + 18 months), news, W_t.
-- Actions settle at day i's close. Sales cost 0.25% of proceeds. Proceeds -> cash -> index fund if autoInvest.
+- Actions settle at day i's close. Sales cost 0.25% of proceeds. Proceeds -> cash (after clearing any overdraft); moving cash into the index fund is the player's own `deposit`.
 - Seats: engineer = lockup, window, 30-day cooling-off. Founder = lockup, window, D&O cooling-off (later of 90 days or 2 business days after the 10-Q/10-K for the fiscal quarter in which the plan was adopted, cap 120), Rule 144 volume cap (rolling 3 months: greater of 1% of sharesOutPost or average weekly volume over the prior 4 calendar weeks), no sale before IPO day 91.
 - SpaceX founder seat: not playable: "The founder's shares are locked until June 12, 2027 (424B4)."
 - Gated controls always say why and when: "Locked by the lockup until Aug 6", "Window closed until Feb 4, your 10b5-1 plan keeps selling.", "Cooling-off: plan trades from Nov 23".

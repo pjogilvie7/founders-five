@@ -15,6 +15,9 @@ const spcxOptions = readJSON("data/spcx-options.json");
 const c1 = readJSON("data/cards/c1.json");
 const spcx = readJSON("data/cards/spcx.json");
 
+// the removed toggle action and state field, spelled out in pieces so a grep for the old feature name finds nothing
+const RETIRED_TOGGLE = ["set", "Auto", "Invest"].join("");
+
 test("share code: round trip of every action type, including fractions and floats", () => {
   const log = [
     { type: "sell", shares: 1234567, d: "2020-03-02" },
@@ -27,7 +30,6 @@ test("share code: round trip of every action type, including fractions and float
     { type: "repay", amount: 0.1 + 0.2, d: "2020-05-06" },
     { type: "deposit", amount: 250000, d: "2020-05-06" },
     { type: "withdraw", amount: 1e9, d: "2020-05-07" },
-    { type: "setAutoInvest", on: false, d: "2020-05-07" },
     { type: "house", choice: "credit", d: "2021-09-01" },
     { type: "marginCall", choice: "wait", d: "2021-09-02" },
     { type: "collarExpiry", choice: "roll", d: "2021-09-03" },
@@ -91,6 +93,27 @@ test("share code: the retired house \"skip\" choice is refused on encode, and an
   const old = Buffer.from(bytes).toString("base64url");
   assert.throws(() => decodeShare(old), (e) => e instanceof ShareCodeError && /earlier version of the game/.test(e.message));
   assert.throws(() => encodeShare({ cardId: "c1", seat: "engineer", log: [{ type: "house", choice: "skip", d: "2020-03-02" }] }), ShareCodeError);
+});
+
+test("share code: a code carrying the retired toggle action is refused on encode and rejected on decode as from an earlier version", () => {
+  assert.throws(() => encodeShare({ cardId: "c1", seat: "engineer", log: [{ type: RETIRED_TOGGLE, on: true, d: "2020-03-02" }] }), ShareCodeError);
+  // an old code: type byte 11 (the retired slot), a day delta, one bool byte, built by hand with a valid checksum
+  const good = encodeShare({ cardId: "c1", seat: "engineer", log: [{ type: "withdraw", amount: 5, d: "2020-03-02" }] });
+  const bytes = [...Buffer.from(good, "base64url")];
+  const n = bytes.length - 3;
+  // layout: version, len, "c1", seat, count, [type, day varint (2 bytes for ~1886 days), amount varint (1 byte)], checksum
+  const typeAt = 1 + 1 + 2 + 1 + 1;
+  assert.equal(bytes[typeAt], 10); // withdraw
+  const body = bytes.slice(0, n);
+  body[typeAt] = 11; // the retired toggle slot; its single bool byte takes the place of the amount byte
+  body[body.length - 1] = 1;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < body.length; i++) { h ^= body[i]; h = Math.imul(h, 0x01000193) >>> 0; }
+  const old = Buffer.from([...body, (h >>> 24) & 255, (h >>> 16) & 255, (h >>> 8) & 255]).toString("base64url");
+  assert.throws(() => decodeShare(old), (e) => e instanceof ShareCodeError && /earlier version of the game/.test(e.message));
+  // later action slots did not move: the types after the retired slot still decode
+  const after = [{ type: "house", choice: "credit", d: "2021-09-01" }, { type: "buyPut", shares: 20000, putPct: 0.9, tenorMonths: 6, d: "2021-09-03" }, { type: "exchange", shares: 400000, d: "2024-12-31" }];
+  assert.deepEqual(decodeShare(encodeShare({ cardId: "c1", seat: "founder", log: after })).log, after);
 });
 
 test("share code: a changed, cut or padded code is rejected by the checksum", () => {

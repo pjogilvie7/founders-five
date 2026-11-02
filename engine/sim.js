@@ -26,7 +26,6 @@ export const EXCHANGE_FEE = 0.01;    // per year
 export const UNWIND_FEE = 0.01;      // of collar notional
 export const CALL_DEADLINE_DAYS = 3; // trading days after the call day; the bank sells at the close of the next trading day
 export const MIN_HISTORY = 20;       // trading days of price history before an option can be priced (index of the first day)
-export const AUTO_INVEST_KEEP = 2_000_000; // auto-invest leaves this much cash (a year of spending)
 export const RULE_PLAN_ACTIVE = "A 10b5-1 plan is active, so new collars and puts are not allowed: a new hedge on the stock would void the plan's defense (Rule 10b5-1(c)(1)(i)(C)). Cancelling the plan lifts the block, and a later plan starts a new cooling-off.";
 const EPS = 1e-9;
 export const HOUSE_CHOICES = [
@@ -201,13 +200,13 @@ export function createGame({ card, seat, market, spcxOptions = null, opts = {} }
   const ctx = buildCtx(card, seat, market, spcxOptions, group);
   const ctxId = ctxKey(card, seat, market, spcxOptions);
   REG.set(ctxId, ctx);
-  const o = { autoInvest: true, collaredLending: false, ...opts };
+  const o = { collaredLending: false, ...opts };
   const s = {
     ctxId,
     cardId: card.id, seat, blind: ctx.blind, live: ctx.live, i: 0, d: ctx.dates[0], done: false,
     total: ctx.total, basis: ctx.basis,
     shares: { locked: ctx.total, free: 0, collared: 0, pledged: 0, sold: 0, exchanged: 0 },
-    cash: START_CASH, overdraft: 0, overdraftAccrued: 0, autoInvest: !!o.autoInvest,
+    cash: START_CASH, overdraft: 0, overdraftAccrued: 0,
     index: { units: 0, cost: 0 },
     loan: { balance: 0, accrued: 0, call: null },
     collars: [], puts: [], plan: null, exchange: null,
@@ -319,7 +318,7 @@ function terminalTaxOf(s, ctx) {
 }
 
 function pushRow(s, ctx, replace) {
-  const row = { d: s.d, W: partsOf(s, ctx).W, S: s.spentToday, rf: dailyRf(ctx.dgs1mo[s.i]), close: ctx.close[s.i] };
+  const row = { d: s.d, W: partsOf(s, ctx).W, S: s.spentToday, rf: dailyRf(ctx.dgs1mo[s.i]), close: ctx.close[s.i], cash: s.cash };
   if (replace) s.history[s.history.length - 1] = row; else s.history.push(row);
 }
 
@@ -373,15 +372,12 @@ function payText(what, amount, r) {
   return `Paid ${money(amount)}${what ? " " + what : ""}: ${parts.map((p) => p.t).join(", ")}.`.replace(/\s+/g, " ");
 }
 
-// Money in: clears the overdraft first, then goes to the index fund if autoInvest (when `invest`), else to cash.
-function receive(s, ctx, amount, invest) {
+// Money in: clears the overdraft first, then lands in cash.
+function receive(s, amount) {
   let x = amount;
   if (x > 0 && s.overdraftAccrued > 0) { const t = Math.min(x, s.overdraftAccrued); s.overdraftAccrued -= t; x -= t; }
   if (x > 0 && s.overdraft > 0) { const t = Math.min(x, s.overdraft); s.overdraft -= t; x -= t; }
-  if (x > 0) {
-    if (invest && s.autoInvest) { s.index.units += x / ctx.spy[s.i]; s.index.cost += x; }
-    else s.cash += x;
-  }
+  if (x > 0) s.cash += x;
 }
 
 function repayLoan(s, amount) {
@@ -751,7 +747,6 @@ function check(s, ctx, type, p) {
       if (p.amount !== undefined && !(p.amount > 0 && p.amount <= v + 0.005)) return no(`You can withdraw up to ${money(v)}`, null, { max: v });
       return yes({ max: v });
     }
-    case "setAutoInvest": return yes();
     case "buyPut": {
       if (s.shares.free <= 0) return noFreeShares(s, ctx);
       const wb = hedgeBlock(s, ctx, "Puts", "a put can be bought then");
@@ -827,7 +822,7 @@ function applyAction(s, ctx, a, ev) {
   switch (type) {
     case "sell": {
       const sale = doSale(s, ctx, a.shares, "free");
-      receive(s, ctx, sale.net, true);
+      receive(s, sale.net);
       s.stats.sells++; s.stats.sharesSold += a.shares;
       if (s.seat === "founder") s.sales144.push({ d: s.d, shares: a.shares });
       award(s, "inside-the-window", ev);
@@ -884,9 +879,6 @@ function applyAction(s, ctx, a, ev) {
       if (w.gain > 0.005) ev.push({ type: "note", d: s.d, pause: false, text: `Withdrew ${money(w.got)}. The gain of ${money(w.gain)} is taxed at quarter end.`, data: {} });
       return null;
     }
-    case "setAutoInvest":
-      s.autoInvest = !!a.on;
-      return null;
     case "flag":
       s.flags.firstUse[a.name] = s.flags.firstUse[a.name] || s.d;
       if (a.name === "streetCheck") award(s, "street-smart", ev);
@@ -940,7 +932,7 @@ function answerHouse(s, ctx, a, ev) {
     const sale = doSale(s, ctx, n, "free");
     if (s.seat === "founder") s.sales144.push({ d: s.d, shares: n });
     s.stats.sells++; s.stats.sharesSold += n;
-    receive(s, ctx, sale.net - HOUSE, true);
+    receive(s, sale.net - HOUSE);
     ev.push({ type: "spend", d: s.d, pause: false, text: `Sold ${commas(n)} shares at $${sale.price.toFixed(2)} and paid ${money(HOUSE)} for the house. Tax on the gain is paid at quarter end.`, data: { source: "house", sale } });
   } else return "The house choices are cash, credit or sell.";
   s.spentToday += HOUSE; s.stats.spendTotal += HOUSE;
@@ -1093,7 +1085,7 @@ function runPlanSale(s, ctx, ev) {
   if (s.seat === "founder") n = Math.min(n, rule144Room(s, ctx));
   if (n > 0) {
     const sale = doSale(s, ctx, n, "free");
-    receive(s, ctx, sale.net, true);
+    receive(s, sale.net);
     if (s.seat === "founder") s.sales144.push({ d: s.d, shares: n });
     s.stats.planSells++; s.stats.planShares += n; s.stats.saleGross += 0;
     if (closed) { s.stats.blackoutPlanSale = true; award(s, "through-the-blackout", ev); }
@@ -1207,7 +1199,7 @@ function advance(s, ctx, ev) {
     const held = stockShares(s);
     if (held > 0) {
       const amt = held * dps;
-      receive(s, ctx, amt, false);
+      receive(s, amt);
       s.tax.realized += amt;
       s.stats.dividends += amt;
       ev.push({ type: "dividend", d, pause: false, text: `Dividend of $${dps.toFixed(2)} a share on ${commas(held)} shares: ${money(amt)} paid to cash. It is taxed at 23.8%, paid at quarter end.`, data: { perShare: dps, shares: held, amount: amt } });
@@ -1303,14 +1295,6 @@ function advance(s, ctx, ev) {
       s.tax.paid += due;
       ev.push({ type: "taxPaid", d, pause: false, text: payText("of tax for the quarter", due, r), data: { amount: due, ...r } });
     }
-  }
-
-  // 7b. auto-invest: on the first trading day of each month, cash above a year of spending goes into the index fund,
-  // but never borrowed money (cash less the loan and the overdraft must stay at or above zero)
-  if (s.autoInvest && ctx.ftdom.has(i)) {
-    const owed = loanDebt(s) + s.overdraft + s.overdraftAccrued;
-    const amt = Math.min(s.cash - AUTO_INVEST_KEEP, s.cash - owed);
-    if (amt > 0.005) { s.cash -= amt; s.index.units += amt / ctx.spy[i]; s.index.cost += amt; }
   }
 
   // 8. credit line
@@ -1470,7 +1454,7 @@ export function snapshot(state, rivals = null) {
   return {
     d: s.d, i, done: s.done, dayLabel: dayLabelOf(s, ctx), close: P, offerPrice: ctx.offer,
     shares: { ...s.shares, total: s.total },
-    cash: s.cash, overdraft: s.overdraft + s.overdraftAccrued, autoInvest: s.autoInvest,
+    cash: s.cash, overdraft: s.overdraft + s.overdraftAccrued,
     index: { value: parts.index, units: s.index.units, cost: s.index.cost },
     loan: {
       balance: s.loan.balance, accrued: s.loan.accrued, owed: debt,
@@ -1486,6 +1470,26 @@ export function snapshot(state, rivals = null) {
     nextRelease, gates: gates(s), rivals: riv, pendingEvent: s.pendingEvent, achievements: s.flags.achievements.slice(),
     spentToday: s.spentToday,
   };
+}
+
+// Cash held beyond a year of spending (12 * SPEND), averaged over the card, and what that same cash earned at the cash rate
+// versus what it would have earned in the index fund over the same days (daily, not compounded, before tax). Each day's gain
+// is on the previous close's idle balance. Null when no cash sat idle.
+export function idleCash(state) {
+  const h = state.history;
+  if (!h || h.length < 2 || typeof h[0].cash !== "number") return null;
+  const ctx = getCtx(state);
+  const keep = 12 * SPEND;
+  let sum = 0, cashGain = 0, indexGain = 0;
+  for (let t = 1; t < h.length; t++) {
+    const idle = Math.max(0, h[t - 1].cash - keep);
+    sum += idle;
+    cashGain += idle * h[t].rf;
+    indexGain += idle * (ctx.spy[t] / ctx.spy[t - 1] - 1);
+  }
+  const avg = sum / (h.length - 1);
+  if (!(avg > 0)) return null;
+  return { avg, cashEarned: cashGain, indexWould: indexGain, diff: indexGain - cashGain, days: h.length - 1 };
 }
 
 export function score(state) {
@@ -1512,6 +1516,6 @@ export function score(state) {
     maxDrawdown: { pct: dd.pct, peakDate: dd.peakDate, troughDate: dd.troughDate },
     irr,
     afterTaxWealth: last.W - unrealizedTax + totalSpending,
-    totalSpending, taxesPaid: state.tax.paid, finalW: last.W, unrealizedTax, days: h.length, flows,
+    idleCash: idleCash(state), totalSpending, taxesPaid: state.tax.paid, finalW: last.W, unrealizedTax, days: h.length, flows,
   };
 }

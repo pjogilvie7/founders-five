@@ -29,14 +29,15 @@ const TYPES = [
   ["repay", ["amount"]],
   ["deposit", ["amount"]],
   ["withdraw", ["amount"]],
-  ["setAutoInvest", [["on", "bool"]]],
+  ["retired11", [["on", "bool"]]], // retired slot (the removed index-fund sweep toggle): keeps every later index; encode refuses it, decode rejects it
   ["house", [["choice", CHOICES.house]]],
   ["marginCall", [["choice", CHOICES.marginCall]]],
   ["collarExpiry", [["choice", CHOICES.collarExpiry]]],
   ["buyPut", ["shares", "putPct", "tenorMonths"]],
   ["exchange", ["shares"]],
 ];
-const BY_NAME = new Map(TYPES.map((t, i) => [t[0], i]));
+const RETIRED = new Set(["retired11"]);
+const BY_NAME = new Map(TYPES.map((t, i) => [t[0], i]).filter(([name]) => !RETIRED.has(name)));
 
 export class ShareCodeError extends Error {
   constructor(msg) { super(msg); this.name = "ShareCodeError"; }
@@ -179,6 +180,7 @@ export function decodeShare(code) {
   for (let k = 0; k < count; k++) {
     const t = TYPES[r.byte()];
     if (!t) throw bad("The share code is not valid.");
+    if (RETIRED.has(t[0])) throw bad("This share code is from an earlier version of the game.");
     day += r.varint();
     const a = { type: t[0] };
     for (const f of t[1]) {

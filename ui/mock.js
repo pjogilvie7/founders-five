@@ -138,7 +138,7 @@ export function createGame({ card, seat }) {
   const s = {
     cardId: card.id, seat, blind: card.blind, live: !!card.live, i: 0, d: card.prices[0][0], done: false,
     total, basis: offer * 0.01, shares: { locked: total, free: 0, collared: 0, pledged: 0, sold: 0, exchanged: 0 },
-    cash: 3e6, overdraft: 0, autoInvest: true, index: { units: 0, cost: 0 },
+    cash: 3e6, overdraft: 0, index: { units: 0, cost: 0 },
     loan: { balance: 0, accrued: 0, call: null }, collars: [], puts: [], plan: null, exchange: null,
     tax: { realized: 0, paid: 0 }, log: [], history: [],
     flags: { houseDone: false, seenTranches: [], firstUse: {}, achievements: [], unlocked: [] },
@@ -241,7 +241,7 @@ function sellShares(s, n) {
   const p = priceAt(s); n = Math.min(n, s.shares.free); if (n <= 0) return 0;
   const gross = n * p, proceeds = gross * (1 - COST);
   s.shares.free -= n; s.shares.sold += n; s.tax.realized += proceeds - n * s.basis;
-  if (s.autoInvest) { s.index.units += proceeds; s.index.cost += proceeds; } else s.cash += proceeds;
+  s.cash += proceeds;
   return proceeds;
 }
 
@@ -297,7 +297,6 @@ export function act(state0, action) {
     case 'repay': { const a = Math.min(action.amount, s.loan.balance, s.cash); s.loan.balance -= a; s.cash -= a; if (s.loan.call && s.loan.balance <= 0.25 * s.shares.pledged * p + 1) { s.loan.call = null; s.pendingEvent = null; } break; }
     case 'deposit': { const a = Math.min(action.amount, s.cash); s.cash -= a; s.index.units += a; s.index.cost += a; break; }
     case 'withdraw': { const a = Math.min(action.amount, s.index.units); s.index.units -= a; s.cash += a; break; }
-    case 'setAutoInvest': s.autoInvest = !!action.on; break;
     case 'house': {
       if (!s.pendingEvent || s.pendingEvent.type !== 'house') return fail('There is no house bill to settle.');
       if (action.choice === 'cash') { let need = 1e7; const c = Math.min(s.cash, need); s.cash -= c; need -= c; s.index.units = Math.max(0, s.index.units - need); }

@@ -68,6 +68,7 @@ export function achievements(state, sc, botScores) {
   return Object.keys(ACHIEVEMENTS).filter((id) => earned.has(id));
 }
 
+const IDLE_CASH_MIN = 250_000; // the idle-cash fact shows only above this average
 const pct1 = (x) => `${(x * 100).toFixed(1)}%`;
 const signedPct = (x) => `${x >= 0 ? "up" : "down"} ${Math.abs(x * 100).toFixed(0)}%`;
 
@@ -102,6 +103,11 @@ export function debrief(state, sc, botScores = {}) {
   bits.push(`You paid ${money(sc.taxesPaid)} of tax during the card and would owe about ${money(Math.max(0, sc.unrealizedTax))} more if you sold everything at the end.`);
   if (st.dividends > 0) bits.push(`The stock paid ${money(st.dividends)} in dividends on your shares, taxed at 23.8%.`);
   if (state.flags.houseDone) bits.push("You paid for the house when it came due.");
+  const ic = sc.idleCash;
+  if (ic && ic.avg > IDLE_CASH_MIN) {
+    const d = Math.abs(ic.diff) < 5000 ? "about the same" : `about ${money(Math.abs(ic.diff))} ${ic.diff > 0 ? "higher" : "lower"}`;
+    bits.push(`On average ${money(ic.avg)} sat in cash beyond a year of spending. It earned ${money(ic.cashEarned)} as cash; in the index fund over the same days it would have ended ${d}, before tax.`);
+  }
   const p2 = bits.join(" ");
 
   // 3. How you compare with the bots, and why
@@ -131,5 +137,5 @@ export function debrief(state, sc, botScores = {}) {
     const parts = names.map(([k, n]) => `${n} on ${counts[k]} of 4`);
     verdict = `You beat ${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]} measures.`.replace(/ measures\.$/, " measures.");
   }
-  return { paragraphs: [p1, p2, p3], verdict, counts };
+  return { paragraphs: [p1, p2, p3], verdict, counts, idleCash: ic && ic.avg > IDLE_CASH_MIN ? ic : null };
 }

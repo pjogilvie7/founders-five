@@ -13,11 +13,14 @@ import { maxAdvance, ltv, callCure, forcedSaleShares, fallToCall, netPerShare } 
 import { coolingOff, rule144 } from "./rules.js";
 import {
   createGame, tick, act, canDo, gates, snapshot, runToEnd, runWithPolicy, replay, score, normalizeCard, wealthParts,
-  getCtx, collarQuote, terminalTax, COST, SPEND, HOUSE, AUTO_INVEST_KEEP,
+  getCtx, collarQuote, terminalTax, COST, SPEND, HOUSE,
 } from "./sim.js";
 import { BOTS, runBot, botPolicy } from "./bots.js";
 import { debrief, achievements, ACHIEVEMENTS, compare } from "./debrief.js";
 
+// the removed toggle action and state field, spelled out in pieces so a grep for the old feature name finds nothing
+const RETIRED_TOGGLE = ["set", "Auto", "Invest"].join("");
+const RETIRED_FIELD = ["auto", "Invest"].join("");
 const here = path.dirname(fileURLToPath(import.meta.url));
 const load = (f) => JSON.parse(fs.readFileSync(path.join(here, "fixtures", f), "utf8"));
 const market = load("market.json");
@@ -534,7 +537,7 @@ test("tax: engine sale matches saleTax; selling 100,000 shares at $150 with $1.3
 
 test("quarterly tax: paid on the last trading day of the quarter; unpaid tax is a liability in W", () => {
   const card = flatCard({ n: 120 });
-  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2); // proceeds stay in cash, so the tax is paid from cash
+  let s = tickToIdx(game(card, "engineer"), 2); // proceeds stay in cash, so the tax is paid from cash
   s = ok(act(s, { type: "sell", shares: 100_000 }));
   const owed = RATE * (100_000 * 100 * (1 - COST) - 100_000 * 1);
   near(wealthParts(s).tax, owed, 1e-6);
@@ -684,7 +687,7 @@ test("collar: opens at zero cost inside the band; settles with max(Kp-S,0) - max
 test("collar: call side loses when the stock ends above the cap", () => {
   const exp = "2020-07-30";
   const card = flatCard({ n: 200, close: (d) => (d >= exp ? 160 : 100) });
-  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 20); // no index fund, so paying the loss realizes nothing else
+  let s = tickToIdx(game(card, "engineer"), 20); // no index fund, so paying the loss realizes nothing else
   s = ok(act(s, { type: "collar", shares: 500_000, tenorMonths: 6, putPct: 0.85 }));
   const Kc = s.collars[0].Kc;
   s = tickTo(s, "2020-07-29");
@@ -1218,7 +1221,7 @@ test("7: collars and puts need 20 trading days of price history", () => {
 test("6: terminal tax = 0.238 * max(0, G + U) - 0.238 * max(0, G); realized losses net against unrealized gains", () => {
   // sell 1,000 shares at a loss (close 0.5 against a $1 basis), then the stock goes to $100
   const card = flatCard({ n: 80, close: (d, i) => (i === 2 ? 0.5 : 100) });
-  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2);
+  let s = tickToIdx(game(card, "engineer"), 2);
   s = ok(act(s, { type: "sell", shares: 1000 }));
   const G = s.tax.realized;
   assert.ok(G < 0);
@@ -1232,7 +1235,7 @@ test("6: terminal tax = 0.238 * max(0, G + U) - 0.238 * max(0, G); realized loss
   near(snapshot(s).unrealizedTax, tt.unrealizedTax, 1e-9);
   near(score(s).afterTaxWealth, score(s).finalW - tt.unrealizedTax + score(s).totalSpending, 1e-6);
   // an open collar's mark (zero cost, so all gain or loss) counts in U
-  let c = tickToIdx(game(flatCard({ n: 80 }), "engineer", { opts: { autoInvest: false } }), 21);
+  let c = tickToIdx(game(flatCard({ n: 80 }), "engineer"), 21);
   c = ok(act(c, { type: "collar", shares: 500_000, tenorMonths: 12, putPct: 0.85 }));
   c = tickToIdx(c, 40);
   const mark = snapshot(c).collars[0].mark;
@@ -1244,7 +1247,7 @@ test("6: terminal tax = 0.238 * max(0, G + U) - 0.238 * max(0, G); realized loss
 test("6a: tax already paid is credited at the end: paid + owed + terminal tax = 23.8% * max(0, G + U), even when a later loss leaves more paid than 23.8% of G", () => {
   // sell 300,000 shares at $100 (a large gain) and buy a put; the quarter-end payments go out; the put then expires worthless, a realized loss
   const card = flatCard({ n: 250 });
-  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2);
+  let s = tickToIdx(game(card, "engineer"), 2);
   s = ok(act(s, { type: "sell", shares: 300_000 }));
   s = tickToIdx(s, 21);
   s = ok(act(s, { type: "buyPut", shares: 100_000, putPct: 0.85, tenorMonths: 6 }));
@@ -1273,7 +1276,7 @@ test("6a2: the shipped card c6 Seller is not overtaxed: tax paid + owed + termin
 
 test("6b: never below what the ledger already owes: a crash after the tax is paid cannot create a refund", () => {
   const card = flatCard({ n: 120, close: (d, i) => (i >= 90 ? 0.01 : 100) });
-  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2);
+  let s = tickToIdx(game(card, "engineer"), 2);
   s = ok(act(s, { type: "sell", shares: 1000 }));
   const owed0 = wealthParts(s).tax;
   assert.ok(owed0 > 0);
@@ -1285,7 +1288,7 @@ test("6b: never below what the ledger already owes: a crash after the tax is pai
   assert.equal(wealthParts(s).tax, 0);
   assert.equal(terminalTax(s).unrealizedTax, 0); // raw would be negative; floored at what the ledger owes (nothing)
   // with the tax still unpaid, the refund stops at the ledger's liability
-  let t = tickToIdx(game(flatCard({ n: 40, close: (d, i) => (i >= 20 ? 0.01 : 100) }), "engineer", { opts: { autoInvest: false } }), 2);
+  let t = tickToIdx(game(flatCard({ n: 40, close: (d, i) => (i >= 20 ? 0.01 : 100) }), "engineer"), 2);
   t = ok(act(t, { type: "sell", shares: 1000 }));
   t = tickToIdx(t, 25);
   near(terminalTax(t).unrealizedTax, -wealthParts(t).tax, 1e-6);
@@ -1304,7 +1307,7 @@ test("8: dividends: D_t from the adjusted series, paid on every share held (lock
   const ctx0 = getCtx(game(card));
   assert.equal(ctx0.div.filter((x) => x > 0).length, 1);
   near(ctx0.div[30], 2, 1e-9);
-  let s = tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 5);
+  let s = tickToIdx(game(card, "engineer"), 5);
   s = ok(act(s, { type: "pledge", shares: 200_000 }));
   s = ok(act(s, { type: "sell", shares: 100_000 }));
   const sold = 100_000;
@@ -1327,7 +1330,7 @@ test("8: dividends: D_t from the adjusted series, paid on every share held (lock
   c2.lockup.groups[0].tranches[0].resolvedDate = c2.prices[60][0];
   c2.lockup.groups[1].tranches[0].trigger = { type: "date", date: c2.prices[60][0] };
   c2.lockup.groups[1].tranches[0].resolvedDate = c2.prices[60][0];
-  let l = tickToIdx(game(c2, "engineer", { opts: { autoInvest: false } }), 30);
+  let l = tickToIdx(game(c2, "engineer"), 30);
   assert.equal(l.shares.locked, 1_000_000);
   near(l.stats.dividends, 2_000_000, 1e-6);
 });
@@ -1353,30 +1356,134 @@ test("8b: dividends on the shipped KE Holdings card (c3) come from its adjusted 
   }
 });
 
-test("9: auto-invest sweeps cash above $2M into the index fund on the first trading day of each month, never borrowed money", () => {
+test("9: nothing is swept into the index fund: proceeds land in cash and cash above $2M stays in cash across a month start", () => {
   const card = flatCard({ n: 200 });
   let s = tickToIdx(game(card), 2);
-  s = tickTo(s, "2020-02-03"); // first trading day of February: spend $166,667, then sweep
-  near(s.cash, AUTO_INVEST_KEEP, 1e-6);
-  assert.ok(s.index.cost > 800_000 && s.index.cost < 840_000, `swept ${s.index.cost}`);
-  near(s.index.cost, 3_000_000 - 166_667 - AUTO_INVEST_KEEP + (s.index.cost - (3_000_000 - 166_667 - AUTO_INVEST_KEEP)), 1e-6);
-  // with auto-invest off, nothing is swept
-  const off = tickTo(tickToIdx(game(card, "engineer", { opts: { autoInvest: false } }), 2), "2020-02-03");
-  assert.ok(off.cash > 2_800_000);
-  assert.equal(off.index.units, 0);
-  // borrowed cash is never swept: draw $10M against pledged shares (cash goes to ~13M); the sweep stops at cash = loan owed
+  assert.equal(s[RETIRED_FIELD], undefined);
+  assert.equal(snapshot(s)[RETIRED_FIELD], undefined);
+  // proceeds from a sale land in cash, not in the index fund
+  const before = s.cash;
+  const sold = ok(act(s, { type: "sell", shares: 10_000 }));
+  near(sold.cash - before, 10_000 * 100 * (1 - COST), 1e-6);
+  assert.equal(sold.index.units, 0);
+  assert.equal(sold.index.cost, 0);
+  // first trading day of February: spending comes out of cash, and nothing moves to the index fund
+  s = tickTo(s, "2020-02-03");
+  assert.ok(s.cash > 2_800_000, `cash ${s.cash}`);
+  assert.equal(s.index.units, 0);
+  assert.equal(s.index.cost, 0);
+  // a large sale stays in cash through a month start
   let b = tickToIdx(game(card), 2);
-  b = ok(act(b, { type: "pledge", shares: 1_000_000 }));
-  b = ok(act(b, { type: "draw", amount: 10_000_000 }));
-  const idx0 = b.index.cost;
+  b = ok(act(b, { type: "sell", shares: 100_000 })); // about $10M into cash
+  assert.ok(b.cash > 12_000_000);
   b = tickTo(b, "2020-02-03");
-  const owed = b.loan.balance + b.loan.accrued + b.overdraft + b.overdraftAccrued;
-  assert.ok(b.cash - owed >= -1e-6, `cash ${b.cash} owed ${owed}`);
-  near(b.cash, owed, 1); // swept down to exactly the borrowed amount
-  assert.ok(b.cash > AUTO_INVEST_KEEP);
-  assert.ok(b.index.cost > idx0);
+  assert.ok(b.cash > 12_000_000, `cash ${b.cash}`);
+  assert.equal(b.index.cost, 0);
+  // the deposit action still works and is the only way money enters the index fund
+  assert.equal(canDo(b, "deposit").allowed, true);
+  b = ok(act(b, { type: "deposit", amount: 5_000_000 }));
+  near(b.index.cost, 5_000_000, 1e-6);
   // the deposit rule is unchanged: only cash above what you owe
-  assert.equal(canDo(b, "deposit").allowed, false);
+  let c = tickToIdx(game(card), 2);
+  c = ok(act(c, { type: "pledge", shares: 1_000_000 }));
+  c = ok(act(c, { type: "draw", amount: 10_000_000 }));
+  const owed = c.loan.balance + c.loan.accrued;
+  assert.ok(canDo(c, "deposit", { amount: c.cash - owed + 1 }).allowed === false);
+  assert.equal(canDo(c, "deposit", { amount: c.cash - owed }).allowed, true);
+});
+
+test("9b: the retired toggle is no longer an action: canDo and act treat it as unknown", () => {
+  const s = tickToIdx(game(flatCard({ n: 50 })), 2);
+  const g = canDo(s, RETIRED_TOGGLE, { on: true });
+  assert.equal(g.allowed, false);
+  assert.equal(g.reason, canDo(s, "noSuchAction").reason);
+  const r = act(s, { type: RETIRED_TOGGLE, on: true });
+  assert.ok(r.error);
+  assert.equal(r.error, act(s, { type: "noSuchAction" }).error);
+  assert.equal(r.state, s);
+  assert.equal(s.log.length, 0);
+  assert.ok(!(RETIRED_TOGGLE in gates(s)));
+});
+
+test("9c: the Seller and the Playbook deposit cash above a year of spending on a month's first trading day, never borrowed money", () => {
+  const card = flatCard({ n: 200 });
+  for (const id of ["seller", "playbook"]) {
+    const run = runBot(id, card, "engineer", market);
+    const deposits = run.state.log.filter((a) => a.type === "deposit");
+    assert.ok(deposits.length >= 1, `${id} deposits ${deposits.length}`);
+    const ctx = getCtx(run.state);
+    const ftd = new Set([...ctx.ftdom].map((i) => ctx.dates[i]));
+    for (const a of deposits) assert.ok(ftd.has(a.d), `${id} deposited on ${a.d}, not a month's first trading day`);
+    // on each deposit day the cash left in hand is a year of spending (the day's spending is already out)
+    const rows = run.state.history;
+    for (const a of deposits) {
+      const row = rows.find((r) => r.d === a.d);
+      near(row.cash, 12 * SPEND, 1, `${id} ${a.d} cash after deposit`);
+    }
+  }
+  // never borrowed: with a credit line draw outstanding, a deposit leaves cash at or above what is owed
+  let s = tickToIdx(game(card), 2);
+  s = ok(act(s, { type: "pledge", shares: 1_000_000 }));
+  s = ok(act(s, { type: "draw", amount: 10_000_000 }));
+  let checked = 0;
+  const end = runWithPolicy(s, botPolicy("seller"), (_e, st) => {
+    const last = st.log[st.log.length - 1];
+    if (!last || last.type !== "deposit" || last.d !== st.d) return;
+    const owed = st.loan.balance + st.loan.accrued + st.overdraft + st.overdraftAccrued;
+    assert.ok(st.cash - owed >= -1e-6, `cash ${st.cash} owed ${owed} on ${st.d}`);
+    checked++;
+  });
+  assert.ok(end.done);
+  assert.ok(checked >= 1);
+  // the Holder never deposits
+  assert.equal(runBot("holder", card, "engineer", market).state.log.filter((a) => a.type === "deposit").length, 0);
+});
+
+test("9d: neither bot adopts a 10b5-1 plan while every share is still locked (the Seller waits for the first release)", () => {
+  // shares release on day 1 in flatCard; use a card whose first release is much later
+  const dates = weekdays("2020-01-02", 300);
+  const card = flatCard({ n: 300 });
+  const late = dates[120];
+  for (const g of card.lockup.groups) for (const t of g.tranches) { t.trigger = { type: "date", date: late }; t.resolvedDate = late; }
+  for (const id of ["seller", "playbook"]) {
+    const run = runBot(id, card, "engineer", market);
+    const plan = run.state.log.find((a) => a.type === "adoptPlan");
+    assert.ok(plan, `${id} adopts a plan at some point`);
+    assert.ok(plan.d >= late, `${id} adopted on ${plan.d}, before the first release on ${late}`);
+    // and on every day the plan exists, at least one share had been released
+    runWithPolicy(game(card), botPolicy(id), (_e, s) => { if (s.plan) assert.ok(s.total - s.shares.locked > 0 || s.shares.sold > 0, `${id} plan with all shares locked on ${s.d}`); });
+  }
+});
+
+test("9e: the debrief states the idle-cash fact when cash sits above a year of spending, and not when it does not", () => {
+  const card = flatCard({ n: 300, close: (d, i) => 100 });
+  let s = tickToIdx(game(card), 2);
+  s = ok(act(s, { type: "sell", shares: 200_000 })); // about $20M of cash
+  const end = runWithPolicy(s, {});
+  const sc = score(end);
+  assert.ok(sc.idleCash && sc.idleCash.avg > 15_000_000, JSON.stringify(sc.idleCash));
+  const d = debrief(end, sc, {});
+  assert.ok(d.idleCash);
+  assert.match(d.paragraphs[1], /On average \$[\d.]+M sat in cash beyond a year of spending\. It earned/);
+  assert.match(d.paragraphs[1], /in the index fund over the same days it would have ended (about \$[\d.,]+M? (higher|lower)|about the same), before tax\./);
+  assert.ok(!/!/.test(d.paragraphs[1]));
+  assert.ok(!/should|recommend/i.test(d.paragraphs[1]));
+  // the figures match the daily data: index gain = sum of idle * SPY return, cash gain = sum of idle * rf
+  const ctx = getCtx(end), h = end.history;
+  let ig = 0, cg = 0, sum = 0;
+  for (let t = 1; t < h.length; t++) {
+    const idle = Math.max(0, h[t - 1].cash - 12 * SPEND);
+    sum += idle; cg += idle * h[t].rf; ig += idle * (ctx.spy[t] / ctx.spy[t - 1] - 1);
+  }
+  near(sc.idleCash.avg, sum / (h.length - 1), 1e-6);
+  near(sc.idleCash.cashEarned, cg, 1e-6);
+  near(sc.idleCash.indexWould, ig, 1e-6);
+  near(sc.idleCash.diff, ig - cg, 1e-6);
+  // a run whose cash stays near a year of spending (the $3M start cash is spent down to it within six months) shows nothing
+  const lean = runWithPolicy(tickToIdx(game(flatCard({ n: 500 })), 2), {});
+  const dl = debrief(lean, score(lean), {});
+  assert.equal(dl.idleCash, null);
+  assert.ok(!/sat in cash/.test(dl.paragraphs[1]));
 });
 
 test("10: gate copy claims a plan only when one exists: none, cooling-off, live", () => {

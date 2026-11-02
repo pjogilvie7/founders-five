@@ -6,6 +6,16 @@ import {
 export const BOTS = ["holder", "seller", "playbook"];
 export const BOT_LABELS = { holder: "The Holder", seller: "The Seller", playbook: "The Playbook" };
 
+// On the first trading day of each month the Seller and the Playbook put cash above a year of spending (12 * SPEND) into the
+// index fund, never borrowed money (cash less the loan and the overdraft stays at or above zero). Returns the deposit action or null.
+function monthlyDeposit(s) {
+  if (!getCtx(s).ftdom.has(s.i)) return null;
+  const owed = (s.loan.balance + s.loan.accrued) + s.overdraft + s.overdraftAccrued;
+  const amount = Math.min(s.cash - 12 * SPEND, s.cash - owed);
+  if (!(amount > 0.005)) return null;
+  return canDo(s, "deposit", { amount }).allowed ? { type: "deposit", amount } : null;
+}
+
 const liquid = (s) => {
   const p = wealthParts(s);
   return p.cash + p.index - p.overdraft;
@@ -47,15 +57,22 @@ function holder() {
   };
 }
 
-// The Seller sells every released share at the first open-window close, and runs a 10% monthly plan to sell through
-// blackouts.
+// The Seller sells every released share at the first open-window close, and from the first release runs a 10% monthly plan to
+// sell through blackouts. Cash above a year of spending goes into the index fund on the first trading day of each month.
 function seller() {
   const step = (s) => {
     if (s.done) return null;
     const out = [];
-    if (!s.plan && canDo(s, "adoptPlan", { pct: 10, months: 18 }).allowed) out.push({ type: "adoptPlan", pct: 10, months: 18 });
+    // a plan is adopted only once a tranche has released: with every share locked there is nothing for it to sell
+    const released = s.total - s.shares.locked;
+    if (!s.plan && released > 0 && canDo(s, "adoptPlan", { pct: 10, months: 18 }).allowed) out.push({ type: "adoptPlan", pct: 10, months: 18 });
     const g = canDo(s, "sell");
     if (g.allowed && g.max > 0) out.push({ type: "sell", shares: g.max });
+    // the deposit is sized after today's actions on a copy, so a sale made on a month's first trading day is deposited too
+    let cur = s;
+    for (const a of out) { const r = act(cur, a); if (!r.error) cur = r.state; }
+    const dep = monthlyDeposit(cur);
+    if (dep) out.push(dep);
     return out;
   };
   return { respond: baseRespond, start: step, day: step };
@@ -100,6 +117,8 @@ function playbook() {
     if (!cur.plan && released > 0 && mem.processed >= released && mem.collarOwed <= 0 && canDo(cur, "adoptPlan", { pct: 5, months: 18 }).allowed) {
       run({ type: "adoptPlan", pct: 5, months: 18 });
     }
+    const dep = monthlyDeposit(cur);
+    if (dep) run(dep);
     return out; // actions already applied to `cur` only for planning; runWithPolicy re-applies them to the real state
   };
   return {
