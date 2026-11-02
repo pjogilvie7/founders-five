@@ -217,7 +217,7 @@ async function startGame({ cardId, seat, watch }, my) {
   tr.forEach((t) => { t.pos = t.date ? Math.min(1, daysBetween(first, t.date) / span) : null; });
   const dctx = { blind: !!card.blind, dates, firstDate: first };
 
-  const ach = new Set(); try { for (const a of JSON.parse(safeLS.get('ff.ach') || '[]')) ach.add(a); } catch { /* ignore */ }
+  const ach = new Set(); // this run only; the lifetime set lives in localStorage ff.ach
   G = {
     cardId, seat, watch, card, entry, engine, state, series, scores, replay: { list: replayList, ptr: 0 }, dctx, tr, span, first,
     userPaused: false, holds: new Set(), speed: watch ? 8 : 1, speeds: watch ? [2, 4, 8] : [1, 2, 4], mode: 'wealth',
@@ -371,7 +371,10 @@ async function openChoice(ev) {
   g.holds.delete('choice'); refresh();
 }
 
-function saveAch() { safeLS.set('ff.ach', JSON.stringify([...G.achievements])); }
+function saveAch() {
+  let life = []; try { life = JSON.parse(safeLS.get('ff.ach') || '[]'); } catch { /* ignore */ }
+  safeLS.set('ff.ach', JSON.stringify([...new Set([...life, ...G.achievements])]));
+}
 
 function handleEvents(events, quiet) {
   const g = G;

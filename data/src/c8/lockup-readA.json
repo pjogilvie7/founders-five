@@ -1,0 +1,41 @@
+{
+  "reader": "A",
+  "card": "c8",
+  "source": "https://www.sec.gov/Archives/edgar/data/1759509/000119312519091446/d721841d424b4.htm",
+  "groups": [
+    {
+      "id": "all-180",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Single 180-day lock-up (market standoff for employees, lock-up for officers and directors), possible blackout-related early end",
+      "tranches": [
+        {
+          "id": "rem-180",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "to the commencement of this offering pursuant to which each of these persons or entities, with limited exceptions, for a period of up to 180 days after the date of this prospectus, may not, without the prior written consent of J.P. Morgan Securities LLC,",
+          "page": 220,
+          "resolvedDate": "2019-09-25",
+          "quoteDay181": "beginning 181 days after the date of this prospectus (subject to the terms of the lock-up and market standoff agreements described below), all remaining shares will become eligible for sale in the public market",
+          "pageDay181": 211,
+          "quoteBlackout": "provided that if (i) at least 120 days have elapsed since the date of this prospectus, (ii) we have publicly released our earnings results for the quarterly period during which this offering occurred and (iii) such lock-up period is scheduled to end during or within five trading days prior to a blackout period, such lock-up period will end ten trading days prior to the commencement of such blackout period.",
+          "pageBlackout": 220,
+          "note": "Upper bound. The blackout proviso can end the lock-up earlier (ten trading days before a blackout that starts on or within five trading days after the scheduled end), but the prospectus gives no blackout dates, so the later date is used."
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Blackout early release: conditions (i) 120 days elapsed and (ii) Q1 2019 earnings released (2019-05-07 in base earnings) are certain to be met before day 180. Condition (iii) depends on the start of Lyft's insider-trading blackout, which the prospectus does not give. The release would then fall ten trading days before that blackout start, i.e. before 2019-09-25. Lyft must announce it at least two trading days ahead (p.220). Per brief the later date 2019-09-25 is used; a reconciler should check Lyft's 8-Ks / 10-Q for an announced blackout release.",
+    "Day count: 2019-03-28 + 180 days = Tue 2019-09-24; the filing itself says 'beginning 181 days after the date of this prospectus' (p.211), so the first sale day is Wed 2019-09-25.",
+    "Who is covered: officers and directors and 'holders of a substantial portion' sign lock-ups; 'holders of substantially all of our capital stock' (including employees) are bound by market standoff agreements for 180 days (p.212). Assumed an early employee is bound by one of the two; terms are the same length. The Underwriting text says 'up to 180 days' while Shares Eligible says 'a period of 180 days'; the blackout proviso is the only way it is shorter.",
+    "Founder-CEOs (Logan Green, John Zimmer) are directors and executive officers: same lock-up, no separate or longer terms."
+  ]
+}

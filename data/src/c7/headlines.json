@@ -1,0 +1,58 @@
+[
+  {
+    "d": "2020-12-17",
+    "text": "Shares rise sharply on heavy trading with no company announcement",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2021-09-21",
+    "text": "Shares jump on heavy volume with no company news",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-03-07",
+    "text": "Shares fall as geopolitical worries deepen a broad market selloff",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-05-12",
+    "text": "Shares rebound sharply after two-day slide following quarterly results",
+    "source": "https://www.sec.gov/Archives/edgar/data/1319161/000131916122000015/q22022ex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-11-22",
+    "text": "Annual results show double-digit profit growth; cash flow beats company expectations",
+    "source": "https://www.sec.gov/Archives/edgar/data/1319161/000131916122000033/q42022ex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2023-01-12",
+    "text": "Shares fall sharply on heavy volume with no company announcement",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2023-05-09",
+    "text": "Quarterly revenue edges up as currency, economic headwinds weigh; net income falls",
+    "source": "https://www.sec.gov/Archives/edgar/data/1319161/000131916123000017/q22023ex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2024-05-09",
+    "text": "Quarterly revenue rises 7% and adjusted profit 9%, but cash use widens",
+    "source": "https://www.sec.gov/Archives/edgar/data/1319161/000131916124000018/q22024ex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  }
+]

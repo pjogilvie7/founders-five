@@ -1,0 +1,58 @@
+[
+  {
+    "d": "2020-03-09",
+    "text": "Shares tumble as oil price collapse and virus fears roil markets",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2020-03-12",
+    "text": "Shares fall again as travel curbs deepen the market rout",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2020-03-16",
+    "text": "Shares sink as emergency rate cut fails to calm investors",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2020-03-18",
+    "text": "Shares drop as markets slide to multi-year lows on recession fears",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2020-03-19",
+    "text": "Shares snap back sharply after days of heavy selling",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2020-03-24",
+    "text": "Shares rally as lawmakers near a large economic rescue package",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2020-04-30",
+    "text": "Quarterly profit and cash flow jump; company withdraws full-year guidance",
+    "source": "https://www.sec.gov/Archives/edgar/data/1722482/000172248220000089/a2020q1earningsreleaseex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2020-07-30",
+    "text": "Revenue dips but margins widen; company refinances debt to cut interest costs",
+    "source": "https://www.sec.gov/Archives/edgar/data/1722482/000172248220000147/a2020q2earningsrelease.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  }
+]

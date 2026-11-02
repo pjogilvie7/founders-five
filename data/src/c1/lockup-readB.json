@@ -1,0 +1,98 @@
+{
+  "reader": "B",
+  "card": "c1",
+  "source": "https://www.sec.gov/Archives/edgar/data/1559720/000119312520315318/d81668d424b4.htm",
+  "groups": [
+    {
+      "id": "employee",
+      "seats": [
+        "engineer"
+      ],
+      "label": "Employee Stockholder: staged release (15% / 25% / remainder)",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 15,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 0,
+            "from": "firstTrade",
+            "onOrAfter": true
+          },
+          "quote": "up to 15% of the shares of our outstanding Class A common stock and securities directly or indirectly convertible into or exchangeable or exercisable for our Class A common stock held by our current and former employees, consultants, and contractors (but excluding current executive officers, our Principal Accounting Officer, and directors including our founders, and any other person who is a party to our Investors\u2019 Rights Agreement) (the \u201cEmployee Stockholders\u201d) may be sold for a 7-trading day period beginning at the commencement of trading on the first trading day on which our common stock is traded on Nasdaq",
+          "page": 349,
+          "resolvedDate": "2020-12-10"
+        },
+        {
+          "id": "t2",
+          "pct": 25,
+          "trigger": {
+            "type": "priceCondition",
+            "pct": 33,
+            "of": "offerPrice",
+            "daysMet": 10,
+            "window": 15,
+            "endsOn": "firstEarnings",
+            "release": {
+              "type": "afterEarnings",
+              "n": 1,
+              "tradingDaysAfter": 2
+            },
+            "minDaysAfterProspectus": 60,
+            "alsoRequiresCloseAtFirstFullTradingDayAfterEarnings": true
+          },
+          "quote": "up to 25% of the shares of our outstanding Class A common stock and securities directly or indirectly convertible into or exchangeable or exercisable for our Class A common stock held by Employee Stockholders, plus any first release window eligible shares held by such person not sold during the first release window, may be sold beginning at the opening of trading on the second trading day immediately following our public release of earnings for the first quarter following the most recent period for which financial statements are included in this prospectus (such release, our \u201cfirst post-public earnings release\u201d), provided that the last reported closing price of our common stock on Nasdaq is at least 33% greater than the initial public offering price per share set forth on the cover page of this prospectus",
+          "page": 350,
+          "resolvedDate": "2021-03-01"
+        },
+        {
+          "id": "t3",
+          "pct": 60,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2,
+            "notBeforeDaysFrom": {
+              "days": 121,
+              "from": "pricingDate"
+            }
+          },
+          "quote": "during the period ending on the later of (i) the opening of trading on the second trading day immediately following our public release of earnings for the second quarter following the most recent period for which financial statements are included in this prospectus and (ii) the 121st day after the date of this prospectus",
+          "page": 349,
+          "resolvedDate": "2021-05-17"
+        }
+      ]
+    },
+    {
+      "id": "founder",
+      "seats": [
+        "founder"
+      ],
+      "label": "Founder-CEO: director and executive officer, full restricted period",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 100,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2,
+            "notBeforeDaysFrom": {
+              "days": 121,
+              "from": "pricingDate"
+            }
+          },
+          "quote": "during the period ending on the later of (i) the opening of trading on the second trading day immediately following our public release of earnings for the second quarter following the most recent period for which financial statements are included in this prospectus and (ii) the 121st day after the date of this prospectus",
+          "page": 349,
+          "resolvedDate": "2021-05-17"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Airbnb release time (pre-market vs after close) is not in the filing; base earnings dates 2021-02-25 and 2021-05-13 are taken as releases whose 'second trading day immediately following' is the next-but-one session, later date used (Mar 1; May 17). If pre-market and the release day counts as the first, dates would be Feb 26 and May 14.",
+    "Tranche t2 needs three conditions the schema holds in one trigger: release on 2nd trading day after first earnings, close >= 133% of $68 (= $90.44) on 10 of the 15 full trading days ending the first full trading day after the release AND at that day's close, and not before 60 days after prospectus (Feb 7, 2021). Checked: all 15 closes (Feb 5-26, 2021) are above $182, so it releases; extra fields on trigger record this.",
+    "Tranche percentages are of the Employee Stockholder's holdings counted on Nov 30, 2020 (t2 also adds shares vested to Feb 25, 2021 and any unsold t1 shares); 15/25/60 is an approximation. An early employee who is party to the Investors Rights Agreement is excluded from t1/t2 and would follow the founder group.",
+    "t1 is a 7-trading-day window (Dec 10-21, 2020); the window closes after day 7 and unsold t1 shares carry into t2. resolvedDate is the first day the shares may be sold."
+  ]
+}

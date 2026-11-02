@@ -1,0 +1,58 @@
+[
+  {
+    "d": "2020-11-09",
+    "text": "Shares plunge as vaccine news pulls investors from pandemic favorites",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2021-11-05",
+    "text": "Company cuts full-year forecast, citing softer demand and limited visibility",
+    "source": "https://www.sec.gov/Archives/edgar/data/1639825/000163982521000320/shareholderletter2022q1.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-01-20",
+    "text": "Shares tumble on report that company is pausing production",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-02-08",
+    "text": "New chief executive named; company announces restructuring and large job cuts",
+    "source": "https://www.sec.gov/Archives/edgar/data/1639825/000163982522000007/pressreleaseannouncingrest.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2023-02-01",
+    "text": "Quarterly results beat company forecasts as cash burn narrows sharply",
+    "source": "https://www.sec.gov/Archives/edgar/data/1639825/000163982523000010/q22023shareholderletter.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2023-08-23",
+    "text": "Paying users decline in quarter as demand slows and recall costs mount",
+    "source": "https://www.sec.gov/Archives/edgar/data/1639825/000163982523000128/q42023shareholderletter.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2024-02-01",
+    "text": "Full-year revenue guided lower; company says it will miss cash-flow goal",
+    "source": "https://www.sec.gov/Archives/edgar/data/1639825/000163982524000004/q22024shareholderletter.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2024-08-22",
+    "text": "Second straight quarter of positive cash flow; revenue returns to growth",
+    "source": "https://www.sec.gov/Archives/edgar/data/1639825/000163982524000120/q42024shareholderletter.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  }
+]

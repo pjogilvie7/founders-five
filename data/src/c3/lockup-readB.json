@@ -1,0 +1,34 @@
+{
+  "reader": "B",
+  "card": "c3",
+  "source": "https://www.sec.gov/Archives/edgar/data/1809587/000104746920004582/a2242260z424b4.htm",
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Standard 180-day lock-up",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "not to directly or indirectly during the period ending 180 days after the date of this prospectus, (i) issue, offer, pledge, sell, contract to sell, offer or issue, contract to purchase or grant any option, right or warrant to purchase, or otherwise dispose of, any ordinary shares or ADSs",
+          "page": 241,
+          "resolvedDate": "2021-02-09"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Foreign issuer: lock-up covers ADSs and ordinary shares; 180 days after Aug 12, 2020 is Feb 8, 2021 (Mon); first sale day Feb 9, 2021. Tencent, Hillhouse, Sequoia have 365 days; not a player seat.",
+    "Filing says 'existing shareholders' and directors/officers; it does not separately describe employee-held share-incentive vehicles. Treated as covered by the same 180 days; no staggered or price release exists."
+  ]
+}

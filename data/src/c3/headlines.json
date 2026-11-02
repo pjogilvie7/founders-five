@@ -1,0 +1,58 @@
+[
+  {
+    "d": "2021-07-26",
+    "text": "Shares plunge as regulatory worries trigger a sharp sector selloff",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2021-12-13",
+    "text": "Shares drop sharply with no company announcement",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-03-04",
+    "text": "Shares slide as geopolitical tensions rattle global markets",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-03-10",
+    "text": "Quarterly transaction volume falls sharply; company forecasts steep revenue drop",
+    "source": "https://www.sec.gov/Archives/edgar/data/1809587/000110465922032177/tm228878d1_ex99-1.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-03-16",
+    "text": "Shares surge after officials pledge support for stock markets",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-10-24",
+    "text": "Shares plunge as political developments rattle investors",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-11-11",
+    "text": "Shares jump as pandemic restrictions ease and inflation cools",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2024-09-26",
+    "text": "Shares surge as policymakers unveil broad stimulus measures",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  }
+]

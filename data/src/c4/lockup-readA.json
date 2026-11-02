@@ -1,0 +1,36 @@
+{
+  "reader": "A",
+  "card": "c4",
+  "source": "https://www.sec.gov/Archives/edgar/data/1506293/000119312519111067/d697629d424b4.htm",
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "All holders: 180 days, cut to 150 days by the trading-window clause",
+      "tranches": [
+        {
+          "id": "all",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 151,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "until 180 days after the date of this prospectus, we and they will not, without the prior written consent of Goldman Sachs & Co. LLC and J.P. Morgan Securities LLC, directly or indirectly, offer, sell, contract to sell, pledge, grant any option to purchase, make any short sale, or otherwise dispose of or hedge any of our shares of common stock, any options, or any securities convertible into, or exchangeable for or that represent the right to receive shares of our common stock; provided that (i) if the restrictions set forth in the lock-up agreement would apply during any portion of the last trading window (meaning a broadly applicable period regularly scheduled to occur following our quarterly earnings release during which trading in our securities would not otherwise be restricted under our insider trading policy) scheduled to begin prior to the end of the lock-up period, (ii) at least 150 days have elapsed since the date of this prospectus and (iii) we have publicly released results for the quarterly period during which this offering occurred, then the last day of the lock-up period will be the later of (x) the trading day immediately prior to the scheduled commencement of the last trading window and (y) 150 days after the date of this prospectus",
+          "page": 189,
+          "resolvedDate": "2019-09-16",
+          "note": "Prospectus dated Apr 17, 2019. Day 150 = Sat Sep 14, 2019; conditions (i)-(iii) met on the facts available (Q2 results released Aug 1, 2019; last trading window starts after that release, before Oct 14), so the last lock-up day is the later of (x) the day before that window starts (~early Aug) and (y) Sep 14 = Sep 14. First trading day to sell: Mon Sep 16, 2019. Without the clause: 180 days = Oct 14, sale from Oct 15."
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Clause (i) depends on the insider trading policy's trading windows, which the filing does not date. Read as the window after the Aug 1 2019 Q2 release (starts before the Oct 14 end), giving Sep 16. If the clause did not apply, the date would be Oct 15, 2019 (181st day).",
+    "Limited tax-sale exceptions (option holders from 31 days = May 18 2019, RSU holders from Aug 5 2019) allow selling only enough to cover taxes; not a tranche.",
+    "Founder is an affiliate (Rule 144 cap after release, engine seat rule)."
+  ]
+}

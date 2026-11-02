@@ -33,7 +33,10 @@ test('the draw is reproducible from the seed', () => {
 test('every included row has a 424B4 URL and proceeds of at least $1B', () => {
   assert.ok(u.included.length >= 10);
   for (const r of u.included) {
-    assert.match(r.url424b4, /^https:\/\/www\.sec\.gov\/Archives\/edgar\/data\/\d+\/\d{18}\/[^/]*424b4[^/]*\.htm$/i, `${r.ticker} url`);
+    assert.match(r.url424b4, /^https:\/\/www\.sec\.gov\/Archives\/edgar\/data\/\d+\/\d{18}\/[^/]+\.htm$/i, `${r.ticker} url`);
+    assert.ok(r.url424b4.includes(r.accession424b4.replace(/-/g, '')), `${r.ticker} url matches the 424B4 accession`);
+    const days = (Date.parse(r.filed424b4) - Date.parse(r.firstTrade)) / 86400000;
+    assert.ok(days >= -3 && days <= 5, `${r.ticker} 424B4 filed ${r.filed424b4}, first trade ${r.firstTrade}`);
     assert.ok(r.proceedsUSD >= 1e9, `${r.ticker} proceeds ${r.proceedsUSD}`);
     assert.ok(r.pricingDate >= '2019-01-01' && r.pricingDate <= '2021-06-30', `${r.ticker} pricing date ${r.pricingDate}`);
     assert.ok(r.firstTrade >= r.pricingDate, `${r.ticker} first trade before pricing`);

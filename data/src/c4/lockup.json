@@ -1,0 +1,74 @@
+{
+  "groups": [
+    {
+      "id": "engineer-standoff",
+      "seats": [
+        "engineer"
+      ],
+      "label": "Early employee (option / RSU holder): market stand-off, 180 days, no early-end clause attached",
+      "groupNote": "Filing p.189: besides the underwriter lock-up agreements, 'we have entered into agreements with certain security holders, including our investor rights agreement, our standard form of option agreement, and our standard form of RSU agreement, that contain market stand-off provisions ... for a period of 180 days following the date of this prospectus.' The 150-day trading-window early end is written only against 'the lock-up agreements' with Goldman Sachs and J.P. Morgan (pp.50, 189, 195), which are signed by all directors and executive officers and 'certain holders'. The text does not say whether an ordinary employee signed a lock-up agreement; the later date is used.",
+      "tranches": [
+        {
+          "id": "all",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "we have entered into agreements with certain security holders, including our investor rights agreement, our standard form of option agreement, and our standard form of RSU agreement, that contain market stand-off provisions imposing restrictions on the ability of such security holders to offer, sell or transfer our equity securities for a period of 180 days following the date of this prospectus",
+          "page": 189,
+          "resolvedDate": "2019-10-15",
+          "readA": "100% (one group for both seats): 150-day trading-window early end -> 2019-09-16",
+          "readB": "100% under the 180-day market stand-off, no early end -> 2019-10-15",
+          "reconcilerNote": "DISAGREEMENT: A put both seats in one group released 2019-09-16 via the 150-day clause; B put the employee under the 180-day stand-off (2019-10-15) and only the founder under the clause. Text: the clause is introduced 'Pursuant to the lock-up agreements with Goldman Sachs & Co. LLC and J.P. Morgan Securities LLC' (p.50) and the paragraph on p.189 ties it to the lock-up agreements of 'all of our directors and executive officers, and certain holders'. The stand-off paragraph that follows ('In addition to the restrictions contained in the lock-up agreements') names the option and RSU agreements and gives 180 days with no early end. So for the founder (a director and executive officer) the clause plainly applies; for an ordinary employee the text points to the stand-off but cannot rule out a signed lock-up (p.189 also describes the tax-withholding sale carve-out as a term of the lock-up agreements for 'RSU and stock option holders', which hints that some employee holders are inside the lock-up agreements). Not settled from the text, so the later date is taken per brief: 180 days after 2019-04-17 = Mon 2019-10-14 (last locked day), free Tue 2019-10-15. A later date can never let a player sell early.",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "founder-lockup",
+      "seats": [
+        "founder"
+      ],
+      "label": "Founder-CEO (director and executive officer): underwriter lock-up with 150-day trading-window early end",
+      "groupNote": "Filing p.189: all directors and executive officers have signed lock-up agreements with the underwriters containing the trading-window early end.",
+      "tranches": [
+        {
+          "id": "all",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 151,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "We and all of our directors and executive officers, and certain holders of our common stock and securities exercisable for or convertible into our common stock, have agreed, or will agree, with the underwriters that, subject to certain exceptions, until 180 days after the date of this prospectus, we and they will not, without the prior written consent of Goldman Sachs & Co. LLC and J.P. Morgan Securities LLC, directly or indirectly, offer, sell, contract to sell, pledge, grant any option to purchase, make any short sale, or otherwise dispose of or hedge any of our shares of common stock, any options, or any securities convertible into, or exchangeable for or that represent the right to receive shares of our common stock; provided that (i) if the restrictions set forth in the lock-up agreement would apply during any portion of the last trading window (meaning a broadly applicable period regularly scheduled to occur following our quarterly earnings release during which trading in our securities would not otherwise be restricted under our insider trading policy) scheduled to begin prior to the end of the lock-up period, (ii) at least 150 days have elapsed since the date of this prospectus and (iii) we have publicly released results for the quarterly period during which this offering occurred, then the last day of the lock-up period will be the later of (x) the trading day immediately prior to the scheduled commencement of the last trading window and (y) 150 days after the date of this prospectus",
+          "page": 189,
+          "resolvedDate": "2019-09-16",
+          "readA": "100% lock-up cut to day 150 (Sat 2019-09-14) by the trading-window clause -> first trading day 2019-09-16",
+          "readB": "100% same clause -> 2019-09-16",
+          "reconcilerNote": "Both reads agree for the founder. Prospectus dated 2019-04-17. Conditions: (ii) at least 150 days elapsed: day 150 = Sat 2019-09-14; (iii) results for the quarter of the offering (Q2 2019) released: 8-K 2019-08-01 (base.json earnings), before day 150. (i) needs a regularly scheduled trading window to begin before the lock-up end (2019-10-14): the window that opens after the 2019-08-01 release does, and it opens in early August, before day 150, so (x) 'trading day before the window starts' (early Aug) is earlier than (y) day 150 and the last locked day is (y) 2019-09-14. First trading day after: Mon 2019-09-16 (in base.json prices). The insider trading policy dates are not in the filing; if clause (i) did not apply the date would be 2019-10-15.",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Early employee seat: the 150-day early end is written against the underwriter lock-up agreements; the employee is placed under the 180-day market stand-off (no early end) and given 2019-10-15. The filing does not say whether an ordinary employee signed a lock-up agreement; if so, the date would be 2019-09-16 (reader A's reading). The later date is used. Evidence for A: p.189 describes the tax-withholding sale carve-out for 'RSU and stock option holders' as a term of the lock-up agreements.",
+    "Clause (i) depends on the insider trading policy's scheduled trading windows, which the filing does not date. Read as the window after the 2019-08-01 Q2 release; if the clause did not apply the founder date would be 2019-10-15 instead of 2019-09-16 (both readers).",
+    "Tax-withholding sale exception (RSU holders from 2019-08-05, option holders from 31 days = 2019-05-18) lets holders sell only enough to cover taxes; not modelled as a tranche (both readers).",
+    "Founder is an affiliate: Rule 144 volume cap after release (engine seat rule)."
+  ]
+}

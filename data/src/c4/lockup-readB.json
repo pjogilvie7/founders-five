@@ -1,0 +1,56 @@
+{
+  "reader": "B",
+  "card": "c4",
+  "source": "https://www.sec.gov/Archives/edgar/data/1506293/000119312519111067/d697629d424b4.htm",
+  "groups": [
+    {
+      "id": "employee",
+      "seats": [
+        "engineer"
+      ],
+      "label": "Employee: market stand-off, 180 days",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "we have entered into agreements with certain security holders, including our investor rights agreement, our standard form of option agreement, and our standard form of RSU agreement, that contain market stand-off provisions imposing restrictions on the ability of such security holders to offer, sell or transfer our equity securities for a period of 180 days following the date of this prospectus",
+          "page": 189,
+          "resolvedDate": "2019-10-15"
+        }
+      ]
+    },
+    {
+      "id": "founder",
+      "seats": [
+        "founder"
+      ],
+      "label": "Founder-CEO: underwriter lock-up with 150-day trading-window release",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 151,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "then the last day of the lock-up period will be the later of (x) the trading day immediately prior to the scheduled commencement of the last trading window and (y) 150 days after the date of this prospectus",
+          "page": 189,
+          "resolvedDate": "2019-09-16"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Early-end clause: lock-up agreement parties (all directors and executive officers, 'certain holders') end on the later of the trading day before the last trading window opens and day 150 (Sep 14, 2019, Saturday) if >=150 days elapsed and Q2 2019 results released (Aug 1, 2019): first sale day Mon Sep 16, 2019. The window start is not given in the filing; the Q2 window opens in early Aug 2019, before day 150, so (y) governs. If the clause were read not to apply, founder would be Oct 15, 2019.",
+    "Early employee seat: filing names market stand-off provisions (investor rights, option and RSU agreements) of 180 days with no early-end clause; it is unknown whether a given employee also signed an underwriter lock-up. Later date (Oct 15, 2019) used for engineer; if the employee signed the lock-up it would be Sep 16.",
+    "Tax-withholding sale exception for option holders (from day 31) and RSU holders (from Aug 5, 2019) is a sell-to-cover carve-out for taxes only; not modelled as a tranche."
+  ]
+}

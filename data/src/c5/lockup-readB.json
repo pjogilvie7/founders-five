@@ -1,0 +1,36 @@
+{
+  "reader": "B",
+  "card": "c5",
+  "source": "https://www.sec.gov/Archives/edgar/data/1722482/000119312519150954/d698870d424b4.htm",
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Single 180-day lock-up (all holders, officers/directors and employees alike)",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 180,
+            "from": "pricingDate",
+            "onOrAfter": false
+          },
+          "quote": "We, our executive officers, directors and certain holders of our common stock, including the selling stockholder, prior to this offering have agreed with the underwriters, subject to certain exceptions, not to dispose of or hedge any shares of our common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Goldman Sachs & Co. LLC and J.P. Morgan Securities LLC.",
+          "page": "198",
+          "resolvedDate": "2019-11-13"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Lock-up runs 'through the date 180 days after the date of this prospectus' (prospectus dated 2019-05-16): day 180 is Tue 2019-11-12, so first sale day is Wed 2019-11-13. Trigger encoded with onOrAfter:false (strictly after day 180); the types.md schema only shows onOrAfter:true, reconciler should map to 'next trading day after'.",
+    "No earnings-based, price-based or staggered release; only underwriters' discretionary early release (page 192 / risk-factor summary), not a scheduled tranche.",
+    "Surviving Stockholders Agreement (Nov 21, 2017) restricts transfers of equity by its parties after the IPO (only to affiliates or in exempt/registered transactions) and gives the company repurchase rights on employee shares; this may bind employee holders beyond the lock-up but is not a lock-up and is not modelled.",
+    "Prospectus summary/risk-factor passage says 'each held by them for 180 days following the date of this prospectus' (same effect). Rule 701 90-day language does not override the lock-up."
+  ]
+}

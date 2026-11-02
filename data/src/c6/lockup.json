@@ -1,0 +1,115 @@
+{
+  "groups": [
+    {
+      "id": "engineer-earnings",
+      "seats": [
+        "engineer"
+      ],
+      "label": "Employee who is not an officer: 33% early release after Q2 earnings only if the price test is met (it was not); everything is released two trading days after Q3 earnings (day 180 is the backstop)",
+      "groupQuote": "The restricted period with respect to our officers, directors, and other holders will terminate on the earlier of (i) the opening of trading on the second trading day immediately following our release of earnings for the quarter ended September 30, 2021 and (ii) 180 days after the date of this prospectus.",
+      "groupPage": 174,
+      "groupNote": "Percentages are of the holder's locked shares. The filing gives the 33% as 'up to 33%' of vested shares held on the Measurement Date (2021-07-09); a long-tenured employee is modelled as fully vested. The 15% officer/director and 15% other-holder early releases do not apply to a non-officer employee.",
+      "tranches": [
+        {
+          "id": "e-q2-price",
+          "pct": 33,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2
+          },
+          "earlyTrigger": {
+            "type": "priceCondition",
+            "pct": 33,
+            "of": "offerPrice",
+            "test": "average of the 10 closes ending on the Q2 2021 earnings date (2021-08-11) AND the close on the first full trading day after it, each at least 33% above the offer ($143.64 split-adjusted)",
+            "release": {
+              "type": "afterEarnings",
+              "n": 1,
+              "tradingDaysAfter": 2
+            },
+            "wouldHaveReleasedOn": "2021-08-13"
+          },
+          "quote": "up to 33% of the shares of common stock and shares of common stock underlying securities convertible into or exercisable or exchangeable for our common stock (including stock options, restricted stock units and other equity awards) held by our employees, other than our officers, as of the Measurement Date for which all vesting conditions are satisfied as of such Measurement Date, may be sold in the public market beginning at the commencement of the second trading day after the Post-Offering Earnings Release Date, provided that the Trading Price Condition is met and that such employee is an employee on the Measurement Date;",
+          "quoteCondition": "the average of the closing prices per share on Nasdaq for the preceding 10-day trading day period ending on, and including, the Post-Offering Earnings Release Date and (ii) the closing price per share on the first full trading day immediately following the Post-Offering Earnings Release Date is at least 33% greater than the initial public offering price per share set forth on the cover page of this prospectus",
+          "page": 174,
+          "resolvedDate": "2021-11-12",
+          "conditionMet": false,
+          "note": "Price test failed (10-day average close $112.52, next-day close $110.04, needed $143.64; the highest close in the window was $120.68). These shares are not forfeited: they release with the rest on 2021-11-12.",
+          "readA": "33% early release, price test failed -> resolvedDate null, swept into the Q3 release (2021-11-12)",
+          "readB": "33% early release, price test failed -> 2021-11-12 with conditionMet:false (null if the engine needs it)",
+          "reconcilerNote": "Only disagreement between the reads: A stored null, B stored 2021-11-12. Both agree the test failed and the shares fall into the Q3 release. Engine: the filing's early 33% release is conditional on the Trading Price Condition (p.174); the condition FAILED, so the shares were not released early and the later release frees them. resolvedDate is therefore set to the later release date, 2021-11-12, with conditionMet:false. The tranche's trigger field is that later release (afterEarnings n=2, +2 trading days), so a recompute from the trigger matches; the original early-release test is kept in earlyTrigger. Test recomputed from base.json: closes 2021-07-29 to 2021-08-11 average 112.52; 2021-08-12 close 110.04; threshold 1.33 x 108 = 143.64 (offer restated for the 1:4 split). A and B encoded the test differently (daysMet 10/window 10 vs 11/11); both are descriptive proxies and both give the same result.",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        },
+        {
+          "id": "e-rem",
+          "pct": 67,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2
+          },
+          "quote": "The restricted period with respect to our officers, directors, and other holders will terminate on the earlier of (i) the opening of trading on the second trading day immediately following our release of earnings for the quarter ended September 30, 2021 and (ii) 180 days after the date of this prospectus.",
+          "page": 174,
+          "resolvedDate": "2021-11-12",
+          "note": "Same date as e-q2-price: the engine releases both tranches (33 + 67 = 100) on 2021-11-12. Day 180 (Sun 2021-12-05, first trading day 2021-12-06) is later, so the earnings leg ends the restriction.",
+          "readA": "67% on the opening of the 2nd trading day after Q3 earnings (2021-11-10, after close): 11-11 first, 11-12 second -> 2021-11-12",
+          "readB": "67%, same rule, 2021-11-12",
+          "reconcilerNote": "Reads agree. Q3 2021 earnings date 2021-11-10 is in base.json earnings; the filing says 'the opening of trading on the second trading day immediately following our release'. If the release was after the close (reader A: 8-K accepted 16:10 ET, not re-checked by me) the 2nd following trading day is 11-12; if before the open on 11-10 it is also 11-12 unless the release day itself counts (11-11). 11-12 chosen.",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "founder-ceo",
+      "seats": [
+        "founder"
+      ],
+      "label": "Founder and CEO: excluded from the officer early release; locked until two trading days after Q3 earnings (day 180 is the backstop)",
+      "groupQuote": "The restricted period with respect to our officers, directors, and other holders will terminate on the earlier of (i) the opening of trading on the second trading day immediately following our release of earnings for the quarter ended September 30, 2021 and (ii) 180 days after the date of this prospectus.",
+      "groupPage": 174,
+      "groupNote": "The 15% officer and director early release is for those 'other than our Chief Executive Officer' (p.174), so the CEO has no early tranche.",
+      "tranches": [
+        {
+          "id": "f-rem",
+          "pct": 100,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2
+          },
+          "quote": "The restricted period with respect to our officers, directors, and other holders will terminate on the earlier of (i) the opening of trading on the second trading day immediately following our release of earnings for the quarter ended September 30, 2021 and (ii) 180 days after the date of this prospectus.",
+          "page": 174,
+          "resolvedDate": "2021-11-12",
+          "readA": "100% -> 2021-11-12 (no early tranche for the CEO)",
+          "readB": "100% -> 2021-11-12 (no early tranche for the CEO)",
+          "reconcilerNote": "Reads agree. CEO exclusion confirmed in the filing text (p.174: 'other than our Chief Executive Officer'). Day 180 = Sun 2021-12-05; backstop first trading day 2021-12-06, later than 11-12.",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Release time of the Q3 2021 earnings (2021-11-10) is not in the filing; reader A saw an 8-K accepted 16:10 ET (after the close). 11-12 holds unless the release day itself counts as day 1 (then 11-11).",
+    "The 33% early release covers only shares whose vesting conditions were met on the Measurement Date (2021-07-09) and only for employees still employed then; a player with unvested shares would see less. Moot because the price test failed.",
+    "The price test is an average of 10 closes plus the next-day close; the schema's priceCondition (daysMet/window) cannot express it, so it is carried as descriptive text in earlyTrigger.test.",
+    "Whether a non-officer employee is inside the 'officers, directors, and other holders' termination sentence, or only under the 180-day market stand-off (p.166); both end on the same backstop day, and the earnings leg is earlier for lock-up signers.",
+    "Summary pages (p.164-166) contain a blank 'at least ___ days' lead-in and '181 days' for 422,796,021 shares; both are the backstop and are superseded by the earlier earnings leg (reader B).",
+    "Marqeta's offer and share counts are restated for the 1:4 split of 2026-07-01 in base.json; percentages are unaffected."
+  ]
+}

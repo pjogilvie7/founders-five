@@ -1,0 +1,42 @@
+{
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "All holders: 180-day lock-up / market standoff from the prospectus date (early end for a trading blackout cannot be dated)",
+      "groupNote": "Filing pp.142-143 and 150: directors, executive officers and substantially all holders are subject to 'lock-up agreements or market standoff provisions' for at least 180 days, with the same blackout proviso written against the lock-up period. The filing does not say which agreement an early employee signed; both seats are given the same date.",
+      "tranches": [
+        {
+          "id": "all",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "not to dispose of or hedge any of our or their common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Goldman Sachs & Co. LLC and J.P. Morgan Securities LLC; provided that if (1) at least 120 days have elapsed since the date of this prospectus, (2) we have publicly released our earnings results for the quarterly period during which this offering occurred, and (3) such lock-up period is scheduled to end during or within five trading days prior to a blackout period, such lock-up period will end ten trading days prior to the commencement of such blackout period.",
+          "page": 150,
+          "resolvedDate": "2020-03-24",
+          "readA": "100% locked through day 180 (2020-03-23), free 2020-03-24; blackout early end not datable",
+          "readB": "100% day 181 -> 2020-03-24; blackout early end not datable",
+          "reconcilerNote": "Both reads agree on 100%, trigger and date; they differ only in how much of the quote they copied (A included the consent clause, B stopped before it; the final quote includes the whole sentence with the blackout proviso). Prospectus dated 2019-09-25 (p.1 cover). 'Continuing through the date 180 days after' = 2020-03-23 (Mon); Shares Eligible (p.142) says 'beginning 181 days after the date of this prospectus' = 2020-03-24 (Tue), a trading day in base.json. The early-end proviso needs 120 days (2020-01-23), results for the quarter of the offering (Q1 FY20, released 2019-11-05) and a blackout under the insider trading policy; the policy dates are not in the filing, so no earlier date can be computed. Later date 2020-03-24 used (cannot let a player sell early).",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Blackout early end: if the 180-day end falls during or within five trading days before a trading blackout (the 2020 quarter-end blackout may start in mid-March), the lock-up ends ten trading days before the blackout starts, possibly early to mid March 2020. Blackout dates are in Peloton's insider trading policy, not the filing; later date 2020-03-24 used.",
+    "The filing does not say whether an early employee holds under a lock-up agreement or a market standoff provision; both seats were given the same 180 days (the blackout proviso is written against both on p.142).",
+    "Founder is an affiliate: Rule 144 volume cap after release (engine seat rule)."
+  ]
+}

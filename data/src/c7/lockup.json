@@ -1,0 +1,48 @@
+{
+  "groups": [
+    {
+      "id": "all-180",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Single 180-day lock-up for all pre-IPO holders, no early release",
+      "groupQuote": "In addition, the Company's officers, directors, and holders of all of the Company's common stock, including the selling stockholders, have agreed with the underwriters, subject to certain exceptions, not to dispose of or hedge any of their common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Morgan Stanley & Co. LLC.",
+      "groupPage": 183,
+      "groupNote": "Employees are covered: p.41 'the holders of all of our outstanding stock have entered into lock-up agreements' and p.177 (Rule 701) 'all shares issued under Rule 701 are subject to lock-up agreements and will only become eligible for sale when the 180-day lock-up agreements expire'. The founder seat is the CEO as officer and director, on the same terms.",
+      "tranches": [
+        {
+          "id": "all-d180",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 180,
+            "from": "pricingDate",
+            "onOrAfter": false,
+            "afterClose": true
+          },
+          "quote": "In addition, the Company's officers, directors, and holders of all of the Company's common stock, including the selling stockholders, have agreed with the underwriters, subject to certain exceptions, not to dispose of or hedge any of their common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Morgan Stanley & Co. LLC.",
+          "page": 183,
+          "quoteWho": "we, the selling stockholders, all of our directors and executive officers and the holders of all of our outstanding stock have entered into lock-up agreements under which, subject to certain",
+          "quoteWhoPage": 41,
+          "resolvedDate": "2020-12-01",
+          "calendarDate": "2020-11-30",
+          "readA": "100% through day 180 (2020-06-03 + 180 = Mon 2020-11-30), first sale day Tue 2020-12-01 -> 2020-12-01",
+          "readB": "100% through day 180 (Mon 2020-11-30), first sale day Tue 2020-12-01 -> 2020-12-01",
+          "reconcilerNote": "Reads agree on every field. Differences are cosmetic (ids, A's quote includes 'In addition, the Company's officers, directors, and holders of all of the Company's common stock', B's stops at 'have agreed'; A's was used and checked against research/424b4/c7.txt p.183 with apostrophes stripped by the text extractor). Date recomputed: 2020-06-03 + 180 = Mon 2020-11-30 (a trading day in base.json); lock-up runs 'through' that date, first sale day is Tue 2020-12-01.",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Prospectus date, pricing date and first trade are all 2020-06-03, so day 180 is counted from the first trade day as well; no off-by-one risk.",
+    "Morgan Stanley may release any portion at its sole discretion (p.41-42); not a scheduled event, not modelled. Listed exceptions (gifts, 10b5-1 plan establishment, margin loans, net share settlement for tax) do not let a player sell at market.",
+    "Employee equity is largely deferred equity units; whether each unit class is inside 'holders of all of the Company's common stock' is assumed from the Rule 701 sentence on p.177."
+  ]
+}

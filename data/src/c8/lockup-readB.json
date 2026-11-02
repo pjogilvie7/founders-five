@@ -1,0 +1,37 @@
+{
+  "reader": "B",
+  "card": "c8",
+  "source": "https://www.sec.gov/Archives/edgar/data/1759509/000119312519091446/d721841d424b4.htm",
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Single 180-day lock-up/market standoff (all holders), with a possible blackout-based early end not datable from the filing",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "beginning 181 days after the date of this prospectus (subject to the terms of the lock-up and market standoff agreements described below), all remaining shares will become eligible for sale in the public market",
+          "quoteBlackoutClause": "provided that if (i) at least 120 days have elapsed since the date of this prospectus, (ii) we have publicly released our earnings results for the quarterly period during which this offering occurred and (iii) such lock-up period is scheduled to end during or within five trading days prior to a blackout period, such lock-up period will end ten trading days prior to the commencement of such blackout period.",
+          "page": "211",
+          "resolvedDate": "2019-09-25"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Blackout early end: lock-up (and, per page 211 proviso, the underwriters' lock-up) ends ten trading days before a blackout period if (i) 120 days have elapsed, (ii) the quarter-of-IPO earnings are released (Q1 2019, 8-K 2019-05-07) and (iii) the scheduled end (day 180 = 2019-09-24) falls during or within five trading days before a blackout. The prospectus does not give the blackout start date (insider trading policy is not described), so whether it applied and the resulting date cannot be settled from the filing; used the later, scheduled date 2019-09-25. If a blackout started about mid-September, the release would land roughly 10 trading days before that (early-to-mid September 2019); the company says it will announce any such release at least two trading days ahead (p.220).",
+    "Scheduled end: 'for a period of 180 days after the date of this prospectus' (prospectus dated 2019-03-28); filing states shares become eligible 'beginning 181 days after', = Wed 2019-09-25 (day 180 is Tue 2019-09-24).",
+    "Employees/founder are bound through market standoff agreements with the company (same 180 days, p.212) and/or underwriter lock-ups; the blackout proviso is written only into the J.P. Morgan lock-up text, not the market standoff paragraph; company and underwriters 'may release certain stockholders' early at discretion (p.57). Treated both seats identically.",
+    "Directed share program participants (directors, employees, friends and family) are also locked up; drivers' DSP shares are not (irrelevant to the seats)."
+  ]
+}

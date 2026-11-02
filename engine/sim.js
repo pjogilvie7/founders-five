@@ -70,6 +70,18 @@ function buildCtx(card, seat, market, spcxOptions, group) {
     ...r,
     idx: r.date ? tradingIndexOnOrAfter(prices, r.date) : -1,
   }));
+  // Limited sale windows (e.g. a 7-trading-day employee window at the IPO): shares from that tranche
+  // still free after windowEnd go back under the lockup until the next release of the group.
+  const tByIdx = (group.tranches || []);
+  releases.forEach((r, k) => {
+    const t = tByIdx.find((x) => x.id === r.id) || tByIdx[k];
+    if (t && t.windowEnd && r.idx >= 0) {
+      const endIdx = tradingIndexOnOrAfter(prices, t.windowEnd);
+      const relockIdx = endIdx >= 0 && endIdx + 1 < n ? endIdx + 1 : -1;
+      const later = sched.filter((x) => x.status === "resolved" && x.date && x.date > t.windowEnd).map((x) => tradingIndexOnOrAfter(prices, x.date)).filter((x) => x >= 0);
+      r.window = { endDate: t.windowEnd, relockIdx, reopenIdx: later.length ? Math.min(...later) : -1 };
+    }
+  });
   const first = (card.ipo && card.ipo.firstTrade) || dates[0];
   const headIdx = new Map();
   for (const h of card.headlines || []) {
@@ -1106,7 +1118,25 @@ function advance(s, ctx, ev) {
     s.flags.seenTranches.push(r.id);
     relShares += n; relIds.push(r.id);
   }
+  for (const r of ctx.releases) {
+    if (!r.window) continue;
+    if (i === r.window.relockIdx && s.flags.seenTranches.includes(r.id)) {
+      const soldSince = s.shares.sold - ((s.flags.soldAtRelease || {})[r.id] || 0);
+      const back = Math.max(0, Math.min(s.shares.free, r.shares - soldSince));
+      if (back > 0) {
+        s.shares.free -= back; s.shares.locked += back;
+        s.flags.relocked = { ...(s.flags.relocked || {}), [r.id]: back };
+        ev.push({ type: "release", d, pause: false, text: `The ${Math.round((r.shares / s.total) * 100)}% employee sale window has closed. ${commas(back)} unsold shares are locked again until the next release.`, data: { relocked: back, tranche: r.id } });
+      }
+    }
+    if (i === r.window.reopenIdx && s.flags.relocked && s.flags.relocked[r.id]) {
+      const back = Math.min(s.flags.relocked[r.id], s.shares.locked);
+      s.shares.locked -= back; s.shares.free += back; relShares += back;
+      s.flags.relocked = { ...s.flags.relocked, [r.id]: 0 };
+    }
+  }
   if (relIds.length) {
+    for (const id of relIds) s.flags.soldAtRelease = { ...(s.flags.soldAtRelease || {}), [id]: s.shares.sold };
     const firstEver = !s.flags.firstUse.release;
     s.flags.firstUse.release = s.flags.firstUse.release || d;
     const pct = Math.round((relShares / s.total) * 100);

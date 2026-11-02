@@ -1,0 +1,97 @@
+{
+  "reader": "A",
+  "card": "c1",
+  "source": "https://www.sec.gov/Archives/edgar/data/1559720/000119312520315318/d81668d424b4.htm",
+  "groups": [
+    {
+      "id": "employee",
+      "seats": [
+        "engineer"
+      ],
+      "label": "Employee Stockholder (non-officer, non-director, not an Investors Rights Agreement party): staged release",
+      "tranches": [
+        {
+          "id": "first-window",
+          "pct": 15,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 0,
+            "from": "firstTrade",
+            "onOrAfter": true
+          },
+          "quote": "up to 15% of the shares of our outstanding Class A common stock and securities directly or indirectly convertible into or exchangeable or exercisable for our Class A common stock held by our current and former employees, consultants, and contractors (but excluding current executive officers, our Principal Accounting Officer, and directors including our founders, and any other person who is a party to our Investors\u2019 Rights Agreement) (the \u201cEmployee Stockholders\u201d) may be sold for a 7-trading day period beginning at the commencement of trading on the first trading day on which our common stock is traded on Nasdaq",
+          "page": 340,
+          "resolvedDate": "2020-12-10",
+          "note": "First release window: 15% may be sold for 7 trading days from the opening of the first trading day (Dec 10-Dec 18). Shares not sold in the window roll into the second window."
+        },
+        {
+          "id": "second-window",
+          "pct": 25,
+          "trigger": {
+            "type": "priceCondition",
+            "pct": 33,
+            "of": "offerPrice",
+            "daysMet": 10,
+            "window": 15,
+            "endsOn": "firstEarnings",
+            "release": {
+              "type": "afterEarnings",
+              "n": 1,
+              "tradingDaysAfter": 2
+            },
+            "notBeforeCalendarDaysAfterPricing": 60
+          },
+          "quote": "up to 25% of the shares of our outstanding Class A common stock and securities directly or indirectly convertible into or exchangeable or exercisable for our Class A common stock held by Employee Stockholders, plus any first release window eligible shares held by such person not sold during the first release window, may be sold beginning at the opening of trading on the second trading day immediately following our public release of earnings for the first quarter following the most recent period for which financial statements are included in this prospectus (such release, our \u201cfirst post-public earnings release\u201d), provided that the last reported closing price of our common stock on Nasdaq is at least 33% greater than the initial public offering price per share set forth on the cover page of this prospectus",
+          "page": 350,
+          "resolvedDate": "2021-03-01",
+          "note": "Gate: close >= 1.33 x $68.00 = $90.44 on 10 of the 15 trading days ending at the close of the first full trading day after the first post-IPO earnings release (Feb 26, 2021), and at that close. Passes (lowest close in the window $182.06). Also not before day 60 (Feb 7, 2021). Release is the opening of the 2nd trading day after the Feb 25, 2021 earnings = Mar 1, 2021."
+        },
+        {
+          "id": "remainder",
+          "pct": 60,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2,
+            "notBeforeCalendarDaysAfterPricing": 121
+          },
+          "quote": "during the period ending on the later of (i) the opening of trading on the second trading day immediately following our public release of earnings for the second quarter following the most recent period for which financial statements are included in this prospectus and (ii) the 121st day after the date of this prospectus (assuming that as of such date we have publicly released our earnings for the second quarter following the most recent period for which financial statements are included in this prospectus)",
+          "page": 340,
+          "resolvedDate": "2021-05-17",
+          "note": "End of restricted period: later of opening of the 2nd trading day after the 2nd post-IPO earnings release (May 13, 2021 -> May 17) and day 121 after Dec 9, 2020 (Apr 9, 2021). Later = May 17, 2021."
+        }
+      ]
+    },
+    {
+      "id": "officers-directors",
+      "seats": [
+        "founder"
+      ],
+      "label": "Founder-CEO (executive officer, director, Investors Rights Agreement party): no early release",
+      "tranches": [
+        {
+          "id": "all",
+          "pct": 100,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2,
+            "notBeforeCalendarDaysAfterPricing": 121
+          },
+          "quote": "during the period ending on the later of (i) the opening of trading on the second trading day immediately following our public release of earnings for the second quarter following the most recent period for which financial statements are included in this prospectus and (ii) the 121st day after the date of this prospectus (assuming that as of such date we have publicly released our earnings for the second quarter following the most recent period for which financial statements are included in this prospectus)",
+          "page": 340,
+          "resolvedDate": "2021-05-17",
+          "note": "Excluded from the Employee Stockholder windows; full restricted period applies. Rule 144 affiliate volume cap and company policy windows apply on top (engine)."
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Earnings timing (pre-market vs after close) is not in the filing data. Used the later reading: 2nd trading day after the earnings date (Feb 25 -> Mar 1; May 13 -> May 17). If the release were treated as same-day pre-market, 'second trading day immediately following' could arguably be Feb 26 / May 14.",
+    "An early employee who is also a party to the Investors Rights Agreement would be excluded from the Employee Stockholder windows and would follow the founder group. Assumed the engineer is not.",
+    "First window lasts only 7 trading days (Dec 10-18 2020); unsold first-window shares carry into the second window, which a pct model cannot show. Engine should treat the 15% as released on Dec 10 with the unsold part simply remaining available.",
+    "Share bases differ: 15% is of holdings at Nov 30 2020 (vested except liquidity condition); 25% is of Nov 30 holdings plus shares vested to Feb 25 2021. Treated as 15/25/60 of the player's locked shares.",
+    "Tax-sale exception (sales to cover taxes on RSU vesting) is not a tranche; ignored.",
+    "Trigger schema has no 'later of' type; tranche 3 / founder use afterEarnings n=2 with notBeforeCalendarDaysAfterPricing=121 (not binding: Apr 9 < May 17)."
+  ]
+}

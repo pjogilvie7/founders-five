@@ -1,0 +1,58 @@
+[
+  {
+    "d": "2020-03-16",
+    "text": "Shares sink as pandemic fears trigger a broad market rout",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2020-03-19",
+    "text": "Shares bounce back sharply after a brutal week of selling",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2020-11-09",
+    "text": "Shares surge as vaccine news lifts stocks hurt by the pandemic",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-05-04",
+    "text": "Company corrects prior-period accounting error; quarterly revenue up 44%",
+    "source": "https://www.sec.gov/Archives/edgar/data/1759509/000175950922000039/lyft-20220331xpressrelease.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-11-08",
+    "text": "Record quarterly revenue and profit above outlook; guidance implies slower growth",
+    "source": "https://www.sec.gov/Archives/edgar/data/1759509/000175950922000077/lyft-20220930xpressrelease.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2023-02-10",
+    "text": "Company guides first-quarter profit lower, citing seasonality and lower prices",
+    "source": "https://www.sec.gov/Archives/edgar/data/1759509/000175950923000018/lyft-2022x12x31pressreleas.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2023-05-05",
+    "text": "Revenue up 14% and profit beats guidance; next-quarter profit outlook trails",
+    "source": "https://www.sec.gov/Archives/edgar/data/1759509/000175950923000056/lyft-20230331xpressrelease.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2024-02-14",
+    "text": "Quarterly adjusted profit swings positive; company eyes first full-year positive cash flow",
+    "source": "https://www.sec.gov/Archives/edgar/data/1759509/000175950924000011/lyft-2023x12x31pressreleas.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  }
+]

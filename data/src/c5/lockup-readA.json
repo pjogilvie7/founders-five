@@ -1,0 +1,37 @@
+{
+  "reader": "A",
+  "card": "c5",
+  "source": "https://www.sec.gov/Archives/edgar/data/1722482/000119312519150954/d698870d424b4.htm",
+  "groups": [
+    {
+      "id": "all-180",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Single 180-day lock-up, no early release: employees, officers and directors alike",
+      "tranches": [
+        {
+          "id": "rem-180",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 180,
+            "from": "pricingDate",
+            "onOrAfter": false,
+            "afterClose": true
+          },
+          "quote": "not to dispose of or hedge any shares of our common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Goldman Sachs & Co. LLC and J.P. Morgan Securities LLC.",
+          "page": 198,
+          "resolvedDate": "2019-11-13"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Restriction runs 'through the date 180 days after the date of this prospectus' (2019-05-16 + 180 = Tue 2019-11-12), so first sale day is Wed 2019-11-13 (trigger carries afterClose:true; onOrAfter:false).",
+    "Filing says lock-ups bind 'certain holders'; it does not list who. An ordinary non-officer employee is assumed to be inside it (p.192 'Lock-Up Agreements' lists directors, executive officers and certain holders). Rule 701 (p.192) would let non-affiliates sell at 90 days only if no lock-up applies.",
+    "Exceptions are only 'subject to certain exceptions' with none described in the prospectus; no early-release, earnings or price-based release exists. Underwriters may release at sole discretion (p.45 and p.192) but that is not a scheduled event.",
+    "Founder-CEO equivalent is Michael Stubblefield (CEO, not a founder); same terms as employee, so one group."
+  ]
+}

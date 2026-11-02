@@ -1,0 +1,41 @@
+{
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Directors, executive officers and existing shareholders: 180 days from the prospectus date (Tencent, Hillhouse, Sequoia are on 365 days and are not player seats)",
+      "groupNote": "Filing p.241: the 180-day lock-up covers the company, directors, executive officers and existing shareholders except Tencent, Hillhouse and Sequoia Capital (365 days). No staggered or earnings-based release. Prices are per ADS (1 ADS = 3 class A shares); the lock-up covers ADSs and ordinary shares alike.",
+      "tranches": [
+        {
+          "id": "all",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "We, our directors and executive officers and our existing shareholders (except certain shareholders including Tencent, Hillhouse and Sequoia Capital, as described below) have agreed, subject to specified exceptions (including an exception for issuance of securities by us in connection with acquisitions, joint ventures or other strategic corporate transactions where the recipients of such securities agree to enter into a lock-up agreement in favor of the underwriters containing substantially the same lock-up restrictions), not to directly or indirectly during the period ending 180 days after the date of this prospectus, (i) issue, offer, pledge, sell, contract to sell, offer or issue, contract to purchase or grant any option, right or warrant to purchase, or otherwise dispose of, any ordinary shares or ADSs",
+          "page": 241,
+          "resolvedDate": "2021-02-09",
+          "readA": "100% locked 'during the period ending 180 days after' 2020-08-12 (= 2021-02-08), free 2021-02-09",
+          "readB": "100% day 181 -> 2021-02-09",
+          "reconcilerNote": "Both reads agree on 100%, trigger, page and date; they differ only in how much of the quote they copied (final quote is the full sentence up to the first clause). Prospectus dated 2020-08-12 (cover). 2020-08-12 + 180 days = Mon 2021-02-08, the last locked day ('the period ending 180 days after'); first sale Tue 2021-02-09, a trading day in base.json. The same wording appears on p.241 (Shares Eligible) and in the Underwriting section.",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "The filing applies the 180 days to 'our existing shareholders' and does not separately describe employee-held share-incentive vehicles; the engineer's shares are assumed covered by the same 180 days (both readers).",
+    "Founder is an affiliate: Rule 144 volume cap after release (engine seat rule). The 365-day group names only Tencent, Hillhouse and Sequoia and their affiliates; the founder-CEO is assumed outside it."
+  ]
+}

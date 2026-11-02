@@ -1,0 +1,36 @@
+{
+  "reader": "A",
+  "card": "c3",
+  "source": "https://www.sec.gov/Archives/edgar/data/1809587/000104746920004582/a2242260z424b4.htm",
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Directors, executive officers and existing shareholders: 180 days from the prospectus date",
+      "tranches": [
+        {
+          "id": "all",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "not to directly or indirectly during the period ending 180 days after the date of this prospectus, (i) issue, offer, pledge, sell, contract to sell",
+          "page": 241,
+          "resolvedDate": "2021-02-09",
+          "note": "Prospectus dated Aug 12, 2020; lock-up 'period ending 180 days after the date of this prospectus' = Feb 8, 2021 (Mon), so first sale Tue Feb 9, 2021. Tencent, Hillhouse and Sequoia (365 days) do not cover the founder-CEO or employees."
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Employee holdings (ESOP vehicles / share incentive plan) are not separately described; the filing applies the 180 days to 'our existing shareholders'. Assumed the engineer's shares are covered by the same 180-day lock-up.",
+    "Foreign private issuer: no earnings-based release; base.json 6-K dates not needed.",
+    "Founder is an affiliate (Rule 144 cap after release, engine seat rule). Prices are ADS-basis; the lock-up covers ADSs and ordinary shares alike."
+  ]
+}

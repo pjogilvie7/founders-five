@@ -1,0 +1,38 @@
+{
+  "reader": "B",
+  "card": "c7",
+  "source": "https://www.sec.gov/Archives/edgar/data/1319161/000119312520160812/d833365d424b4.htm",
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Single 180-day lock-up (all holders, officers/directors and employees alike)",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 180,
+            "from": "pricingDate",
+            "onOrAfter": false
+          },
+          "quote": "have agreed with the underwriters, subject to certain exceptions, not to dispose of or hedge any of their common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Morgan Stanley & Co. LLC.",
+          "page": "183",
+          "resolvedDate": "2020-12-01",
+          "quoteWho": "we, the selling stockholders, all of our directors and executive officers and the holders of all of our outstanding stock have entered into lock-up agreements under which, subject to certain",
+          "quoteWhoPage": "41"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Prospectus dated June 3, 2020 (base.json pricingDate = firstTrade = 2020-06-03). Lock-up runs 'through the date 180 days after the date of this prospectus': day 180 = Mon 2020-11-30, first sale day Tue 2020-12-01. Trigger encoded onOrAfter:false (strictly after day 180).",
+    "No earnings-based, price-based or staggered release; Morgan Stanley may release any portion at its sole discretion (p.41), not a scheduled tranche.",
+    "Rule 701 text (p.177): 'all shares issued under Rule 701 are subject to lock-up agreements and will only become eligible for sale when the 180-day lock-up agreements expire', so non-officer employee shares follow the same date. Employee equity is mostly deferred equity units / Class A under S-8; 10b5-1 plan establishment is permitted during lock-up but not trades.",
+    "Founder seat: filing describes a company with Access Industries control; the founder-CEO seat is mapped to the CEO officer/director and carries identical lock-up terms."
+  ]
+}

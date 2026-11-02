@@ -1,0 +1,58 @@
+[
+  {
+    "d": "2021-02-26",
+    "text": "Quarterly revenue declines, but company calls demand resilient and expects rebound",
+    "source": "https://www.sec.gov/Archives/edgar/data/1559720/000119312521056952/d147144dex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2021-11-05",
+    "text": "Record quarterly revenue and net income as demand rebounds; outlook upbeat",
+    "source": "https://www.sec.gov/Archives/edgar/data/1559720/000119312521320113/d245727dex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-05-09",
+    "text": "Shares slide as sharp selloff hits growth stocks across the market",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2022-11-02",
+    "text": "Record quarterly profit, but fourth-quarter revenue outlook points to slower growth",
+    "source": "https://www.sec.gov/Archives/edgar/data/1559720/000119312522274904/d408297dex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2023-02-15",
+    "text": "First full-year profit reported; company authorizes new share buyback",
+    "source": "https://www.sec.gov/Archives/edgar/data/1559720/000119312523039008/d451233dex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2024-08-07",
+    "text": "Quarterly revenue growth slows to 11%; outlook flags softer demand",
+    "source": "https://www.sec.gov/Archives/edgar/data/1559720/000119312524194849/d831385dex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2025-02-14",
+    "text": "Booking growth accelerates in fourth quarter as company outlines new services",
+    "source": "https://www.sec.gov/Archives/edgar/data/1559720/000119312525026054/d915198dex991.htm",
+    "nameFilter": "pass",
+    "review": "pending"
+  },
+  {
+    "d": "2025-04-09",
+    "text": "Shares surge as markets rally on a pause in tariff increases",
+    "source": "market",
+    "nameFilter": "pass",
+    "review": "pending"
+  }
+]

@@ -1,0 +1,36 @@
+{
+  "reader": "A",
+  "card": "c2",
+  "source": "https://www.sec.gov/Archives/edgar/data/1639825/000119312519255124/d738839d424b4.htm",
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "All holders: 180 days from the prospectus date",
+      "tranches": [
+        {
+          "id": "all",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "not to dispose of or hedge any of our or their common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Goldman Sachs & Co. LLC and J.P. Morgan Securities LLC",
+          "page": 150,
+          "resolvedDate": "2020-03-24",
+          "note": "Prospectus dated Sep 25, 2019; locked 'through the date 180 days after' = Mar 23, 2020; Shares Eligible for Future Sale says 'beginning 181 days after the date of this prospectus' = Mar 24, 2020 (Tuesday, a trading day). Blackout-related early end possible but not datable from the filing."
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Early-end clause: if at least 120 days have passed, the Q1 FY20 quarter earnings are out (Nov 5, 2019) and the lock-up would end during or within 5 trading days before a blackout period, it ends 10 trading days before the blackout starts. The blackout dates come from Peloton's insider trading policy, which the filing does not give, so no earlier date can be resolved; used the later date (Mar 24, 2020). A quarter-end blackout (Mar 2020) could pull release to mid-March.",
+    "Founder is an affiliate: Rule 144 volume cap applies after release (engine seat rule).",
+    "'Date of this prospectus' read as pricing date Sep 25, 2019; day 181 counted from that date."
+  ]
+}

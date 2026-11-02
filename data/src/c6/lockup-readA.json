@@ -1,0 +1,81 @@
+{
+  "reader": "A",
+  "card": "c6",
+  "source": "https://www.sec.gov/Archives/edgar/data/1522540/000119312521187099/d64065d424b4.htm",
+  "groups": [
+    {
+      "id": "engineer-earnings",
+      "seats": [
+        "engineer"
+      ],
+      "label": "Employee who is not an officer: 33% early release at Q2 earnings if the price test is met, everything else released at Q3 earnings or day 180, whichever is first",
+      "tranches": [
+        {
+          "id": "e-q2-price",
+          "pct": 33,
+          "trigger": {
+            "type": "priceCondition",
+            "pct": 33,
+            "of": "offerPrice",
+            "daysMet": 10,
+            "window": 10,
+            "endsOn": "firstEarnings",
+            "test": "average of the 10 closes ending on the earnings release date AND the close on the first full trading day after it, each at least 133% of offer",
+            "release": {
+              "type": "afterEarnings",
+              "n": 1,
+              "tradingDaysAfter": 2
+            }
+          },
+          "quote": "up to 33% of the shares of common stock and shares of common stock underlying securities convertible into or exercisable or exchangeable for our common stock (including stock options, restricted stock units and other equity awards) held by our employees, other than our officers, as of the Measurement Date for which all vesting conditions are satisfied as of such Measurement Date, may be sold in the public market beginning at the commencement of the second trading day after the Post-Offering Earnings Release Date, provided that the Trading Price Condition is met and that such employee is an employee on the Measurement Date;",
+          "page": 174,
+          "resolvedDate": null,
+          "conditionMet": false,
+          "note": "Price test failed (threshold $143.64 split-adjusted; 10-day average $112.52, next-day close $110.04). Shares are not forfeited: they stay locked and fall under e-rem at 2021-11-12."
+        },
+        {
+          "id": "e-rem",
+          "pct": 67,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2
+          },
+          "quote": "The restricted period with respect to our officers, directors, and other holders will terminate on the earlier of (i) the opening of trading on the second trading day immediately following our release of earnings for the quarter ended September 30, 2021 and (ii) 180 days after the date of this prospectus.",
+          "page": 174,
+          "resolvedDate": "2021-11-12",
+          "note": "Engine should release ALL still-locked shares here (67 plus the failed 33 = 100). Q3 earnings 8-K 2021-11-10 accepted 16:10 ET, after the close; trading days following: 11-11, then 11-12; free at the opening of 11-12. Day 180 (2021-12-05) is later, so the earnings leg ends the restriction."
+        }
+      ]
+    },
+    {
+      "id": "founder-ceo",
+      "seats": [
+        "founder"
+      ],
+      "label": "Founder and CEO: excluded from the officer early release; locked until Q3 earnings leg or day 180, whichever is first",
+      "tranches": [
+        {
+          "id": "f-rem",
+          "pct": 100,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2
+          },
+          "quote": "The restricted period with respect to our officers, directors, and other holders will terminate on the earlier of (i) the opening of trading on the second trading day immediately following our release of earnings for the quarter ended September 30, 2021 and (ii) 180 days after the date of this prospectus.",
+          "page": 174,
+          "resolvedDate": "2021-11-12",
+          "note": "The 15% officer/director early release excludes the CEO ('other than our Chief Executive Officer', p.174), so no early tranche. Restriction ends on the earlier of opening of trading on the 2nd trading day after the Q3 2021 earnings release (11-12) and day 180 (2021-12-06 first sale day)."
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Percentages: 33% (employee) applies to shares 'for which all vesting conditions are satisfied' as of the 2021-07-09 Measurement Date. A veteran employee is assumed fully vested; unvested shares are not covered by the early release.",
+    "The Q2 early release needs both a 10-day average close and the next-day close at least 33% above IPO price. The schema's priceCondition counts days (daysMet of window); I used daysMet 10 of window 10 as a conservative proxy and added test/release fields. Result is the same (max close in the window 120.68 vs 143.64 needed), so the 33% tranche has resolvedDate null and folds into the remainder.",
+    "Q3 earnings: 8-K accepted 2021-11-10 16:10:13 ET (after close; stock moved the next day). If it were counted as pre-market the date would still be 11-12 under 'second trading day immediately following'. Resolved 2021-11-12 either way unless the release day itself counts as the first day (then 11-11); I took the later date.",
+    "Whether the founder-CEO (Jason Gardner) also falls under 'other stockholders' 15% release: no, that bullet is for stockholders other than officers and directors; he is an officer, and the officer bullet excludes him by name.",
+    "Market stand-off (p.166) for holders who did not sign a lock-up is a flat 180 days; I assumed the player signed the lock-up, which has the earlier termination."
+  ]
+}

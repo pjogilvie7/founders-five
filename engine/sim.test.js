@@ -854,7 +854,9 @@ function invariants(state, label) {
   // locked shares leave only through the lockup ladder
   let released = 0;
   for (const r of ctx.releases) if (state.flags.seenTranches.includes(r.id)) released += r.shares;
-  assert.equal(sh.locked, state.total - released, `${label} locked ${state.d}`);
+  // shares re-locked after a limited employee sale window count as locked until they return
+  const relocked = Object.values(state.flags.relocked || {}).reduce((a, x) => a + x, 0);
+  assert.equal(sh.locked, state.total - released + relocked, `${label} locked ${state.d}`);
   assert.ok(state.cash >= -1e-6, `${label} cash ${state.cash} on ${state.d}`);
   assert.ok(state.overdraft >= -1e-6 && state.loan.balance >= -1e-6);
   const collared = state.collars.reduce((a, c) => a + c.shares, 0);

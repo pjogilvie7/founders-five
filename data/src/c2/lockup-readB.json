@@ -1,0 +1,34 @@
+{
+  "reader": "B",
+  "card": "c2",
+  "source": "https://www.sec.gov/Archives/edgar/data/1639825/000119312519255124/d738839d424b4.htm",
+  "groups": [
+    {
+      "id": "all",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Standard 180-day lock-up / market standoff",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true
+          },
+          "quote": "not to dispose of or hedge any of our or their common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus",
+          "page": 150,
+          "resolvedDate": "2020-03-24"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "The filing allows early end of lock-up if >=120 days elapsed (Jan 23, 2020), results for the quarter of the offering released (Nov 5, 2019), and the lock-up is scheduled to end during or within five trading days before a blackout period: then it ends ten trading days before the blackout starts. Blackout start is not given in the filing, so cannot be resolved; later date (180-day, Mar 24, 2020) used. A real early release could land in March 2020 or earlier.",
+    "Early employees hold under market standoff provisions or lock-up agreements ('lock-up agreements or market standoff provisions'); the filing does not say which; both seats given the same 180 days."
+  ]
+}

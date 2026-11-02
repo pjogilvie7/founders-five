@@ -1,0 +1,61 @@
+{
+  "groups": [
+    {
+      "id": "all-180",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Single 180-day lock-up (market stand-off for employees, lock-up for officers and directors); ended early on 2019-08-19 under the blackout clause",
+      "groupQuote": "beginning 181 days after the date of this prospectus (subject to the terms of the lock-up and market standoff agreements described below), all remaining shares will become eligible for sale in the public market",
+      "groupPage": 211,
+      "groupNote": "Employees are bound by market standoff agreements and officers and directors by underwriter lock-ups, for the same 180 days (p.212); the founders, Logan Green and John Zimmer, are directors and executive officers on the same terms. The prospectus cannot date the blackout clause; Lyft's own 8-K of 2019-08-07 (Item 8.01) does (see reconcilerNote).",
+      "tranches": [
+        {
+          "id": "all-blackout",
+          "pct": 100,
+          "trigger": {
+            "type": "date",
+            "date": "2019-08-19"
+          },
+          "scheduledTrigger": {
+            "type": "calendarDaysAfter",
+            "days": 181,
+            "from": "pricingDate",
+            "onOrAfter": true,
+            "resolvedDate": "2019-09-25"
+          },
+          "quote": "provided that if (i) at least 120 days have elapsed since the date of this prospectus, (ii) we have publicly released our earnings results for the quarterly period during which this offering occurred and (iii) such lock-up period is scheduled to end during or within five trading days prior to a blackout period, such lock-up period will end ten trading days prior to the commencement of such blackout period.",
+          "page": 220,
+          "quoteSchedule": "beginning 181 days after the date of this prospectus (subject to the terms of the lock-up and market standoff agreements described below), all remaining shares will become eligible for sale in the public market",
+          "quoteSchedulePage": 211,
+          "quoteAnnounce": "We will announce the date of any expected blackout-related release to the lock-up at least two trading days in advance of such release.",
+          "eightK": {
+            "url": "https://www.sec.gov/Archives/edgar/data/1759509/000119312519215328/d789114d8k.htm",
+            "filed": "2019-08-07",
+            "item": "8.01",
+            "says": "scheduled end 2019-09-24; quarterly blackout commences at the end of the day on 2019-08-31; the lock-up period will end at the open of trading on 2019-08-19"
+          },
+          "resolvedDate": "2019-08-19",
+          "scheduledDate": "2019-09-25",
+          "readA": "100% on 2019-09-25 (day 181 per p.211); blackout early end possible but undatable from the prospectus, so the later date was used",
+          "readB": "100% on 2019-09-25 (day 181 per p.211); blackout early end possible but undatable from the prospectus, so the later date was used",
+          "reconcilerNote": "The two reads agree on every field (both 2019-09-25, both flagged the blackout clause as the one open doubt). I changed the date to 2019-08-19. Reason: the prospectus clause (p.220, p.212, p.57) ends the lock-up ten trading days before a blackout when (i) 120 days have passed, (ii) the IPO-quarter earnings are out and (iii) the scheduled end (2019-09-24) is within five trading days before or inside a blackout. Conditions (i) and (ii) are both met by 2019-07-26 (day 120 from 2019-03-28; Q1 2019 earnings were out 2019-05-07). The prospectus gives no blackout dates, but Lyft's 8-K filed 2019-08-07 (Item 8.01) says the lock-up was scheduled to end 2019-09-24, that the quarterly blackout commences at the end of the day on 2019-08-31, and that the lock-up period 'will end at the open of trading on August 19, 2019'. 2019-08-19 is a Monday and a trading date in base.json (index 98); counting ten trading days from Aug 19 to Aug 30 inclusive gives 10, which matches the clause. This goes beyond 'filing text alone' (it uses the post-IPO 8-K, as the SpaceX reconciliation did for earnings dates) and departs from both reads, so it is the main item for the human check. To revert, set trigger to scheduledTrigger and resolvedDate to 2019-09-25. Trigger type is 'date' so a recompute matches the stored date.",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Date moved from the readers' 2019-09-25 to 2019-08-19 on the strength of Lyft's 8-K (2019-08-07, Item 8.01), not the prospectus. If the project rule is 'prospectus only', revert to 2019-09-25 (scheduledTrigger holds it).",
+    "The blackout proviso is written into the J.P. Morgan lock-up text (p.220, p.212) and the p.57 risk factor; the market standoff sentence on p.212 does not repeat it. The 8-K says the early end applies to holders under either market standoff or lock-up agreements, so employees and officers are treated alike (reader B raised the same question).",
+    "Day count if the early end had not applied: the filing says 'beginning 181 days after', so first sale day is 2019-09-25 (2019-03-28 + 181), not 09-24 (reader A, B agree).",
+    "Directed share program participants are also locked up; drivers' DSP shares are not (irrelevant to the two seats).",
+    "Underwriters and the company may release holders early at their discretion (p.57); not modelled."
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "groups": [
+    {
+      "id": "all-180",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Single 180-day lock-up, no early release: employees, officers and directors alike",
+      "groupQuote": "We, our executive officers, directors and certain holders of our common stock, including the selling stockholder, prior to this offering have agreed with the underwriters, subject to certain exceptions, not to dispose of or hedge any shares of our common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Goldman Sachs & Co. LLC and J.P. Morgan Securities LLC.",
+      "groupPage": 198,
+      "groupNote": "The filing says 'certain holders' without listing them; an ordinary non-officer employee is modelled as inside the lock-up (both reads assumed the same). The card has no founder in the usual sense (CEO Michael Stubblefield is a hired CEO); the founder seat uses the same terms.",
+      "tranches": [
+        {
+          "id": "all-d180",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 180,
+            "from": "pricingDate",
+            "onOrAfter": false,
+            "afterClose": true
+          },
+          "quote": "We, our executive officers, directors and certain holders of our common stock, including the selling stockholder, prior to this offering have agreed with the underwriters, subject to certain exceptions, not to dispose of or hedge any shares of our common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Goldman Sachs & Co. LLC and J.P. Morgan Securities LLC.",
+          "page": 198,
+          "resolvedDate": "2019-11-13",
+          "calendarDate": "2019-11-12",
+          "readA": "100% through day 180 (2019-05-16 + 180 = Tue 2019-11-12), first sale day Wed 2019-11-13 -> 2019-11-13",
+          "readB": "100% through day 180 (Tue 2019-11-12), first sale day Wed 2019-11-13 -> 2019-11-13",
+          "reconcilerNote": "Reads agree on every field (pct, trigger, resolvedDate, page). Differences are cosmetic: ids, A's shortened quote (B's is the full sentence, used here and checked verbatim against research/424b4/c5.txt p.198), and page typed as string in B. Date recomputed: prospectus date 2019-05-16 + 180 calendar days = Tue 2019-11-12; the lock-up runs 'through' that date, so the first sale day is the next trading day, Wed 2019-11-13, which is in base.json prices.",
+          "reconciled": true,
+          "human": {
+            "status": "pending",
+            "by": null,
+            "date": null
+          }
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Filing lists the lock-up signers only as 'we, our executive officers, directors and certain holders'; whether a non-officer employee's shares are inside it is assumed (p.192 'Lock-Up Agreements'; Rule 701 90-day language on p.192 would apply only if no lock-up bound the employee).",
+    "'Subject to certain exceptions' is not detailed in the prospectus; none gives a scheduled early release. The underwriters (Goldman Sachs, J.P. Morgan) may release at their sole discretion; not modelled.",
+    "The Stockholders Agreement dated 2017-11-21 (repurchase rights on employee shares, transfer limits) may bind employees beyond the lock-up; it is not a lock-up and is not modelled (reader B).",
+    "Whether the first sale day is day 180 or day 181: prospectus text is 'through the date 180 days after'; treated as free the next trading day after day 180 (engine semantics)."
+  ]
+}

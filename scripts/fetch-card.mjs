@@ -21,7 +21,7 @@ const INFO = {
   PTON: { industry: 'consumer', sharesOutPost: 279390508, sharesText: '279,390,508', note: 'Prospectus figure is after the offering and the concurrent private placement of 3,448,275 shares.' },
   BEKE: { industry: 'other', sharesOutPost: 3382438135, sharesText: '2,497,136,855', adsRatio: 3, note: '2,497,136,855 class A + 885,301,280 class B ordinary shares; price is per ADS (1 ADS = 3 class A ordinary shares), so sharesOutPost is in ADS-equivalents.' },
   PINS: { industry: 'consumer', sharesOutPost: 529372774, sharesText: '529,372,774' },
-  AVTR: { industry: 'health', sharesOutPost: 534293808, sharesText: '534,293,808' },
+  AVTR: { industry: 'health', sharesOutPost: 534293808, sharesText: '534,293,808', note: 'Four Item 2.02 8-Ks are preliminary-revenue updates, not quarterly results: 2020-07-07, 2020-10-23, 2021-01-11, 2021-10-12. Lockup readers: do not count them as an earnings release for an afterEarnings trigger.' },
   MQ: { industry: 'fintech', sharesOutPost: 530245901, sharesText: '530,245,901' },
   WMG: { industry: 'consumer', sharesOutPost: 510000000, sharesText: '510,000,000' },
   LYFT: { industry: 'mobility', sharesOutPost: 285877300, sharesText: '285,877,300' },
@@ -49,21 +49,24 @@ export function pageOf(text, needle) {
   return null;
 }
 
-async function earningsFromSixK(cik, filings, from, to) {
-  // Foreign private issuers file 6-K, not 8-K. Keep 6-Ks whose exhibit 99.1 headline reports quarterly or annual results.
+export async function earningsFromSixK(cik, filings, from, to) {
+  // Foreign private issuers file 6-K, not 8-K. Keep 6-Ks whose press-release exhibit (99.1) headline announces
+  // quarterly or annual results; skip meeting results, dividend and other releases.
   const out = [];
   const cands = filings.filter((f) => f.form === '6-K' && f.filingDate >= from && f.filingDate <= to);
   for (const f of cands) {
     const base = `https://www.sec.gov/Archives/edgar/data/${cik}/${f.accession.replace(/-/g, '')}`;
     let idx;
     try { idx = await secFetch(`${base}/index.json`, { asJson: true }); } catch { continue; }
-    const docs = (idx.directory?.item || []).map((i) => i.name).filter((n) => /\.htm$/i.test(n));
-    const ex = docs.find((n) => /ex-?99[-_.]?1/i.test(n));
+    const docs = (idx.directory?.item || []).map((i) => i.name).filter((n) => /\.htm$/i.test(n) && !/index/i.test(n));
+    const ex = docs.find((n) => /(ex-?|_)?99(d|[-_.])?1\.htm$/i.test(n));
     if (!ex) continue;
     let head;
-    try { head = htmlToText(await secFetch(`${base}/${ex}`)).slice(0, 2500); } catch { continue; }
-    if (/(Announces|Reports)[^.\n]{0,80}(Quarter|Fiscal Year|Full Year|Full-Year|Year)[^.\n]{0,60}(Unaudited )?(Financial )?Results/i.test(head) || /Unaudited Financial Results/i.test(head.slice(0, 600))) {
-      out.push({ d: f.filingDate, url: `${base}/${ex}`, headline: head.split('\n').find((l) => /Results/i.test(l))?.slice(0, 160) });
+    try { head = htmlToText(await secFetch(`${base}/${ex}`)).replace(/\s+/g, ' ').slice(0, 1500); } catch { continue; }
+    // dual-listed issuers open with a Hong Kong exchange disclaimer, so search the first 1,500 characters
+    const m = head.match(/(?:Announces|Reports|Announce|Report)\s+(?:Unaudited\s+)?(?:(?:First|Second|Third|Fourth)\s+Quarter|(?:Fiscal|Full)\s+Year|Annual\s+Results|Q[1-4])[^.]{0,120}/i);
+    if (m && !/General Meeting/i.test(m[0])) {
+      out.push({ d: f.filingDate, url: `${base}/${ex}`, headline: m[0].slice(0, 160) });
     }
   }
   return out;

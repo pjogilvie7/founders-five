@@ -1,6 +1,7 @@
 // The dark rail: clock, year bar, window lamp, certificate, cash, net worth, rivals, drawers.
 import { art, iconUrl } from './data.js';
 import { money, moneyFull, signedMoney, int, esc, dateLabel } from './format.js';
+import { canonicalId } from './achievements.js';
 
 export const ACHIEVEMENTS = [
   ['inside-the-window', 'Inside the Window', 'Make your first sale in an open window.'],
@@ -223,9 +224,9 @@ export function createRail(el, h) {
     }
     prevRank = you;
     // achievements
-    const earned = new Set([...(v.achievements || [])].map((x) => slug(x)));
+    const earned = new Set([...(v.achievements || [])].map((x) => canonicalId(x) || slug(x)));
     let n = 0;
-    q.ach.querySelectorAll('li').forEach((li) => { const on = earned.has(li.dataset.id); if (on) n++; li.classList.toggle('on', on); });
+    q.ach.querySelectorAll('li').forEach((li) => { const on = earned.has(canonicalId(li.dataset.id) || li.dataset.id); if (on) n++; li.classList.toggle('on', on); });
     q.achCnt.textContent = `${n}/${ACHIEVEMENTS.length}`;
     // portfolio
     const rows = [

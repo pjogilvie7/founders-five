@@ -1,0 +1,36 @@
+{
+  "reader": "A",
+  "card": "c7",
+  "source": "https://www.sec.gov/Archives/edgar/data/1319161/000119312520160812/d833365d424b4.htm",
+  "groups": [
+    {
+      "id": "all-180",
+      "seats": [
+        "engineer",
+        "founder"
+      ],
+      "label": "Single 180-day lock-up for all pre-IPO holders, no early release",
+      "tranches": [
+        {
+          "id": "rem-180",
+          "pct": 100,
+          "trigger": {
+            "type": "calendarDaysAfter",
+            "days": 180,
+            "from": "pricingDate",
+            "onOrAfter": false,
+            "afterClose": true
+          },
+          "quote": "In addition, the Company's officers, directors, and holders of all of the Company's common stock, including the selling stockholders, have agreed with the underwriters, subject to certain exceptions, not to dispose of or hedge any of their common stock or securities convertible into or exchangeable for shares of common stock during the period from the date of this prospectus continuing through the date 180 days after the date of this prospectus, except with the prior written consent of Morgan Stanley & Co. LLC.",
+          "page": 183,
+          "resolvedDate": "2020-12-01"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Prospectus is dated June 3, 2020 (p. cover), which is also the first trade date (base pricingDate = firstTrade = 2020-06-03). 2020-06-03 + 180 days = Mon 2020-11-30; restriction runs 'through the date', so first sale day is Tue 2020-12-01.",
+    "Employees are covered: summary p.41 says 'the holders of all of our outstanding stock have entered into lock-up agreements' and Rule 701 p.177 says 'all shares issued under Rule 701 are subject to lock-up agreements and will only become eligible for sale when the 180-day lock-up agreements expire'. Founder-CEO is an officer/director signing the same agreement.",
+    "No scheduled early release, earnings or price release. Morgan Stanley may release any portion at its sole discretion at any time (p.42), not a scheduled event. Listed exceptions (gifts, 10b5-1 plan establishment, margin loans, net share settlement for tax withholding, open-market purchases) do not let a player sell at market."
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "reader": "B",
+  "card": "c6",
+  "source": "https://www.sec.gov/Archives/edgar/data/1522540/000119312521187099/d64065d424b4.htm",
+  "groups": [
+    {
+      "id": "engineer",
+      "seats": [
+        "engineer"
+      ],
+      "label": "Non-officer employee: 33% early release after Q2 2021 earnings if price test is met; all remaining shares at Q3 2021 earnings + 2 trading days (or day 180 if earlier)",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 33,
+          "trigger": {
+            "type": "priceCondition",
+            "pct": 33,
+            "of": "offerPrice",
+            "test": "avg of 10 closes ending on earnings date AND close on next trading day, both >= 1.33 x offer (143.64 split-adjusted)",
+            "daysMet": 11,
+            "window": 11,
+            "endsOn": "earnings:2021-08-11",
+            "releaseOnSuccess": "2021-08-13"
+          },
+          "quote": "up to 33% of the shares of common stock and shares of common stock underlying securities convertible into or exercisable or exchangeable for our common stock (including stock options, restricted stock units and other equity awards) held by our employees, other than our officers, as of the Measurement Date for which all vesting conditions are satisfied as of such Measurement Date, may be sold in the public market beginning at the commencement of the second trading day after the Post-Offering Earnings Release Date, provided that the Trading Price Condition is met and that such employee is an employee on the Measurement Date",
+          "quoteCondition": "provided that (a) each of (i) the average of the closing prices per share on Nasdaq for the preceding 10-day trading day period ending on, and including, the Post-Offering Earnings Release Date and (ii) the closing price per share on the first full trading day immediately following the Post-Offering Earnings Release Date is at least 33% greater than the initial public offering price per share set forth on the cover page of this prospectus, or the Trading Price Condition",
+          "page": "174",
+          "resolvedDate": "2021-11-12",
+          "conditionMet": false,
+          "note": "Price test FAILED (10-day avg close 112.52, next-day close 110.04, vs 143.64 needed), so the early release never happened; these shares fall into the general Q3 release on 2021-11-12. If the engine requires null for 'never releases early', treat as null early release + fallback 2021-11-12."
+        },
+        {
+          "id": "t2",
+          "pct": 67,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2
+          },
+          "quote": "The restricted period with respect to our officers, directors, and other holders will terminate on the earlier of (i) the opening of trading on the second trading day immediately following our release of earnings for the quarter ended September 30, 2021 and (ii) 180 days after the date of this prospectus.",
+          "page": "174",
+          "resolvedDate": "2021-11-12"
+        }
+      ]
+    },
+    {
+      "id": "founder",
+      "seats": [
+        "founder"
+      ],
+      "label": "Founder-CEO: excluded from early carve-outs; everything released at Q3 2021 earnings + 2 trading days (or day 180 if earlier)",
+      "tranches": [
+        {
+          "id": "t1",
+          "pct": 100,
+          "trigger": {
+            "type": "afterEarnings",
+            "n": 2,
+            "tradingDaysAfter": 2
+          },
+          "quote": "The restricted period with respect to our officers, directors, and other holders will terminate on the earlier of (i) the opening of trading on the second trading day immediately following our release of earnings for the quarter ended September 30, 2021 and (ii) 180 days after the date of this prospectus.",
+          "page": "174",
+          "resolvedDate": "2021-11-12"
+        }
+      ]
+    }
+  ],
+  "doubts": [
+    "Q3 2021 earnings release is 2021-11-10 in base.json; release timing (pre-market vs after close) not in the filing. 'Opening of trading on the second trading day immediately following our release' = 2021-11-12 if released after close or pre-market and counting days after the release date; if pre-market and Nov 10 itself counted, 2021-11-11. Used the later date. Day 180 = 2021-12-05 (Sun), so the earnings limb (Nov 12) is earlier either way.",
+    "Q2 early-release carve-outs (15% officers/directors other than the CEO, 33% non-officer employees, 15% other holders) apply only to securities already vested on the Measurement Date (July 9, 2021) and require holding the position on that date; 'up to' 33% means the cap applies to vested holdings, mapped to pct of locked shares. Condition not met so moot here.",
+    "Founder-CEO: the CEO is explicitly excluded from the 15% officer/director carve-out ('other than our Chief Executive Officer'). The Q3 termination applies to 'officers, directors, and other holders', so the CEO is released with everyone else on 2021-11-12.",
+    "Second-earnings termination (Q3) has no price condition. Prospectus summary (p.164-166) says 'at least days' (blank) in the shares-eligible lead-in and '181 days' for 422,796,021 shares; both are the backstop, superseded by the earlier earnings limb.",
+    "Holders who did not sign a lock-up are covered by 180-day market stand-off (p.166); same end date as backstop. Class A shares purchased in the offering are free.",
+    "Schema: priceCondition fields (daysMet/window/endsOn) do not express 'average of 10 closes plus next-day close'; encoded descriptively with the extra 'test' field."
+  ]
+}
