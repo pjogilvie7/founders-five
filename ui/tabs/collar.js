@@ -323,6 +323,14 @@ export default {
     { title: 'You keep the shares', body: 'You keep your shares and your vote, but you give up gains above the cap. Collared shares cannot be sold until the collar ends.' },
     { title: 'At expiry', body: 'At expiry the difference is settled in cash and taxed. You can roll the collar at that day’s prices or let it end.' },
   ],
+  // "Why it matters": the deeper deck behind the ? button, opened only when the player asks for it.
+  deeper: [
+    { title: "Why hedge instead of sell", body: "A collar protects the value of shares you are not ready, or not allowed, to sell, and it does that without a sale, so no gain is taxed when you put it on. Holders use one when they want to stay invested but cannot afford a crash. Locked shares cannot be collared: lockups bar hedging too." },
+    { title: "How the floor works", body: "Say the stock is $100, the floor is 85% and the cap comes out at $130. If the price is $60 at expiry, the put pays $25 a share, so your shares plus the put are still worth $85. If it ends at $160, you pay the $30 above the cap, so you keep $130. Anywhere between $85 and $130, nothing changes hands." },
+    { title: "Why it can cost nothing", body: "You buy a put and sell a call. The game sets the cap where the call you sell is worth exactly what the put costs, priced from the stock’s volatility and interest rates. A lower floor makes the put cheaper, so the cap can sit higher. The Street check compares the model’s cap with the caps listed options imply." },
+    { title: "What you give up", body: "Every dollar above the cap for the life of the collar, and the right to sell those shares until it ends. Ending one early costs 1% of the collared shares’ value. At expiry the cash settlement is taxed. A band so tight that almost no risk is left can be taxed as a sale (Section 1259), so the game requires a wide band." },
+    { title: "Rolling", body: "When a collar ends you can roll it: a new one at that day’s price. After a fall the new floor protects a lower value; after a rise it protects more. A roll obeys the trading window, and none can start while a 10b5-1 plan runs." },
+  ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;
     ensure(c, (k) => build(k, c));

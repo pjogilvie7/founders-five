@@ -43,6 +43,13 @@ export default {
     { title: 'A seven-year lock', body: 'The pool stays locked for seven years. Leaving early (returning your own shares) is not modeled; the game holds the fund to the end.' },
     { title: 'Tax at the end', body: 'Nothing is taxed when you contribute. At the end the fund is valued less 23.8% tax on the gain over your carried-over basis.' },
   ],
+  // "Why it matters": the deeper deck behind the ? button, opened only when the player asks for it.
+  deeper: [
+    { title: "Diversify without a tax bill", body: "Selling to diversify triggers tax now. An exchange fund pools many holders’ concentrated stocks in a partnership. Contributing shares to it is not a sale (Section 721), so no tax is due, and you end up owning a slice of a broad basket." },
+    { title: "The catch", body: "You must stay in for seven years; leave earlier and you generally get your own shares back. Your low cost basis carries over, so the tax is put off, not erased. These funds charge fees and are usually open only to very wealthy investors." },
+    { title: "How the game models it", body: "The fund follows the S&P 500 with dividends, less 1% a year. The minimum is $1M of free shares, contributed in an open window. At the end of the card it is valued less 23.8% tax on the gain over your carried-over basis." },
+    { title: "Who it is built for", body: "Holders with a large gain in one stock who want to spread the risk and can leave the money untouched for seven years." },
+  ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;
     ensure(c, (k) => build(k, c));

@@ -36,6 +36,7 @@ export function createPaper(el, ctx) {
   for (const d of defs) {
     if (d.mod) { d.label = d.mod.label || d.label; d.hotkey = d.mod.hotkey || d.hotkey; }
     d.lesson = (d.mod && d.mod.lesson) || DEFAULT_LESSONS[d.id];
+    d.deeper = (d.mod && d.mod.deeper) || [];
   }
   el.innerHTML = `
   <section class="paper" aria-label="Tools">
@@ -43,7 +44,7 @@ export function createPaper(el, ctx) {
     <div class="notice-slot" role="status" aria-live="polite"></div>
     <div class="tabbar">
       <div class="tabs" role="tablist" aria-label="Tools"></div>
-      <button class="help" aria-label="Lesson refresher for this tool" title="Lesson refresher">?</button>
+      <button class="help" aria-label="How this tool works and why it matters" title="How it works, and why it matters">?</button>
     </div>
     <div class="panel-wrap"><div class="panel" role="tabpanel" tabindex="-1"></div><div class="toasts" aria-live="polite"></div></div>
     <div class="ticker empty"><span class="tk-lbl">News</span><span class="tk-text">No headlines yet.</span></div>
@@ -292,5 +293,5 @@ export function createPaper(el, ctx) {
     render(false);
   }
   setUnlocked(unlocked);
-  return { update, select, forceRender: () => render(true), toast, setNews, get active() { return active; }, tabIds: defs.map((d) => d.id), lesson: (id) => defs.find((d) => d.id === id)?.lesson, label: (id) => defs.find((d) => d.id === id)?.label };
+  return { update, select, forceRender: () => render(true), toast, setNews, get active() { return active; }, tabIds: defs.map((d) => d.id), lesson: (id) => defs.find((d) => d.id === id)?.lesson, deeper: (id) => defs.find((d) => d.id === id)?.deeper || [], label: (id) => defs.find((d) => d.id === id)?.label };
 }

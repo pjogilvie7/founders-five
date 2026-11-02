@@ -407,7 +407,14 @@ function openLesson(id) {
   const cards = g.paper.lesson(id); if (!cards) return;
   g.holds.add('lesson-ref');
   const prev = document.activeElement;
-  showLesson(cards, { kicker: g.paper.label(id), label: g.paper.label(id) + ' lesson' }).then(() => { g.holds.delete('lesson-ref'); pauseAfterPopup(g); refresh(); restoreFocus(prev); });
+  const name = g.paper.label(id), deeper = g.paper.deeper(id);
+  // How it works first; "Why it matters" opens the deeper deck (impacts, costs, a worked example) only if the player asks.
+  (async () => {
+    let r = await showLesson(cards, { kicker: name, label: name + ' lesson', moreLabel: deeper.length ? 'Why it matters' : '' });
+    if (r === 'more' && !g.dead) await showLesson(deeper, { kicker: `${name}: why it matters`, label: `${name}: why it matters`, doneLabel: 'Done' });
+    if (g.dead) return;
+    g.holds.delete('lesson-ref'); pauseAfterPopup(g); refresh(); restoreFocus(prev);
+  })();
 }
 // Every tool unlocked together (the first release opens three) is walked through in ONE dialog, each card titled with its tool.
 async function runLessons() {
@@ -419,13 +426,16 @@ async function runLessons() {
   // Several tools at once: the first card of each, then a pointer to the full lessons (15 cards in a row was a wall).
   const cards = ids.length > 1
     ? [...ids.map((id) => { const c = g.paper.lesson(id)[0]; return { ...c, title: `${g.paper.label(id)}: ${c.title}` }; }),
-      { title: 'The full lessons', body: 'Each tool’s full lesson opens from the ? button beside the tabs.' }]
+      { title: 'The full lessons', body: 'The ? button beside the tabs opens each tool’s full lesson, with a “Why it matters” section on what it does to your wealth and what it costs.' }]
     : g.paper.lesson(ids[0]);
   const names = ids.map((id) => g.paper.label(id));
-  await showLesson(cards, {
+  const deeper = ids.length === 1 ? g.paper.deeper(ids[0]) : [];
+  const r = await showLesson(cards, {
     kicker: ids.length > 1 ? `${ids.length} tools unlocked` : `${names[0]} unlocked`,
     label: ids.length > 1 ? `${names.join(', ')} lessons` : `${names[0]} lesson`, doneLabel: 'Got it', skipLabel: 'Close',
+    moreLabel: deeper.length ? 'Why it matters' : '',
   });
+  if (r === 'more' && !g.dead) await showLesson(deeper, { kicker: `${names[0]}: why it matters`, label: `${names[0]}: why it matters`, doneLabel: 'Done' });
   if (g.dead) return;
   g.holds.delete('lesson'); g.lessonBusy = false; pauseAfterPopup(g); refresh(); restoreFocus(prev);
 }

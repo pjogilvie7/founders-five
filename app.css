@@ -323,7 +323,7 @@ button{font:inherit;color:inherit}
 .dots{display:flex;gap:8px;justify-content:center}
 .dots i{width:9px;height:9px;border:1px solid var(--ink);transform:rotate(45deg);transition:background .2s}
 .dots i.on{background:var(--ink)}
-.dlg-actions{display:flex;gap:10px;align-items:center;margin-top:6px}
+.dlg-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px}
 .choices{display:grid;gap:12px;margin-top:6px}
 .choice{display:grid;gap:4px}
 .choice .btn{width:100%}

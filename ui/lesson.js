@@ -70,8 +70,8 @@ function mount(node, { onEscape } = {}) {
 }
 
 /**
- * cards: [{title, body}]. Resolves 'done' | 'skip' | 'esc'.
- * opts: {kicker, doneLabel, skipLabel, label}
+ * cards: [{title, body}]. Resolves 'done' | 'skip' | 'esc' | 'more'.
+ * opts: {kicker, doneLabel, skipLabel, moreLabel, label}. moreLabel adds a button on every card that resolves 'more'.
  */
 export function showLesson(cards, opts = {}) {
   return new Promise((resolve) => {
@@ -87,6 +87,7 @@ export function showLesson(cards, opts = {}) {
       <div class="dots" aria-hidden="true">${cards.map(() => '<i></i>').join('')}</div>
       <div class="dlg-actions">
         ${opts.skipLabel ? `<button class="btn ghost" data-a="skip">${esc(opts.skipLabel)}</button>` : ''}
+        ${opts.moreLabel ? `<button class="btn ghost more" data-a="more">${esc(opts.moreLabel)}</button>` : ''}
         <span class="grow"></span>
         <button class="btn" data-a="back">Back</button>
         <button class="btn primary" data-a="next"></button>
@@ -108,6 +109,7 @@ export function showLesson(cards, opts = {}) {
       if (a === 'next') { if (i === cards.length - 1) finish('done'); else { i++; draw(); } }
       else if (a === 'back') { if (i > 0) { i--; draw(); } }
       else if (a === 'skip') finish('skip');
+      else if (a === 'more') finish('more');
     });
     node.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowRight' && i < cards.length - 1) { i++; draw(); }

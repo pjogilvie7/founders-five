@@ -119,6 +119,14 @@ export default {
     { title: 'The maintenance call', body: 'If the loan rises above 35% of the pledged value, the bank issues a call. You post cash, or shares are sold.' },
     { title: 'The forced sale', body: 'If the loan is still above 35% at the close of the fourth trading day, the bank sells enough shares at that close. That sale is taxed and ignores the window.' },
   ],
+  // "Why it matters": the deeper deck behind the ? button, opened only when the player asks for it.
+  deeper: [
+    { title: "What pledging means", body: "Pledging gives the bank a claim on shares as collateral for a loan. You still own them, keep the vote and keep any rise in the price. The bank can sell them only if you fail a maintenance call. Locked shares cannot be pledged: lockups bar it." },
+    { title: "Why borrow instead of sell", body: "Borrowing is not a sale, so no gain is taxed now. The cash pays for something today, like the house, while the shares stay invested. In the US, heirs generally get a stepped-up basis on shares held until death, which is why some wealthy families borrow against stock rather than sell. This game ends after five years, so it still counts the unpaid tax." },
+    { title: "What it costs", body: "Interest at SOFR plus 2% a year, added to the loan. If the shares grow faster than the interest, the loan paid for itself; if they fall, you owe the same loan against less collateral." },
+    { title: "The maintenance call, in numbers", body: "You can borrow up to 25% of the pledged value. The bank calls when the loan reaches 35%. From a 25% start that takes a fall of about 29%, because 0.25 / 0.35 is about 0.71. You then have three trading days to post cash or sell; after that the bank sells at the next close, window or not, and that sale is taxed." },
+    { title: "Why companies watch pledging", body: "A forced sale by an insider can push the price down and set off more calls, which hurts every shareholder. Many public companies limit or ban pledging by executives and describe the policy in their proxy statement." },
+  ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;
     ensure(c, (k) => build(k, c));

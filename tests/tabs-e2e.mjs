@@ -207,6 +207,14 @@ await fill('.stock .fld-in', '');
 
 // ---- 4. Collar and the Street check
 await tab('collar');
+// the ? button: how it works, then "Why it matters" on request; closing leaves the clock paused
+await page.locator('.help').click(); await page.waitForSelector('.dialog.lesson [data-a=more]');
+ok(/Collar/.test(await txt('.dialog.lesson .kicker')), 'the ? button opens the collar lesson with a Why it matters button');
+await page.locator('.dialog.lesson [data-a=more]').click(); await wait(700);
+const deep = await page.locator('.dialog.lesson').last().textContent();
+ok(/why it matters/i.test(deep) && /hedge instead of sell/i.test(deep), 'Why it matters opens the deeper collar cards');
+for (let k = 0; k < 8 && await page.locator('.dialog.lesson').count(); k++) { await page.locator('.dialog.lesson [data-a=next]').click(); await wait(150); }
+ok((await page.locator('.dialog.lesson').count()) === 0 && (await pauseLabel()) === 'Play', 'the deeper cards close and the clock stays paused');
 const q = await txt('.collar .quote');
 ok(/model price/.test(q) && /Floor/.test(q) && /Cap/.test(q) && /\$0/.test(q), 'collar shows a live model-price quote: floor, cap, zero cost');
 ok(/Band rule/.test(q), 'band rule shown');

@@ -150,6 +150,14 @@ export default {
     { title: 'Selling', body: 'You can sell free shares only while the trading window is open. Each sale costs 0.25% and the gain is taxed at 23.8%.' },
     { title: 'Where the money goes', body: 'Sale proceeds go to cash. Moving cash into the index fund is a separate choice, made in the Cash tab. Tax on the sale is paid at quarter end.' },
   ],
+  // "Why it matters": the deeper deck behind the ? button, opened only when the player asks for it.
+  deeper: [
+    { title: "One stock is a big bet", body: "Almost all of your family’s wealth sits in one company. A single stock can halve and stay down; the S&P 500 spreads the same money across about 500 companies. Studies of US IPOs (Jay Ritter’s data) find that on average they trail the market in the years after listing." },
+    { title: "What a sale locks in", body: "A sale turns a paper gain into money that no longer depends on this company. If the price later falls, the sold shares are safe; if it rises, they miss the gain. Selling part of a position splits the difference between those two regrets." },
+    { title: "What a sale costs", body: "Two costs come out at once: 0.25% to sell, and 23.8% tax on the gain (the 20% long-term rate plus the 3.8% net investment income tax). Your cost basis is tiny, so nearly the whole price is gain. The tax is owed on the day you sell and paid at quarter end." },
+    { title: "Waiting does not erase the tax", body: "Holding puts the tax off, but the bill is still there: at the end of the card the game charges tax on gains you never sold, and the rail’s after-tax net worth counts it every day. So a sale mostly swaps stock for cash. The real question is how much of your wealth one company should carry." },
+    { title: "Windows and lockups", body: "Insiders may trade only while the company’s trading window is open, for a few weeks after each earnings report, so they are not trading ahead of news. The lockup is a separate promise to the underwriters not to sell for a set time after the IPO. A 10b5-1 plan is the one way to keep selling while the window is shut." },
+  ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;
     ensure(c, (k) => build(k, c));

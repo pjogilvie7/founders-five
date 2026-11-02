@@ -57,6 +57,13 @@ export default {
     { title: 'You keep the upside', body: 'Unlike a collar, a put does not cap your gains. The price of that is the premium, paid from cash and then the index fund.' },
     { title: 'At expiry', body: 'The put is settled in cash at expiry and taxed. If it ends worthless, the premium is a capital loss.' },
   ],
+  // "Why it matters": the deeper deck behind the ? button, opened only when the player asks for it.
+  deeper: [
+    { title: "Insurance with a premium", body: "A put gives you the right to sell at the strike until it expires. If the stock crashes, the put pays the fall below the strike. If it does not, the premium is gone, like an insurance premium in a year with no claim." },
+    { title: "Put or collar", body: "A collar usually costs nothing up front because you give up the upside. A put keeps every dollar of upside and charges a premium instead. So a collar costs upside later; a put costs cash now." },
+    { title: "What sets the price", body: "Puts cost more when the strike is closer to today’s price, when they run longer, and when the stock is more volatile. A 90% put for 12 months on a jumpy new stock can cost a large slice of the shares’ value." },
+    { title: "A worked example", body: "Stock at $100, an 85% put, premium $8 a share. If the stock ends at $60, the put pays $25, so you are down $23 a share instead of $40. If it ends at $130, the put pays nothing and you are up $22 instead of $30." },
+  ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;
     ensure(c, (k) => build(k, c));

@@ -95,6 +95,14 @@ export default {
     { title: 'Adopt it in an open window', body: 'You can adopt a plan only when the window is open. Cancelling it starts everything over, and while a plan is adopted you cannot open a new collar or put.' },
     { title: 'Cooling-off', body: 'The first sale waits out a cooling-off period: 30 days for an engineer, and for a founder the later of 90 days or two business days after the report for the quarter of adoption, at most 120. The tab shows the date the plan goes live.' },
   ],
+  // "Why it matters": the deeper deck behind the ? button, opened only when the player asks for it.
+  deeper: [
+    { title: "The problem it solves", body: "An insider usually knows something the market does not, so selling by hand is limited to open windows and can look like trading on inside news. A 10b5-1 plan is written in advance, while you know nothing material, and then runs on its own. SEC Rule 10b5-1 treats sales under such a plan as a defense against insider-trading claims." },
+    { title: "Why holders use one", body: "It keeps selling through blackouts. It takes the timing out of your hands, so a bad week cannot freeze you and a good week cannot tempt you to wait. It spreads sales over many prices instead of one day. And investors can see the sales were planned, not a reaction to news." },
+    { title: "What it costs you", body: "Flexibility. The first sale waits out a cooling-off period: 30 days for the engineer; for an officer, the later of 90 days or two business days after the quarter’s report, at most 120 (the SEC’s 2022 rules). Changing the plan means starting over, only one plan can run, and while it runs you cannot open a new collar or put." },
+    { title: "How much a plan sells", body: "Each month the plan sells its percentage of the shares that are free that day. With nothing new released, a 5% plan for 18 months sells about 60% of what was free at the start (0.95 to the 18th power is about 0.40), and a 10% plan for 12 months about 72%. New releases make each month’s sale bigger." },
+    { title: "For the founder", body: "A founder is an affiliate, so plan sales also count against the Rule 144 cap on how much can be sold in any three months. The plan sells what the cap allows and no more." },
+  ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;
     ensure(c, (k) => build(k, c));

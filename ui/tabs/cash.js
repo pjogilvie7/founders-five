@@ -55,6 +55,13 @@ export default {
     { title: 'The index fund', body: 'Idle cash can sit in an index fund that tracks the S&P 500 with dividends reinvested. Moving money in and out takes one click.' },
     { title: 'Tax on the way out', body: 'Index fund gains are taxed when you withdraw, at 23.8% of the gain over your average cost.' },
   ],
+  // "Why it matters": the deeper deck behind the ? button, opened only when the player asks for it.
+  deeper: [
+    { title: "Cash and the index fund", body: "Cash earns the one-month Treasury rate and never falls. The index fund holds the S&P 500, about 500 large US companies, with dividends reinvested. Over long periods stocks have earned more than cash, but the index can drop by a third or more in a bad year, as in 2008 and early 2020." },
+    { title: "Why diversify", body: "Your shares rise and fall with one company. The index spreads the same dollars across hundreds, so one company’s bad news barely moves it. Moving sale proceeds into the index keeps a stake in the market’s long-run return with far less single-company risk." },
+    { title: "Idle cash has a cost", body: "Money left in cash is safe, but over five years the index has usually grown more. The debrief shows how much sat idle and what it would have earned in the index over the same days. The Seller and the Playbook keep about a year of spending in cash and put the rest in the index fund each month." },
+    { title: "Tax on the way out", body: "A deposit is not taxed. A withdrawal is taxed at 23.8% on the gain over your average cost, paid at quarter end. Spending draws on cash first, then the index fund, then the credit line." },
+  ],
   render(c, snap, api) {
     c._snap = snap; c._api = api;
     ensure(c, (k) => build(k, c));
