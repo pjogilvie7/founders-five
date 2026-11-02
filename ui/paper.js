@@ -46,7 +46,7 @@ export function createPaper(el, ctx) {
       <button class="help" aria-label="Lesson refresher for this tool" title="Lesson refresher">?</button>
     </div>
     <div class="panel-wrap"><div class="panel" role="tabpanel" tabindex="-1"></div><div class="toasts" aria-live="polite"></div></div>
-    <div class="ticker"><span class="tk-lbl">News</span><span class="tk-text">No headlines yet.</span></div>
+    <div class="ticker empty"><span class="tk-lbl">News</span><span class="tk-text">No headlines yet.</span></div>
   </section>`;
   const $ = (s) => el.querySelector(s);
   const tabsEl = $('.tabs'), panel = $('.panel'), banner = $('.banner-slot'), notices = $('.notice-slot'), toasts = $('.toasts'), tk = $('.tk-text');
@@ -74,7 +74,18 @@ export function createPaper(el, ctx) {
     const ids = defs.map((d) => d.id), i = ids.indexOf(active);
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const n = ids[(i + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length]; select(n, true); tabEls[n].focus(); }
   });
-  $('.help').addEventListener('click', () => h.onLesson(active));
+  const help = $('.help');
+  help.addEventListener('click', () => h.onLesson(active));
+  // Phone: the ? lives in the header's clock row, after the speed keys, so it never floats over the board. Wider screens keep it in the tab bar.
+  const phoneMq = matchMedia('(max-width:899px)');
+  function dockHelp() {
+    if (!el.isConnected) { phoneMq.removeEventListener?.('change', dockHelp); return; }
+    const home = $('.tabbar'), clock = phoneMq.matches ? el.parentElement?.querySelector('.rail-host .transport') : null;
+    const to = clock || home;
+    if (help.parentElement !== to) to.appendChild(help);
+  }
+  dockHelp();
+  phoneMq.addEventListener?.('change', dockHelp);
 
   function select(id, focus) {
     if (!tabEls[id]) return;
@@ -204,7 +215,7 @@ export function createPaper(el, ctx) {
     };
     countRaf = requestAnimationFrame(tick);
   }
-  const lockable = () => el.querySelectorAll('.tabbar, .panel-wrap, .ticker');
+  const lockable = () => [...el.querySelectorAll('.tabbar, .panel-wrap, .ticker'), help];
   function momentHtml(list) {
     const items = list.map((n) => ({ ...n, kind: n.kind || n.type || 'note' }));
     const rels = items.filter((n) => n.kind === 'release' && n.shares != null);
@@ -257,7 +268,7 @@ export function createPaper(el, ctx) {
     while (toasts.children.length > 4) toasts.firstChild.remove();
     setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 400); }, kind === 'ach' ? 5200 : 4200);
   }
-  function setNews(text, when) { tk.innerHTML = text ? `<span class="when num">${esc(when || '')}</span> ${esc(text)}` : 'No headlines yet.'; tk.classList.remove('pop'); void tk.offsetWidth; tk.classList.add('pop'); }
+  function setNews(text, when) { tk.parentElement.classList.toggle('empty', !text); tk.innerHTML = text ? `<span class="when num">${esc(when || '')}</span> ${esc(text)}` : 'No headlines yet.'; tk.classList.remove('pop'); void tk.offsetWidth; tk.classList.add('pop'); }
 
   function update(v) {
     view = v; setUnlocked(v.unlocked);

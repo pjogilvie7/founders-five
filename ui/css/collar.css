@@ -1,138 +1,206 @@
-/* Gauntlet overrides for the collar piece; loaded after the base stylesheets.
-   Goal: the whole move (pick tenor and floor, read three numbers, enter shares, confirm) fits one screen. */
+/* Collar piece, loaded after the base stylesheets.
+   One raised "instrument" card holds the whole move: tenor and floor pickers, the share input and confirm plate, and one
+   result strip (floor, cap and the band between them) under them. While the engine blocks the move the card is just the lock card. Soft layered shadow and a 1px ink edge (no offset shadows). Confirm is a raised engraved plate that
+   presses 2px; success thumps a COLLARED stamp onto the card with the engine's receipt line. */
+
+.collar{gap:14px;
+  --cd-edge:color-mix(in srgb,var(--ink) 55%,var(--paper-line));--cd-r:4px;--cd-bg:#fbf9f1;
+  --cd-sh:inset 0 1px 0 rgba(255,255,255,.8),0 1px 2px rgba(24,38,47,.16),0 8px 14px -8px rgba(24,38,47,.28)}
+/* the readout, the lock card and each open collar are one kind of card: same edge, radius, ground and shadow */
+.collar .quote,.collar .row-item{border:1px solid var(--cd-edge);border-radius:var(--cd-r);background:var(--cd-bg);box-shadow:var(--cd-sh)}
 
 /* header plate: single rule, teal top edge and an engraved scale, no double frame */
-.collar{gap:10px}
-.collar .plate{box-shadow:none;border-top:3px solid var(--collar);padding:10px 18px 14px;overflow:hidden;position:relative}
+.collar .plate{box-shadow:0 1px 2px rgba(24,38,47,.14),0 8px 18px -12px rgba(24,38,47,.3);border-top:3px solid var(--collar);padding:10px 18px 14px;overflow:hidden;position:sticky;top:0;z-index:7}
 .collar .plate .t-lede{padding-right:0}
-.collar .plate .t-stamp{top:auto;bottom:16px;right:24px;margin:0;font-size:17px;letter-spacing:.14em;padding:1px 8px 0;background:color-mix(in srgb,var(--paper) 88%,transparent);transform-origin:right bottom}
+/* the in-panel stamp below replaces the header one; the header one stays in the DOM, unseen */
+.collar .plate .t-stamp{top:auto;bottom:16px;right:24px;margin:0;font-size:17px;padding:1px 8px 0;opacity:0!important;animation:none!important}
 .collar .plate::before{inset:auto 0 0 0;height:6px;border:0;background:repeating-linear-gradient(90deg,var(--paper-line) 0 1px,transparent 1px 8px);opacity:.9}
 .collar .plate .tool-h h2{font:650 26px/1.15 var(--f-body);font-variant-caps:normal;text-transform:none;letter-spacing:-.012em}
 .collar .plate .tool-h h2::after{content:"";display:inline-block;width:22px;height:3px;margin-left:12px;vertical-align:.28em;background:var(--gold)}
 .collar .plate .t-lede{max-width:none;font-size:14px}
-.collar .box{padding:12px 16px 14px}
+.collar .box{padding:12px 16px 14px;box-shadow:0 1px 2px rgba(24,38,47,.1),0 8px 16px -12px rgba(24,38,47,.28)}
 .collar .box h3{margin-bottom:8px;font:600 15px/1.2 var(--f-body);font-variant-caps:normal;text-transform:none;letter-spacing:0;color:var(--ink);display:flex;align-items:center;gap:8px}
 .collar .box h3::before{content:"";width:3px;height:14px;background:var(--gold)}
-/* the plate above already names the panel: keep the box heading for screen readers only on wide screens */
-@media (min-width:900px){.collar .box>h3{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);margin:0}.collar .box{padding-top:14px}}
+/* the plate above already names the panel: keep the box heading for screen readers only */
+.collar .instr>h3{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);margin:0}
+
+/* ---- the instrument card ---------------------------------------------------------------------------------------- */
+.collar .box.instr{--px:20px;--pt:16px;position:relative;padding:var(--pt) var(--px) 16px;border:1px solid var(--ink);border-radius:3px;
+  background:linear-gradient(180deg,#faf6ea 0,var(--paper) 46%,color-mix(in srgb,var(--paper) 82%,var(--paper-2)) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 1px 1px rgba(24,38,47,.2),0 4px 8px -2px rgba(24,38,47,.16),0 18px 30px -14px rgba(24,38,47,.4)}
+.collar .instr.stamped{animation:coJolt .4s var(--ease-out) both}
+@keyframes coJolt{0%,50%{transform:none}58%{transform:translateY(2px)}100%{transform:none}}
 
 /* form grid: tenor and floor share a row on desktop, everything else spans */
-.collar .aform{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
-.collar .aform>.t-head{grid-area:auto;align-self:stretch;padding-bottom:0;text-align:left}
-.collar .aform>.t-head,.collar .aform>.t-prev,.collar .aform>.t-gate,.collar .aform>.dock,.collar .aform>.t-res{grid-column:1/-1}
-.collar .segf-l{font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.collar .aform{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;position:relative}
+.collar .aform>.t-head{display:none}
+.collar .aform>.t-prev,.collar .aform>.t-gate,.collar .aform>.dock,.collar .aform>.t-res{grid-column:1/-1}
+.collar .segf-l,.collar .dock .fld-l,.collar .qs-fig .k,.collar .row-item .k,.collar .street .q-grid .k{font:600 13px/1.2 var(--f-body);letter-spacing:0;text-transform:none;font-variant-caps:normal;color:var(--muted)}
 .collar .seg2{display:flex;width:100%}
-.collar .seg2 button{flex:1;min-width:0;min-height:40px;padding:4px 8px;font-size:14px}
-.collar .seg2 button[aria-checked=true]{background:var(--collar);border-color:var(--ink);color:#fff;box-shadow:inset 0 -3px 0 var(--gold)}
+.collar .seg2 button{flex:1;min-width:0;min-height:42px;padding:4px 8px;font-size:14px;background:linear-gradient(180deg,#fbf8ee,var(--paper));transition:background .15s,transform .09s var(--ease-out)}
+.collar .seg2 button:hover{background:#fffdf5}
+.collar .seg2 button[aria-checked=true]{background:var(--collar);border-color:var(--ink);color:#fff;box-shadow:inset 0 -3px 0 var(--gold),inset 0 2px 4px rgba(0,0,0,.22)}
 .collar .seg2 button:focus-visible{outline:2px solid var(--gold);outline-offset:2px;position:relative;z-index:1}
 
-/* quote: three large figures in one row, then the band */
-.collar .quote{padding:10px 14px 10px;gap:8px}
-.collar .q-top{gap:4px 10px}
-.collar .tag.model{font-size:10px;padding:0 6px}
-.collar .q-meta{font-size:12px}
-.collar .q-grid{gap:0;grid-template-columns:repeat(3,minmax(0,1fr))}
-.collar .q-grid>div{padding:0 14px;border-left:1px solid color-mix(in srgb,var(--collar) 35%,transparent);gap:1px}
-.collar .q-grid>div:first-child{padding-left:0;border-left:0}
-.collar .q-grid .k{font-size:10.5px;letter-spacing:.1em;white-space:nowrap}
-.collar .q-grid .v{font-size:32px;line-height:1.1;letter-spacing:-.01em;color:var(--ink)}
-.collar .q-grid .q-cost .v{color:var(--good)}
-.collar .q-grid .sub{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.collar .quote.bad .q-grid .v{color:var(--seal)}
+/* the result strip: one recessed window under the shares row. Floor and cap each appear once, as figures over the band ends. */
+.collar .quote{padding:11px 16px 8px;gap:8px;border-top:3px solid var(--collar);transition:opacity .25s,filter .25s}
+.collar .q-top{gap:4px 10px;align-items:center}
+.collar .tag.model{display:inline-block;font:600 12.5px/1.3 var(--f-body);letter-spacing:0;text-transform:none;font-variant-caps:normal;padding:1px 8px}
+.collar .tag.model::first-letter{text-transform:uppercase}
+.collar .q-meta{font:400 13px/1.35 var(--f-body);color:var(--muted)}
+.collar .q-strip{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px;margin:0 4px}
+.collar .qs-fig{display:grid;gap:1px;min-width:0}
+.collar .qs-cap{text-align:right;justify-items:end}
+.collar .qs-fig .k{white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+.collar .qs-fig .k::before{content:"";width:9px;height:9px;border:2px solid var(--collar);background:color-mix(in srgb,var(--collar) 30%,var(--paper))}
+.collar .qs-cap .k::before{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 40%,var(--paper))}
+.collar .qs-fig .v{font-size:32px;line-height:1.1;letter-spacing:-.01em;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.collar .quote.has-n .qs-floor .v{color:var(--collar)}
+.collar .quote.bad .qs-fig .v{color:var(--seal)}
+.collar .qs-sub{font-size:12.5px;color:var(--muted);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.collar .qs-cs{text-align:right}
+.collar .q-err{margin:0;font:600 13.5px/1.4 var(--f-body);color:var(--seal)}
+.collar .q-err[hidden]{display:none}
 
-.q-band{position:relative;height:32px;margin:2px 4px 0}
-.q-band::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;background:var(--paper-line)}
-.q-band .b-fill{position:absolute;top:2px;height:10px;left:var(--f);right:calc(100% - var(--c));
+.q-band{grid-column:1/-1;position:relative;height:38px;margin:6px 2px 4px}
+.q-band::before{content:"";position:absolute;left:0;right:0;top:26px;height:2px;background:var(--paper-line)}
+.q-band .b-fill{position:absolute;top:22px;height:10px;left:var(--f);right:calc(100% - var(--c));
   background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--collar) 42%,transparent) 0 3px,color-mix(in srgb,var(--collar) 16%,transparent) 3px 6px);
-  border:1px solid var(--collar);transition:left .35s var(--ease-out),right .35s var(--ease-out)}
-.q-band .b-pin{position:absolute;top:0;width:0;height:16px;border-left:2px solid var(--collar);margin-left:-1px;transition:left .35s var(--ease-out)}
+  border:1px solid var(--collar);transition:left .4s var(--ease-out),right .4s var(--ease-out)}
+.q-band .b-pin{position:absolute;top:18px;width:0;height:18px;border-left:3px solid var(--collar);margin-left:-1.5px;transition:left .4s var(--ease-out),transform .3s var(--ease-out)}
 .q-band .b-f{left:var(--f)}
-.q-band .b-t{left:var(--t);border-left-color:var(--ink);height:20px;top:-2px}
+.q-band .b-t{left:var(--t);border-left:2px solid var(--ink);height:24px;top:14px;margin-left:-1px}
 .q-band .b-c{left:var(--c);border-left-color:var(--gold)}
-.q-band em{position:absolute;top:19px;left:0;transform:translateX(-50%);font-style:normal;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
-.q-band .b-t em{top:21px;color:var(--ink);font-weight:600}
-.collar .q-rule{font-size:11.5px;line-height:1.35;margin:0}
-
-/* quote card terms: held until, under floor, over cap live inside the model-price card; the confirm preview
-   below stays in the page as a live region for screen readers only, so nothing is said twice on screen */
-.collar .q-terms{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 16px;font-size:13px;line-height:1.35;color:var(--ink)}
-.collar .q-terms span{padding-left:12px;position:relative}
-.collar .q-terms span::before{content:"";position:absolute;left:0;top:.5em;width:5px;height:5px;background:var(--collar)}
-.collar .q-terms .t-hi::before{background:var(--gold)}
+.q-band em{position:absolute;top:-13px;left:0;transform:translateX(-50%);font:600 12.5px/1 var(--f-body);font-style:normal;letter-spacing:0;text-transform:none;color:var(--ink);white-space:nowrap}
+.q-strip.bump .b-fill{animation:coFill .42s var(--ease-out)}
+.q-strip.bump .b-f,.q-strip.bump .b-c{animation:coPin .42s var(--ease-out)}
+@keyframes coFill{from{filter:saturate(2.2) brightness(.9)}}
+@keyframes coPin{35%{transform:translateY(-3px)}}
+/* the one plain sentence lives in Terms, collapsed by default */
+.collar .co-say{margin:6px 0 4px;font:500 15px/1.45 var(--f-body);color:var(--ink);text-wrap:pretty;padding-left:12px;border-left:3px solid var(--gold)}
+.collar .co-say b{font-weight:600}
+.collar .co-terms{margin:0;font-size:13px;line-height:1.4;color:var(--muted);border-top:1px solid color-mix(in srgb,var(--collar) 22%,transparent);padding-top:2px}
+.collar .co-terms summary{display:inline-flex;align-items:center;gap:8px;min-height:30px;cursor:pointer;font-weight:600;color:var(--collar);list-style:none}
+.collar .co-terms summary::-webkit-details-marker{display:none}
+.collar .co-terms summary::after{content:"";width:6px;height:6px;border:solid var(--gold);border-width:0 2px 2px 0;transform:rotate(45deg) translateY(-2px);transition:transform .2s var(--ease-out)}
+.collar .co-terms[open] summary::after{transform:rotate(-135deg) translateY(-1px)}
+.collar .co-terms summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.collar .co-terms ul{margin:4px 0 4px;padding-left:18px;display:grid;gap:2px}
+/* the confirm preview below stays in the page as a live region for screen readers only, so nothing is said twice on screen */
 .collar .t-prev{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
-.collar .t-res:empty{display:none}
-.collar .t-res{padding:8px 12px;border-left:3px solid var(--collar);background:color-mix(in srgb,var(--collar) 8%,var(--paper));font-size:13px;line-height:1.4}
-
-/* preview and gate stay short */
-.collar .t-prev .t-hint{font-size:12.5px;line-height:1.4;margin:0}
+/* the receipt line is read aloud and held in the stamp; it never shows twice */
+.collar .t-res{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;padding:0;border:0}
 .collar .t-hint:empty,.collar .t-prev:has(>.t-hint:empty){display:none}
-.collar .gate{font-size:13px;line-height:1.4;padding:8px 12px}
+.collar .gate{font-size:13.5px;line-height:1.4;padding:8px 12px}
 
-/* the dock: input, MAX and confirm as one unit */
-.collar .dock{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);grid-template-areas:"l l" "r go" "m go";gap:4px 14px;align-items:stretch;
-  padding:10px 12px 8px;border:1px solid var(--ink);background:color-mix(in srgb,var(--paper-2) 60%,var(--paper));position:relative}
-.collar .dock .fld{display:contents}
-.collar .dock .fld-l{grid-area:l;font-size:11px;letter-spacing:.12em;text-transform:uppercase;align-self:end}
-.collar .dock .fld-row{grid-area:r}
-.collar .dock .fld-max{grid-area:m;min-height:0;margin:0;font-size:12.5px;align-self:start}
+/* ---- the dock: a full-bleed band under the pickers holding the whole move: shares, quick sizes, confirm, then the result strip -- */
+.collar .dock{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);grid-template-areas:"f go" "q q";gap:14px 20px;align-items:end;
+  margin:2px calc(var(--px) * -1) 2px;padding:14px var(--px) 16px;position:relative;
+  border-top:1px solid color-mix(in srgb,var(--ink) 30%,var(--paper-line));border-bottom:1px solid color-mix(in srgb,var(--ink) 30%,var(--paper-line));
+  background:linear-gradient(180deg,color-mix(in srgb,var(--paper-2) 92%,var(--paper)),color-mix(in srgb,var(--paper-2) 62%,var(--paper)));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7)}
+.collar .dock .fld{grid-area:f;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"l m" "r r" "g g";gap:6px 12px;min-width:0}
+.collar .dock .fld-l{grid-area:l;align-self:end}
+.collar .dock .fld-row{grid-area:r;display:flex;gap:10px;align-items:stretch;min-width:0}
+.collar .dock .fld-max{grid-area:m;min-height:0;margin:0;font-size:13px;align-self:end;text-align:right}
 .collar .dock .fld-max:empty{display:none}
-.collar .dock .fld-in{font-size:28px;min-height:56px;font-weight:500;letter-spacing:-.01em}
+.collar .dock .fld-in{flex:1 1 150px;min-width:0;font-size:28px;min-height:58px;font-weight:500;letter-spacing:-.01em;box-shadow:inset 0 2px 4px rgba(24,38,47,.16)}
 .collar .dock .fld-in:focus-visible{outline:2px solid var(--collar);outline-offset:1px}
-.collar .dock .fld-row .max{min-height:56px;min-width:76px;padding:0 14px;background:color-mix(in srgb,var(--gold) 22%,var(--paper));color:var(--ink);font-weight:700;letter-spacing:.1em;border:1px solid var(--ink);box-shadow:inset 0 0 0 2px var(--paper),inset 0 0 0 3px var(--gold);transition:background .15s,transform .12s var(--ease-out)}
-.collar .dock .fld-row .max:active{transform:scale(.97)}
-.collar .dock .fld-row .max:hover{background:color-mix(in srgb,var(--gold) 40%,var(--paper))}
-.collar .dock .fld-row .max:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.collar .dock .max[aria-disabled=true]{background:var(--paper-2);box-shadow:none;border-color:var(--paper-line);color:var(--muted)}
+.collar .dock .fld-in.tick{animation:coTickIn .45s var(--ease-out)}
+@keyframes coTickIn{0%{background-color:color-mix(in srgb,var(--gold) 45%,var(--paper))}100%{background-color:var(--paper)}}
+.collar .dock .t-gate{grid-area:g;margin:0}
+.collar .dock .t-gate:empty{display:none}
+.collar .dock .quote{grid-area:q}
+.collar .co-act{grid-area:go;align-self:end;display:grid;gap:10px;min-width:0}
+.collar .co-line{margin:0;font:500 14.5px/1.4 var(--f-body);color:var(--ink);text-wrap:balance;text-align:center}
+.collar .co-line b{font-weight:600;color:var(--collar)}
+.collar .co-line b+b,.collar .co-line b:last-child{color:var(--ink)}
 
-/* confirm: teal plate with a gold keyline (never alarm red). Idle, ready, and reason states share one frame. */
-.collar .dock .t-go{grid-area:go;align-self:stretch;justify-self:stretch;min-width:0;width:100%;min-height:56px;padding:8px 14px;font-size:16px;font-weight:600;line-height:1.2;letter-spacing:.01em;text-wrap:balance;
-  color:#fff;background:var(--collar);border:1px solid #1d494c;border-radius:3px;
-  box-shadow:inset 0 0 0 2px var(--collar),inset 0 0 0 3px color-mix(in srgb,var(--gold) 80%,var(--paper));
-  transition:filter .15s,transform .12s var(--ease-out),background .2s,box-shadow .2s}
+/* quick sizes: three flat engraved tabs beside the input; the one matching the typed count lights gold with an ink edge */
+.collar .co-chips{flex:none;display:flex;gap:6px}
+.collar .co-chips .co-chip{position:relative;min-width:62px;min-height:58px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  font:700 15px/1 var(--f-body);letter-spacing:.04em;white-space:nowrap;color:var(--ink);
+  background:linear-gradient(180deg,#fdfbf3,color-mix(in srgb,var(--paper) 92%,var(--paper-2)));
+  border:1px solid color-mix(in srgb,var(--ink) 55%,var(--paper-line));border-radius:var(--cd-r);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 1px 2px rgba(24,38,47,.18);
+  transition:background .15s,border-color .15s,box-shadow .12s var(--ease-out),transform .09s var(--ease-out)}
+.collar .co-chips .co-chip:hover{background:#fffdf5;border-color:var(--ink)}
+.collar .co-chips .co-chip:active{transform:translateY(1px);box-shadow:inset 0 2px 5px rgba(24,38,47,.22)}
+.collar .co-chips .co-chip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.collar .co-chips .co-chip.on{background:color-mix(in srgb,var(--gold) 34%,var(--paper));border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--gold),inset 0 2px 4px rgba(24,38,47,.16)}
+.collar .co-chips .co-chip[aria-disabled=true]{color:var(--muted);background:var(--paper-2);border-color:var(--paper-line);box-shadow:none;cursor:default}
+.collar .co-chips .co-chip[aria-disabled=true]:active{transform:none}
+
+/* confirm: an engraved teal plate with a fine gold keyline inside the edge. Soft shadow, no hard lip; it presses 2px when pushed. */
+.collar .dock .t-go{justify-self:stretch;position:relative;min-width:0;width:100%;min-height:74px;padding:8px 18px;font-size:17px;font-weight:600;line-height:1.25;letter-spacing:.01em;text-wrap:balance;
+  color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--collar) 88%,#fff),var(--collar) 55%,color-mix(in srgb,var(--collar) 90%,#000));border:1px solid #163f42;border-radius:var(--cd-r);text-shadow:0 1px 0 rgba(0,0,0,.28);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 2px rgba(24,38,47,.3),0 8px 14px -8px rgba(24,38,47,.4);
+  transition:filter .15s,transform .09s var(--ease-out),box-shadow .09s var(--ease-out),background .2s}
+.collar .dock .t-go::after{content:"";position:absolute;inset:3px;border:1px solid color-mix(in srgb,var(--gold) 70%,transparent);border-radius:2px;pointer-events:none}
 .collar .dock .t-go:hover{filter:brightness(1.08)}
-.collar .dock .t-go:active{transform:translateY(1px) scale(.985);filter:brightness(.92)}
+.collar .dock .t-go:active{transform:translateY(2px);filter:brightness(.93);box-shadow:inset 0 3px 8px rgba(0,0,0,.4),0 1px 1px rgba(24,38,47,.3)}
 .collar .dock .t-go:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
-/* waiting for a number: pale teal, still reads as the one button on the card */
-.collar .dock .t-go[aria-disabled=true]{opacity:1;cursor:default;color:var(--collar);
-  background:color-mix(in srgb,var(--collar) 11%,var(--paper));border-color:color-mix(in srgb,var(--collar) 45%,var(--paper-line));
-  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--collar) 11%,var(--paper)),inset 0 0 0 3px color-mix(in srgb,var(--gold) 45%,transparent)}
+/* waiting for a number: pale and flat */
+.collar .dock .t-go[aria-disabled=true]{opacity:1;cursor:default;color:var(--collar);text-shadow:none;
+  background:color-mix(in srgb,var(--collar) 9%,var(--paper));border-color:color-mix(in srgb,var(--collar) 55%,var(--paper-line));box-shadow:none}
+.collar .dock .t-go[aria-disabled=true]::after{border-color:color-mix(in srgb,var(--collar) 22%,transparent)}
 .collar .dock .t-go[aria-disabled=true]:hover{filter:none}
 .collar .dock .t-go[aria-disabled=true]:active{transform:none;filter:none}
-@keyframes collarReady{50%{box-shadow:inset 0 0 0 2px var(--collar),inset 0 0 0 3px color-mix(in srgb,var(--gold) 80%,var(--paper)),0 0 0 4px color-mix(in srgb,var(--gold) 38%,transparent)}}
+@keyframes collarReady{50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 1px 2px rgba(24,38,47,.3),0 0 0 5px color-mix(in srgb,var(--gold) 38%,transparent)}}
 .collar .dock .t-go.ready{animation:collarReady 2.2s ease-in-out 2}
 @keyframes collarNudge{30%{transform:translateX(-3px)}60%{transform:translateX(3px)}}
 .collar .dock .t-go.nudge{animation:collarNudge .26s ease-out}
 
-/* blocked by the engine: the whole input row gives way to one card (engraved lock, the reason, one way forward).
-   The field and confirm stay in the DOM but out of sight and out of the tab order. */
-.collar .co-blocked .dock .fld-l,.collar .co-blocked .dock .fld-row,.collar .co-blocked .dock .fld-max,.collar .co-blocked .dock .t-go{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:-1px;padding:0;border:0;white-space:nowrap;pointer-events:none}
-.collar .co-blocked .t-gate{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
-.collar .co-blocked .dock{grid-template-columns:minmax(0,1fr);grid-template-areas:"card";padding:14px 16px;
-  background:color-mix(in srgb,var(--paper) 70%,var(--paper-2));box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--paper-line)}
-.collar .co-card{grid-area:card;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 18px;padding:2px 4px}
-.collar .co-card[hidden]{display:none}
-.collar .co-seal{grid-row:1;width:56px;height:56px;color:var(--ink);transform-origin:center}
-.collar .co-seal circle{fill:none;stroke:var(--gold);stroke-width:1}
-.collar .co-seal .s-r1{stroke-dasharray:1.4 2.6;stroke:color-mix(in srgb,var(--gold) 80%,var(--paper))}
-.collar .co-seal .s-r2{stroke:var(--ink);stroke-width:1.4}
-.collar .co-seal .s-r3{fill:color-mix(in srgb,var(--paper) 55%,var(--paper-2));stroke:var(--gold)}
-.collar .co-seal .s-sh{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round}
-.collar .co-seal .s-bd{fill:var(--ink);stroke:var(--gold);stroke-width:1}
-.collar .co-seal .s-hole{fill:var(--gold);stroke:none}
-.collar .co-seal .s-key{stroke:var(--gold);stroke-width:2;stroke-linecap:round}
-.collar .co-why{font:500 16px/1.4 var(--f-body);color:var(--ink);text-wrap:balance;max-width:44ch}
-.collar .co-go{min-height:48px;padding:8px 20px;font:600 15px/1.2 var(--f-body);letter-spacing:.01em;color:#fff;background:var(--ink);border:1px solid var(--ink);border-radius:3px;cursor:pointer;white-space:nowrap;
-  box-shadow:inset 0 0 0 2px var(--ink),inset 0 0 0 3px color-mix(in srgb,var(--gold) 85%,var(--paper));transition:filter .15s,transform .12s var(--ease-out)}
+/* ---- blocked by the engine: the card is the lock card and nothing else; every control stays in the DOM, inert and unseen --------- */
+.collar .co-blocked>.segf,.collar .co-blocked .dock .fld,.collar .co-blocked .dock .co-act,.collar .co-blocked .dock .quote,.collar .co-blocked .t-gate{
+  position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;margin:0;padding:0;border:0;opacity:0;pointer-events:none}
+.collar .co-blocked .dock{display:block;margin:0;padding:0;border:0;background:none;box-shadow:none}
+.collar .box.instr.is-locked{--px:22px;--pt:22px;padding-bottom:22px;
+  background:
+    repeating-radial-gradient(circle at 100% 0,transparent 0 9px,color-mix(in srgb,var(--gold) 11%,transparent) 9px 10px),
+    repeating-radial-gradient(circle at 0 100%,transparent 0 9px,color-mix(in srgb,var(--collar) 9%,transparent) 9px 10px),
+    linear-gradient(180deg,#faf6ea 0,var(--paper) 100%)}
+.collar .co-lock{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 20px;min-width:0}
+.collar .co-lock[hidden]{display:none}
+.collar .co-medal{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;
+  background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--ink) 80%,#fff),var(--ink) 70%);
+  box-shadow:0 0 0 2px var(--paper),0 0 0 3px var(--gold),0 6px 12px -6px rgba(24,38,47,.55),inset 0 1px 0 rgba(255,255,255,.25)}
+.collar .co-seal{width:30px;height:30px;fill:none;stroke:var(--paper);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.collar .co-seal rect{fill:color-mix(in srgb,var(--gold) 55%,var(--ink))}
+.collar .co-seal .s-key{stroke:var(--paper);stroke-width:2}
+.collar .co-copy{display:grid;gap:4px;min-width:0}
+.collar .co-why{margin:0;font:650 20px/1.25 var(--f-body);letter-spacing:-.005em;color:var(--ink);text-wrap:balance}
+.collar .co-sub{margin:0;font:400 14px/1.4 var(--f-body);color:var(--muted);text-wrap:pretty}
+.collar .co-go{position:relative;flex:none;min-height:52px;padding:8px 20px;font:600 16px/1.2 var(--f-body);letter-spacing:.01em;color:#fff;white-space:nowrap;cursor:pointer;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--ink) 82%,#fff),var(--ink) 60%,color-mix(in srgb,var(--ink) 88%,#000));border:1px solid #0b141a;border-radius:var(--cd-r);text-shadow:0 1px 0 rgba(0,0,0,.35);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 1px 2px rgba(24,38,47,.3),0 8px 14px -8px rgba(24,38,47,.45);
+  transition:filter .15s,transform .09s var(--ease-out),box-shadow .09s var(--ease-out)}
+.collar .co-go::after{content:"";position:absolute;inset:3px;border:1px solid color-mix(in srgb,var(--gold) 70%,transparent);border-radius:2px;pointer-events:none}
 .collar .co-go[hidden]{display:none}
-.collar .co-go:hover{filter:brightness(1.25)}
-.collar .co-go:active{transform:translateY(1px) scale(.985)}
+.collar .co-go:hover{filter:brightness(1.2)}
+.collar .co-go:active{transform:translateY(2px);filter:brightness(.95);box-shadow:inset 0 3px 8px rgba(0,0,0,.5),0 1px 1px rgba(24,38,47,.3)}
 .collar .co-go:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
-@keyframes coSeal{from{transform:scale(.86) rotate(-14deg);opacity:0}to{transform:none;opacity:1}}
-.collar .co-blocked .co-seal{animation:coSeal .45s var(--ease-pop) both}
+
+/* ---- the stamp: COLLARED thumps onto the card, a receipt slip prints beneath it ---------------------------------- */
+.collar .co-stamp{position:absolute;inset:0;z-index:6;display:grid;place-content:center;justify-items:center;gap:18px;border-radius:inherit;cursor:pointer;
+  background:color-mix(in srgb,var(--paper) 86%,transparent);-webkit-backdrop-filter:blur(1.5px);backdrop-filter:blur(1.5px);animation:coVeil .16s ease-out both;transition:opacity .25s}
+.collar .co-stamp.out{opacity:0}
+.collar .co-word{position:relative;font:700 clamp(34px,5.4vw,54px)/1 var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:var(--collar);
+  padding:8px 18px 4px 28px;border:4px solid var(--collar);border-radius:2px;background:color-mix(in srgb,var(--paper) 55%,transparent);
+  transform:rotate(-6deg);animation:coThump .4s cubic-bezier(.2,.8,.2,1) both}
+.collar .co-word::after{content:"";position:absolute;inset:-8px;border:2px solid var(--collar);border-radius:3px;opacity:0;animation:coRing .5s .2s ease-out both}
+.collar .co-slip{max-width:min(460px,88%);padding:10px 16px 11px;background:#fffdf6;border:1px solid var(--paper-line);border-bottom:2px dashed color-mix(in srgb,var(--ink) 35%,var(--paper-line));
+  font-size:13.5px;line-height:1.4;text-align:center;color:var(--ink);box-shadow:0 8px 14px -10px rgba(24,38,47,.5);animation:coPrint .38s .22s var(--ease-out) both}
+@keyframes coVeil{from{opacity:0}}
+@keyframes coThump{0%{transform:scale(2.5) rotate(-15deg);opacity:0}55%{transform:scale(.95) rotate(-6deg);opacity:1}100%{transform:scale(1) rotate(-6deg);opacity:1}}
+@keyframes coRing{0%{opacity:.7;transform:scale(.96)}100%{opacity:0;transform:scale(1.28)}}
+@keyframes coPrint{from{clip-path:inset(0 0 100% 0);transform:translateY(-8px);opacity:0}to{clip-path:inset(0 0 -8px 0);transform:none;opacity:1}}
 
 /* your collars: stamped cards */
-.collar .row-item{padding:12px 14px;margin-top:10px;border:1px solid var(--paper-line);border-left:3px solid var(--collar);background:color-mix(in srgb,var(--paper) 80%,#fff)}
+.collar .row-item{padding:12px 14px;margin-top:10px;border-top:3px solid var(--collar)}
 .collar .row-item:first-child{margin-top:0;padding-top:12px}
+.collar .row-item.fresh{animation:coFresh 1.6s var(--ease-out)}
+@keyframes coFresh{from{background:color-mix(in srgb,var(--gold) 30%,var(--paper));border-top-color:var(--gold)}}
 .collar .r-main b{font-size:16px}
 .collar .street summary{font-size:14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;position:relative;padding-right:22px;min-height:40px}
 .collar .street summary::after{content:"";position:absolute;right:4px;top:50%;width:8px;height:8px;margin-top:-6px;border:solid var(--gold);border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .2s var(--ease-out)}
@@ -140,60 +208,78 @@
 .collar .street summary:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .collar .sc-figs{display:flex;flex-wrap:wrap;gap:2px 22px;margin-left:auto}
 .collar .sc-figs>span{display:inline-flex;align-items:baseline;gap:8px}
-.collar .sc-figs i{font:600 10.5px/1 var(--f-body);font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.collar .sc-figs i{font:600 13px/1 var(--f-body);font-style:normal;letter-spacing:0;color:var(--muted)}
 .collar .sc-figs b{font:500 20px/1 var(--f-num);color:var(--ink)}
 .collar .street summary>span:first-child{font:600 15px/1.2 var(--f-body);font-variant-caps:normal;text-transform:none;letter-spacing:0;color:var(--ink);display:inline-flex;align-items:center;gap:8px}
 .collar .street summary>span:first-child::before{content:"";width:3px;height:14px;background:var(--gold)}
+.collar .street .q-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;margin-top:8px}
+.collar .street .q-grid>div{display:grid;gap:1px;padding:0 14px;border-left:1px solid color-mix(in srgb,var(--collar) 35%,transparent)}
+.collar .street .q-grid>div:first-child{padding-left:0;border-left:0}
+.collar .street .q-grid .v{font-size:30px;line-height:1.1;letter-spacing:-.01em;color:var(--ink)}
+.collar .street .t-hint,.collar .street .q-grid .sub{font-size:13px}
+.collar .street .q-grid .sub{white-space:normal;overflow:visible;text-overflow:clip}
 
-/* phone: one column, dock pinned to the bottom of the panel so it never needs a scroll */
+/* ---- phone: one column; the dock sticks to the bottom of the panel while the card is in view so confirm never scrolls away -- */
 @media (max-width:899px){
-  .collar{gap:10px;padding-top:4px}
-  .panel .collar .plate{padding:8px 12px 10px;border-top:3px solid var(--collar);border-radius:2px;overflow:visible}
+  .collar{gap:12px;padding:4px 0 8px}
+  .panel .collar .plate{padding:8px 12px 10px;border-top:3px solid var(--collar);border-radius:2px;overflow:visible;position:sticky;top:0}
   .panel .collar .plate::before{display:none}
   .collar .plate .tool-h h2{font-size:22px;line-height:1.15}
   .collar .plate .t-lede{display:none}
   .collar .plate .tool-h{margin:0}
+  .collar .plate .chip{font-size:12px}
   .collar .box>h3{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-  .collar .box{padding:10px 12px 0}
-  .collar .box h3{margin-bottom:6px}
-  .collar .aform{grid-template-columns:minmax(0,1fr);gap:8px}
-  .collar .aform>.t-head{padding-bottom:0;text-align:left}
-  .collar .aform>.segf{display:grid;grid-template-columns:84px minmax(0,1fr);align-items:center;gap:8px}
-  .collar .segf-l{font-size:10.5px;line-height:1.15}
-  .collar .seg2 button{min-height:38px;font-size:13px;padding:2px 4px}
-  .collar .quote{padding:8px 10px}
-  .collar .q-grid>div{padding:0 8px}
-  .collar .q-grid .k{font-size:9.5px;letter-spacing:.05em}
-  .collar .q-grid .v{font-size:22px}
-  .collar .q-grid .sub{font-size:10.5px}
-  .collar .q-terms{font-size:11.5px;gap:2px 10px}
-  .collar .q-terms span{padding-left:10px}
-  .collar .q-rule{display:none}
-  .collar .q-top{flex-wrap:nowrap}
-  .collar .q-meta{font-size:11px;white-space:nowrap}
-  .q-band{height:30px}
-  .collar .dock{grid-template-columns:minmax(0,1fr);grid-template-areas:"l" "r" "m" "go";gap:3px;position:sticky;bottom:0;z-index:2;margin:0 -12px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-width:1px 0 0;
-    box-shadow:0 -8px 14px -10px rgba(24,38,47,.35)}
-  .collar .dock .fld-l{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .collar .dock .fld-in{font-size:24px;min-height:46px}
-  .collar .dock .fld-row .max{min-height:46px}
-  .collar .dock .fld-max{font-size:11.5px;line-height:1.2}
-  .collar .dock .t-go{min-height:48px;margin-top:3px;font-size:15px}
-  .collar .co-blocked .dock{padding:12px 14px calc(12px + env(safe-area-inset-bottom));margin:0 -12px}
-  .collar .co-card{grid-template-columns:auto minmax(0,1fr);gap:10px 12px;padding:0}
-  .collar .co-seal{width:44px;height:44px}
-  .collar .co-why{font-size:14.5px;line-height:1.35}
-  .collar .co-go{grid-column:1/-1;width:100%;min-height:46px}
-  .collar .t-res{font-size:12.5px;padding:6px 10px}
+  .collar .box{padding:12px}
+  .collar .box.instr{--px:12px;--pt:12px}
+  .collar .aform{grid-template-columns:minmax(0,1fr);gap:10px}
+  .collar .aform>.segf{display:grid;grid-template-columns:86px minmax(0,1fr);align-items:center;gap:8px}
+  .collar .segf-l{font-size:13px;line-height:1.2}
+  .collar .seg2 button{min-height:42px;font-size:13px;padding:2px 1px;white-space:nowrap;overflow:hidden}
+  .collar .quote{padding:10px 12px 6px;gap:6px}
+  .collar .q-top{flex-wrap:wrap;gap:2px 10px}
+  .collar .tag.model{font-size:12px}
+  .collar .q-meta{font-size:12.5px;line-height:1.35}
+  .collar .q-strip{margin:0 2px;gap:0 10px}
+  .collar .qs-fig .v{font-size:21px;letter-spacing:-.025em}
+  .collar .qs-sub{font-size:12.5px}
+  .collar .q-band{height:38px;margin:6px 2px 4px}
+  .collar .co-say{font-size:15px}
+  .collar .street .q-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+  .collar .street .q-grid>div{padding:0;border-left:0}
+  .collar .street .q-grid .v{font-size:26px}
+  /* phone: the dock is part of the page flow right under the pickers: input, three chips, result strip, confirm */
+  .collar .dock{grid-template-columns:minmax(0,1fr);grid-template-areas:"f" "q" "go";gap:12px;align-items:stretch;margin:4px calc(var(--px) * -1) 2px;padding:12px var(--px) 14px}
+  .collar .dock .fld{gap:4px 10px}
+  .collar .dock .fld-row{flex-wrap:wrap;gap:8px}
+  .collar .dock .fld-in{flex:1 1 100%;font-size:24px;min-height:48px}
+  .collar .co-chips{flex:1 1 100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .collar .co-chips .co-chip{min-width:0;min-height:44px;font-size:14px;padding:0 6px}
+  .collar .dock .fld-max{font-size:13px;line-height:1.25}
+  .collar .dock .t-go{min-height:56px;font-size:16px;align-self:stretch}
+  .collar .co-act{align-self:stretch}
+  .collar .co-line{order:-1;font-size:14px}
+  .collar .box.instr.is-locked{--px:16px;--pt:18px;padding-bottom:18px}
+  .collar .co-lock{grid-template-columns:auto minmax(0,1fr);gap:14px 14px}
+  .collar .co-medal{width:52px;height:52px}
+  .collar .co-seal{width:26px;height:26px}
+  .collar .co-why{font-size:18px}
+  .collar .co-sub{font-size:13.5px}
+  .collar .co-go{grid-column:1/-1;width:100%;min-height:52px;font-size:16px}
+  .collar .co-word{font-size:28px;letter-spacing:.12em;padding:6px 10px 3px 16px}
+  .collar .co-slip{font-size:13px;max-width:92%}
   .collar .sc-figs{margin-left:0;gap:2px 16px}
-  .collar .sc-figs b{font-size:17px}
-  /* the scroll area keeps a bar's height of room so no sentence is left under the sticky dock */
-  .collar{padding-bottom:var(--dock-h,150px)}
-  .panel-wrap:has(.tool.collar){scroll-padding-bottom:var(--dock-h,150px)}
+  .collar .sc-figs b{font-size:18px}
+  .collar .r-side .t-hint{font-size:12.5px}
+  .collar .r-main span{font-size:13px}
+  .collar .street .t-hint,.collar .street .q-grid .sub{font-size:13px}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .collar .dock .t-go.ready,.collar .dock .t-go.nudge,.collar .co-blocked .co-seal{animation:none}
-  .collar .dock .t-go,.collar .dock .max{transition:none}
+  .q-strip.bump .b-fill,.q-strip.bump .b-f,.q-strip.bump .b-c{animation:none}
+  .collar .dock .fld-in.tick,.collar .dock .t-go.ready,.collar .dock .t-go.nudge,.collar .instr.stamped,.collar .row-item.fresh{animation:none}
+  .collar .dock .t-go,.collar .co-chip,.collar .co-go,.collar .seg2 button,.collar .quote{transition:none}
+  .collar .co-stamp,.collar .co-word,.collar .co-slip{animation:none}
+  .collar .co-word::after{display:none}
+  .collar .co-stamp{transition:none}
   .q-band .b-fill,.q-band .b-pin{transition:none}
 }

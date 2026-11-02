@@ -436,11 +436,11 @@ function resolvePending(s, type) {
 }
 
 // ---------------------------------------------------------------- collars and puts
-export function collarQuote(state, tenorMonths, putPct) {
-  return quoteCollar(state, getCtx(state), tenorMonths, putPct);
+export function collarQuote(state, tenorMonths, putPct, shares) {
+  return quoteCollar(state, getCtx(state), tenorMonths, putPct, shares);
 }
 
-function quoteCollar(s, ctx, tenorMonths, putPct) {
+function quoteCollar(s, ctx, tenorMonths, putPct, shares) {
   const i = s.i, S = ctx.close[i];
   const expiry = tradingDateOnOrAfter(ctx.prices, addMonths(s.d, tenorMonths));
   const T = daysBetween(s.d, expiry) / 365;
@@ -467,6 +467,12 @@ function quoteCollar(s, ctx, tenorMonths, putPct) {
   };
   if (putPct > 0.9 + EPS) out.error = "The floor must be at most 90% of today's price.";
   else if (z.Kc < 1.1 * S - EPS) out.error = "At this floor the cap would sit below 110% of today's price, which is too tight a band for the game.";
+  // Totals for a typed share count: the least the shares are worth at expiry (floor) and the most (cap), in cents.
+  if (Number.isInteger(shares) && shares > 0) {
+    out.shares = shares;
+    out.floorValue = Math.round(shares * Kp * 100) / 100;
+    out.capValue = Math.round(shares * z.Kc * 100) / 100;
+  }
   return out;
 }
 

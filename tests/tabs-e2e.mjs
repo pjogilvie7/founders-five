@@ -129,7 +129,8 @@ const q = await txt('.collar .quote');
 ok(/model price/.test(q) && /Floor/.test(q) && /Cap/.test(q) && /\$0/.test(q), 'collar shows a live model-price quote: floor, cap, zero cost');
 ok(/Band rule/.test(q), 'band rule shown');
 await fill('.collar .fld-in', 50000);
-ok(/^Collar 50,000 shares for 12 months$/.test(await txt('.collar .t-go')), 'collar confirm button names shares and tenor');
+ok((await txt('.collar .t-go')) === 'Collar 50,000 shares', 'collar confirm button names the shares (floor and cap live in the result strip)');
+ok(/50,000 shares: at least \$[\d,]+ until .* \(floor\)\. Above \$[\d,]+ you give up the gain \(cap\)\./.test(await txt('.collar .co-say')), 'collar quote card shows live floor and cap totals for the typed shares');
 ok(/Held until/.test(await txt('.collar .t-prev')) && /put pays you/.test(await txt('.collar .t-prev')) && /you pay the call/.test(await txt('.collar .t-prev')), 'collar preview shows the hold date, floor and cap terms');
 await shot('04a-collar-ready-1280');
 await page.setViewportSize({ width: 375, height: 812 }); await wait(400); await shot('04b-collar-ready-375');
@@ -314,11 +315,14 @@ const TABS = ['stock', 'plan', 'collar', 'credit', 'cash'];
 const overflow = () => page.evaluate(() => { const w = window.innerWidth + 1; return { doc: document.documentElement.scrollWidth <= w, panel: [...document.querySelectorAll('.panel, .tool, .plate, .box')].filter((e) => e.offsetParent).every((e) => e.scrollWidth <= e.clientWidth + 1 || getComputedStyle(e).overflowX !== 'visible') }; });
 for (const [name, vp] of [['1280x800', { width: 1280, height: 800 }], ['375x812', { width: 375, height: 812 }]]) {
   await page.setViewportSize(vp); await wait(500);
+  // let any harness toast (e.g. the synthetic maintenance-call test banner) expire so it does not sit in the panel captures
+  await page.waitForFunction(() => !document.querySelector('.toast'), null, { timeout: 8000 }).catch(() => {});
   for (const id of TABS) {
     await tab(id);
     if (id === 'stock') await fill('.stock .fld-in', 12000);
     if (id === 'collar') { await fill('.collar .fld-in', 20000); await page.locator('.collar .street').evaluate((e) => { e.open = false; }); }
     await wait(500);
+    await page.waitForFunction(() => ![...document.querySelectorAll('.toast')].some((t) => /^Test banner/.test(t.textContent)), null, { timeout: 8000 }).catch(() => {});
     await page.locator('.panel-wrap').evaluate((e) => { e.scrollTop = 0; });
     await shot(`${name}-${id}`);
     // second shot scrolled to the bottom for tall panels

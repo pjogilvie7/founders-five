@@ -9,6 +9,7 @@
 .lockcard{display:none}
 
 @media (max-width:899px){
+  .paper{--slab:0 1px 0 #fff9 inset,0 3px 0 -1px color-mix(in srgb,var(--ink) 22%,var(--paper-line)),0 12px 18px -12px rgb(24 38 47/.5)}
 
   /* ---------------------------------------------------------------- shell */
   #root:has(#screen[data-screen=play],#screen[data-screen=watch]) .site-foot{display:none}
@@ -44,9 +45,18 @@
   .rail-host .lamp-text::before{font:600 14px/1.2 var(--f-body);letter-spacing:.01em;text-transform:none;color:var(--rail-text)}
   .rail-host .rail:not(.win-open) .lamp-text::before{content:"Closed";color:var(--rail-muted)}
   .rail-host .rail.win-open .lamp-text::before{content:"Open"}
-  .rail-host .transport{grid-area:1/3;gap:4px;justify-self:end}
-  .rail-host .speeds{gap:4px}
-  .rail-host .rail .btn,.rail-host .btn{min-height:36px;min-width:38px;padding:0 8px;border-radius:6px;box-shadow:none;
+  .rail-host .transport{grid-area:1/3;gap:3px;justify-self:end}
+  .rail-host .speeds{gap:3px}
+  /* the ? lives here (paper.js docks it after the speed keys): the same key family, quieter, never floating over the board */
+  .rail-host .help{flex:none;width:34px;height:36px;min-width:34px;margin:0;padding:0;border-radius:6px;box-shadow:none;background:transparent;
+    border:1px solid var(--rail-line);color:var(--rail-muted);font:600 15px/1 var(--f-body);display:grid;place-items:center;
+    transition:background .15s,color .15s,border-color .15s}
+  .rail-host .help::before{content:"";position:absolute;inset:-4px -3px}
+  .rail-host .help{position:relative}
+  .rail-host .help:hover{background:#223a49;color:var(--rail-text);border-color:var(--rail-muted)}
+  .rail-host .help:active{transform:scale(.94);box-shadow:none}
+  .rail-host .help[inert]{opacity:.4}
+  .rail-host .rail .btn,.rail-host .btn{min-height:36px;min-width:34px;padding:0 6px;border-radius:6px;box-shadow:none;
     background:var(--rail-2);border:1px solid var(--rail-line);color:var(--rail-text);font:600 14px/1 var(--f-num);letter-spacing:0}
   .rail-host .btn:hover{background:#223a49}
   .rail-host .btn:active{transform:scale(.94);box-shadow:none}
@@ -99,79 +109,103 @@
   .rail-host .marks{display:none}
 
   /* the rivals / rules sheet drops straight from under the header */
-  .rail-host .rail-more{top:calc(100% + 1px);border-top:0;box-shadow:0 20px 30px -8px #000d;max-height:min(66dvh,520px);overscroll-behavior:contain}
+  /* one material: the sheet is cream paper with ink type and a gold edge, like the board under it. The rail tokens are redefined
+     inside it, so every row and drawer in it follows without a rule of its own. */
+  .rail-host .rail-more{top:calc(100% + 1px);border-top:0;max-height:min(66dvh,520px);overscroll-behavior:contain;
+    --rail:var(--paper);--rail-2:color-mix(in srgb,var(--paper) 55%,#fff);--rail-line:var(--paper-line);--rail-text:var(--ink);--rail-muted:var(--muted);
+    --gold:#7C5E1E;--good-lit:var(--good);--seal-lit:var(--seal);
+    background:var(--paper);color:var(--ink);border-bottom:3px solid #B08A3E;box-shadow:0 16px 22px -12px rgb(24 38 47/.6)}
+  .rail-host .rail-more .rivals li{background:transparent}
+  .rail-host .rail-more .rivals li.you{background:linear-gradient(90deg,color-mix(in srgb,#B08A3E 22%,transparent),transparent 85%)}
+  .rail-host .rail-more :focus-visible{outline-color:var(--collar)}
   /* the open sheet rides above a maintenance banner */
   .play .rail-host:has(.rail.more-open){z-index:40}
   .rail-host .rail.more-open .rail-more{animation:phoneDrop .24s var(--ease-out)}
   @keyframes phoneDrop{from{opacity:0;transform:translateY(-8px)}}
 
   /* ---------------------------------------------------------------- paper */
-  .paper{--nav-h:52px;--tick-h:34px;--toast-h:56px;--safe:env(safe-area-inset-bottom,0px);display:flex;flex-direction:column}
+  .paper{--nav-h:56px;--tick-h:38px;--toast-h:56px;--safe:env(safe-area-inset-bottom,0px);display:flex;flex-direction:column}
   .paper .banner-slot{order:0}
 
   /* the board: the wrap scrolls; the toast slot is carved out of its bottom edge instead of floating over it */
   .paper .panel-wrap{order:1;flex:1 1 0;min-height:0;position:static;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
-  .paper .panel{max-width:none;padding:10px 12px 18px}
+  .paper .panel{max-width:none;padding:10px 12px 22px;scroll-padding-bottom:22px}
+  /* no headline yet: the news row gives its space back; the ? then floats over the board's corner, so the board keeps room for it */
+  .paper .ticker.empty{display:none}
+  /* ...and the toast slot and scroll room stop reserving its height */
+  .paper:has(.ticker.empty){--tick-h:0px}
   /* content that runs under the news strip fades out instead of being sliced */
   .paper .panel-wrap::after{content:"";display:block;position:sticky;bottom:0;height:16px;margin-top:-16px;pointer-events:none;background:linear-gradient(transparent,var(--paper))}
-  .paper .toasts{position:absolute;left:0;right:0;bottom:calc(var(--nav-h) + var(--safe) + var(--tick-h));height:var(--toast-h);max-width:none;
+  .paper .toasts{position:absolute;left:0;right:0;bottom:calc(var(--nav-h) + var(--safe));height:var(--toast-h);max-width:none;
     display:grid;align-content:center;justify-items:stretch;gap:0;padding:0 10px;background:var(--paper);border-top:1px solid var(--paper-line);pointer-events:auto;z-index:5}
   .paper .toasts:not(:has(.toast)){display:none}
   .paper:has(.notice-slot .moment,.banner-slot .margin) .toasts{display:none}
   .paper:has(.toast):not(:has(.notice-slot .moment,.banner-slot .margin)) .panel-wrap{margin-bottom:var(--toast-h)}
-  .paper .toast{max-width:none;padding:6px 11px 6px 12px;font-size:13px;line-height:1.35;border:0;border-left:3px solid var(--gold);border-radius:3px;box-shadow:none;
-    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-  .paper .toast.err{border-left-color:var(--seal-lit)}
+  .paper .toast{max-width:none;padding:6px 11px 6px 12px;font-size:13px;line-height:1.35;border:1px solid var(--paper-line);border-left:4px solid #B08A3E;border-radius:3px;box-shadow:none;
+    background:#FBF7EC;color:var(--ink);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+  .paper .toast.err{border-left-color:var(--seal)}
   .paper .toast.warn{border-left-color:var(--warn)}
-  .paper .toast.ach{border-left-color:var(--ink)}
+  .paper .toast.ach{border-left-color:var(--ink);background:color-mix(in srgb,#B08A3E 18%,#FBF7EC);font-weight:600}
   .paper .toast:not(:last-child){display:none}
 
-  .paper .ticker{order:2;flex:none;height:var(--tick-h);min-height:0;padding:0 46px 0 14px;gap:10px;align-items:center;font-size:12.5px;border-top:1px solid var(--paper-line);background:var(--paper-2);white-space:nowrap}
-  .paper .tk-lbl{font-size:9.5px;letter-spacing:.16em}
+  /* the news line sits under the header, so the Sell bar and the toast slot are the last things above the nav */
+  .paper .ticker{order:0;flex:none;height:var(--tick-h);min-height:0;padding:0 14px;gap:10px;align-items:center;font-size:13px;border-top:0;border-bottom:1px solid var(--paper-line);background:var(--paper-2);white-space:nowrap}
+  .paper .tk-lbl{font-size:13px;letter-spacing:.06em}
   .paper .tk-text{flex:1 1 auto;min-width:0;color:var(--muted)}
-  .paper .tk-text .when{font-size:11.5px}
+  .paper .tk-text .when{font-size:13px}
 
   /* bottom nav: every tool, equal width, icon over label; sealed tools are dimmed and still open their reason. */
   .paper .tabbar{order:3;flex:none;position:relative;display:flex;align-items:stretch;gap:0;padding:0 0 var(--safe);height:calc(var(--nav-h) + var(--safe));
     border-top:1px solid var(--ink);border-bottom:0;background:var(--paper-2)}
   .paper .tabs{display:flex;flex:1 1 auto;margin:0;overflow:visible}
-  .paper .tab{flex:1 1 0;flex-direction:column;justify-content:center;gap:2px;min-height:0;min-width:0;width:calc(100% / 7);margin:0;padding:5px 2px 4px;border:0;border-radius:0;
-    background:transparent;color:var(--muted);font-size:10.5px;font-weight:600;line-height:1.12;text-align:center;white-space:nowrap;position:relative;overflow:hidden;
+  .paper .tab{flex:1 1 0;flex-direction:column;justify-content:center;gap:3px;min-height:0;min-width:0;width:calc(100% / 7);margin:0;padding:6px 1px 5px;border:0;border-radius:0;
+    background:transparent;color:var(--muted);font-size:11px;font-weight:600;line-height:1.1;text-align:center;white-space:nowrap;position:relative;overflow:hidden;
     box-shadow:none;transition:background .15s,color .15s}
   .paper .tab+.tab::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:1px;background:var(--paper-line)}
-  .paper .tab .lbl{display:block;max-width:100%;overflow:hidden;text-overflow:clip;letter-spacing:-.03em;padding-inline:0}
-  .paper .tab .ico,.paper .tab .ico img,.paper .tab .gl{width:20px;height:20px}
+  .paper .tab .lbl{display:block;max-width:100%;overflow:hidden;text-overflow:clip;letter-spacing:0;padding-inline:0}
+  .paper .tab .ico,.paper .tab .ico img,.paper .tab .gl{width:22px;height:22px}
   .paper .tab:hover{background:color-mix(in srgb,var(--paper) 60%,var(--paper-2))}
   .paper .tab.active{background:var(--paper);color:var(--ink);box-shadow:inset 0 3px 0 var(--gold);border:0}
   .paper .tab.active::before,.paper .tab.active+.tab::before{opacity:0}
   .paper .tab:active{background:var(--paper)}
   .paper .tab:focus-visible{outline-offset:-3px}
   .paper .tab kbd{display:none}
-  /* Sealed tools stay visible and tappable one by one: each opens its own rule and unlock date (PRD 4.4). */
-  .paper .tab.locked{display:flex;color:var(--muted);opacity:.8}
-  .paper .tab.locked .ico,.paper .tab.locked .gl{width:18px;height:18px}
-  /* the padlock is quiet grey, not four red alarms; the one red thing on the bar is the verb on the board above it */
-  .paper .tab.locked .gl.lock{fill:color-mix(in srgb,var(--muted) 70%,var(--paper-2));stroke:var(--paper-2)}
-  /* the ? refresher sits inside the news strip, at its right end */
-  .paper .help{position:absolute;right:8px;bottom:calc(100% + 3px);flex:none;width:28px;height:28px;margin:0;z-index:6;
-    font-size:14px;box-shadow:none;border-color:var(--paper-line);background:var(--paper);color:var(--muted)}
-  .paper .help::before{content:"";position:absolute;inset:-8px}
-  .paper .help:hover{color:var(--ink);border-color:var(--ink)}
-  .paper .help:active{transform:scale(.92);box-shadow:none}
+  /* Sealed tools stay visible and tappable one by one: each opens its own rule and unlock date (PRD 4.4).
+     They read as intentional, not disabled: the tool's own engraved icon at full strength, a small gold lock badge pinned to its
+     corner, and a label at normal weight in muted ink. The oxblood seal glyph the script draws is turned into the badge. */
+  .paper .tab{color:var(--ink)}
+  .paper .tab.locked{display:flex;color:color-mix(in srgb,var(--ink) 58%,var(--paper-2));font-weight:500}
+  .paper .tab.locked .lbl{font-weight:500;color:inherit}
+  .paper .tab.locked .ico{position:static;width:22px;height:22px;overflow:visible;background:center/22px 22px no-repeat;opacity:.9}
+  .paper .tab#tab-plan.locked .ico{background-image:url(../../assets/icons/plan.svg)}
+  .paper .tab#tab-collar.locked .ico{background-image:url(../../assets/icons/collar.svg)}
+  .paper .tab#tab-credit.locked .ico{background-image:url(../../assets/icons/credit.svg)}
+  .paper .tab#tab-put.locked .ico{background-image:url(../../assets/icons/put.svg)}
+  .paper .tab#tab-exchange.locked .ico{background-image:url(../../assets/icons/exchange.svg)}
+  /* the badge sits in the slot's top-right corner, clear of the icon and the label */
+  .paper .tab.locked .gl.lock{position:absolute;top:3px;left:calc(50% + 5px);right:auto;width:11px;height:11px;padding:1.5px;box-sizing:content-box;border-radius:50%;
+    fill:var(--gold);stroke:var(--ink);stroke-width:1.5;background:var(--paper-2);box-shadow:0 0 0 1px color-mix(in srgb,var(--ink) 55%,var(--paper-2));opacity:1}
+  .paper .tab.locked .gl.lock path{fill:none;stroke:var(--ink);stroke-width:1.9}
+  .paper .tab.locked .gl.lock circle{stroke:none}
+  .paper .tab.active .gl.lock{background:var(--paper);box-shadow:0 0 0 1px var(--ink)}
+
+  .paper .tabbar{position:static}
+  /* tools that kept room for the ? beside their title no longer need it: it is in the header */
+  .paper .help{display:none}
 
   /* maintenance call: same words and buttons, in less height, so the chart stays in view */
   .paper .banner-slot .margin{grid-template-columns:minmax(0,1fr);grid-template-areas:"main" "stakes" "btns";gap:6px;padding:9px 12px 12px}
   .paper .margin .m-h{font-size:19px;margin-bottom:1px}
-  .paper .margin p{font-size:12.5px;line-height:1.38;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+  .paper .margin p{font-size:13px;line-height:1.38;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
   .paper .m-stakes{grid-template-columns:auto 1fr 1fr;align-items:end;gap:0 14px;padding:6px 0 0;border-left:0;border-top:1px solid rgb(241 236 223 / .35)}
   .paper .m-stakes .big{grid-column:1;grid-row:1}
   .paper .m-stakes .big dd{font-size:22px}
   .paper .m-stakes>div:nth-child(2){grid-column:2;grid-row:1}
   .paper .m-stakes>div:nth-child(3){grid-column:3;grid-row:1}
-  .paper .m-stakes dt{font-size:9.5px;letter-spacing:.12em}
+  .paper .m-stakes dt{font-size:13px;letter-spacing:0;text-transform:none}
   .paper .m-stakes dd{font-size:14px}
   .paper .m-btns{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:6px}
-  .paper .margin .btn{min-height:42px;padding:4px 6px;font-size:12.5px;line-height:1.2;min-width:0}
+  .paper .margin .btn{min-height:42px;padding:4px 6px;font-size:13px;line-height:1.2;min-width:0}
   .paper .margin .btn[data-mc=post]{grid-column:auto}
 
   /* ---------------------------------------------------------------- tool panels */
@@ -190,41 +224,47 @@
   .panel .tool.stock>.plate{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);padding:0;border:0;white-space:nowrap}
   .panel .tool.stock>.bigs{order:1}
   .panel .tool.stock>.t-chart{order:2}
-  .panel .tool.stock>.lockcard{order:3}
-  .panel .tool.stock>.keys{order:4}
+  .panel .tool.stock>.keys{order:3}
+  .panel .tool.stock>.lockcard{order:4}
   .panel .tool.stock .lower{display:contents}
   .panel .tool.stock .sellbox{order:5}
-  .panel .tool.stock .lower>.box:not(.sellbox){order:6;margin-top:22px}
+  .panel .tool.stock .lower>.box:not(.sellbox){order:6}
+  /* the board ends flush with the Sell bar: no padding under the last card, a small spacer instead */
+  .panel:has(.tab-body[data-tab=stock]:not([hidden])){padding-bottom:0;scroll-padding-bottom:0}
+  .panel .tool.stock{padding-bottom:0}
+  .panel .tool.stock::after{content:"";order:8;flex:none;height:10px;margin-top:-4px}
+  /* the pinned Sell bar is about 74px tall: the shares card keeps that much clear above it, so at rest the two never touch */
+  .panel .tool.stock .lower>.box:not(.sellbox){scroll-margin-bottom:84px}
 
   /* three numbers as one ledger strip */
-  .panel .tool.stock .bigs{grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:7px 0 8px;border:1px solid var(--paper-line);
-    background:color-mix(in srgb,var(--paper) 70%,#fff)}
-  .panel .tool.stock .big{padding:0 10px;gap:1px}
+  .panel .tool.stock .bigs{grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:6px 0 7px;min-height:54px;align-items:center;border:1px solid var(--paper-line);
+    background:color-mix(in srgb,var(--paper) 70%,#fff);border-radius:3px;box-shadow:var(--slab)}
+  .panel .tool.stock .big{padding:0 8px;gap:0;min-width:0}
   .panel .tool.stock .big+.big{border-left:1px solid var(--paper-line)}
-  .panel .tool.stock .big .k{font-size:9.5px;letter-spacing:.12em;white-space:nowrap}
-  .panel .tool.stock .big .v{font-size:19px;line-height:1.2}
+  .panel .tool.stock .big .k{font:500 13px/1.2 var(--f-body);letter-spacing:0;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:clip}
+  .panel .tool.stock .big .v{font-size:18px;line-height:1.2;white-space:nowrap}
   .panel .tool.stock .big .sub{display:none}
   .panel .bigs{gap:10px 14px}
   .panel .big .v{font-size:23px}
 
   /* the Sell card: a small engraved slip with a large pressable plate under it */
   .panel .tool.stock .sellbox{padding:9px 10px 10px;border-color:var(--ink);background:color-mix(in srgb,var(--paper) 70%,#fff);
-    box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--paper-line)}
+    box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--paper-line),0 3px 0 -1px color-mix(in srgb,var(--ink) 22%,var(--paper-line)),0 12px 18px -12px rgb(24 38 47/.5)}
   .panel .tool.stock .sellbox>h3{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);margin:0;white-space:nowrap}
   .panel .tool.stock .aform{gap:7px}
   .panel .tool.stock .fld{gap:3px}
-  .panel .tool.stock .fld-l{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase}
+  .panel .tool.stock .fld-l{font:600 13px/1.2 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
   .panel .tool.stock .fld-in{min-height:46px;font-size:20px}
   .panel .tool.stock .fld-row .max{min-height:46px;min-width:60px}
   .panel .tool.stock .fld-max:empty{display:none}
-  .panel .tool.stock .gate{font-size:12.5px;line-height:1.35;padding:6px 10px}
+  .panel .tool.stock .gate{font-size:13px;line-height:1.35;padding:6px 10px}
   .panel .tool.stock .gate .lockdot{margin-top:4px}
   .panel .tool.stock .pv{padding:7px 10px;gap:6px 10px;margin:0;grid-template-columns:repeat(3,minmax(0,1fr))}
   .panel .tool.stock .pv dd{font-size:14px}
-  .panel .tool.stock .pv dt{font-size:9.5px;letter-spacing:.1em}
-  .panel .tool.stock .t-hint{font-size:12px;line-height:1.4}
+  .panel .tool.stock .pv dt{font:500 13px/1.2 var(--f-body);letter-spacing:0;text-transform:none}
+  .panel .tool.stock .t-hint{font-size:13px;line-height:1.4}
   .panel .tool.stock .t-prev>.t-hint:only-child{display:none}
-  .panel .tool.stock .fld-max{margin:0;font-size:11.5px;line-height:1.3;color:var(--muted)}
+  .panel .tool.stock .fld-max{margin:0;font-size:13px;line-height:1.3;color:var(--muted)}
   .panel .tool.stock .t-res{padding:6px 10px;font-size:13px;line-height:1.4}
   /* the verb: a tall engraved oxblood plate, pressed by a soft inner shadow rather than a hard foot */
   .panel .tool.stock .t-go{min-height:54px;font-size:16px;letter-spacing:.05em;border:1px solid #3a0b08;border-radius:5px;
@@ -243,49 +283,123 @@
   .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown){display:flex;align-items:center;gap:0;padding:0;border:1px solid var(--paper-line);
     background:var(--paper-2);box-shadow:none;border-radius:3px;overflow:hidden}
   .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown)::before{content:"Sell";flex:none;align-self:stretch;display:flex;align-items:center;padding:0 12px;
-    font:600 10px/1 var(--f-label,inherit);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);border-right:1px solid var(--paper-line)}
+    font:600 13px/1 var(--f-body);letter-spacing:.02em;color:var(--muted);border-right:1px solid var(--paper-line)}
   .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown) .aform{flex:1 1 auto;min-width:0;display:block}
   .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown) :is(.fld,.t-go,.t-head,.t-prev,.t-res){display:none}
   .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown) .gate{border:0;background:transparent;padding:10px 12px;font-size:13px;align-items:center}
   .panel .tool.stock .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown) .gate .lockdot{margin-top:0}
 
-  /* the chart is the game: it takes every pixel the rest of the board leaves. Sell form open: leave room for it. */
-  .panel .t-chart{height:clamp(220px,38vh,460px);height:clamp(220px,38dvh,460px);padding:4px 4px 2px;flex:none}
-  .panel .tool.stock>.t-chart{height:clamp(190px,calc(100vh - 474px),420px);height:clamp(190px,calc(100dvh - 474px),420px)}
-  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown)>.t-chart{height:clamp(200px,calc(100vh - 366px),480px);height:clamp(200px,calc(100dvh - 366px),480px)}
-  /* nothing to sell yet: the countdown card takes the room the sell form gave up, and the chart gives back the height it uses */
-  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown):has(.lockcard:not([hidden]))>.t-chart{height:clamp(190px,calc(100vh - 462px),460px);height:clamp(190px,calc(100dvh - 462px),460px)}
+  /* the chart is the game, but it never takes more than about 41% of the screen: the Sell bar and the board under it stay in reach.
+     Axis text is 11px or more (chart.js). */
+  .panel .t-chart{height:clamp(200px,41vh,460px);height:clamp(200px,41dvh,460px);padding:4px 4px 2px;flex:none;position:relative}
+  /* shares still sealed, none free: the countdown card is the whole bottom half, so the chart gives back that height */
+  .panel .tool.stock:has(.lockcard.solo:not([hidden]))>.t-chart{height:clamp(190px,calc(100vh - 600px),460px);height:clamp(190px,calc(100dvh - 600px),460px)}
+  /* the window is shut but some shares are free: the card and the one-line reason both show */
+  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown):has(.lockcard:not([hidden],.solo))>.t-chart{height:clamp(190px,calc(100vh - 560px),460px);height:clamp(190px,calc(100dvh - 560px),460px)}
 
-  /* ------------------------------------------------ the countdown card: an engraved slip with a vignette, the next release and a fuse
-     Shown only while the sell form is folded to one line, so the screen always has one thing to watch and one thing to do. */
-  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown)>.lockcard:not([hidden]){display:grid}
-  .lockcard{grid-template-columns:80px minmax(0,1fr) auto;align-items:center;column-gap:10px;position:relative;margin:0;padding:8px 14px 14px 10px;
-    border:1px solid var(--ink);border-radius:2px;background:color-mix(in srgb,var(--paper) 70%,#fff);overflow:hidden;
-    box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--paper-line)}
-  .lc-art{width:80px;height:60px;display:grid;place-items:center}
+  /* the key is its own row directly under the plot (never over the price line): four marks, one line, 12px */
+  .panel .tool.stock>.keys{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:0 8px;margin:-4px 0 0;padding:0 6px;font:500 12px/1.3 var(--f-body);color:var(--muted)}
+  .panel .tool.stock>.keys li{flex:none;gap:5px;white-space:nowrap}
+  .panel .tool.stock>.keys i{width:12px}
+  .panel .tool.stock>.keys li:nth-child(n+5){display:none}
+
+  /* ------------------------------------------------ the Sell bar: shares free, so the input, MAX and the verb are pinned directly above the nav.
+     The board scrolls beneath it; folded (sealed or window shut) the card keeps its place in the flow and nothing is pinned. */
+  /* ONE row: shares input, MAX, Sell. The label stays for screen readers. The sale breakdown folds to a single summary line under the row
+     (tap the chevron to open it); the receipt after a sale is a toast, never part of the bar. */
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)){order:9;position:sticky;bottom:0;z-index:7;
+    margin:0;padding:11px 12px 8px;max-height:40dvh;overflow-y:auto;overscroll-behavior:contain;
+    border:1px solid var(--ink);border-bottom:0;border-radius:6px 6px 0 0;background:#FBF7EC;
+    box-shadow:inset 0 3px 0 #FBF7EC,inset 0 4px 0 #B08A3E,0 -14px 18px -14px rgb(24 38 47/.55)}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .aform{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:4px 8px;align-items:stretch;padding:0}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) :is(.fld,.fld-row){display:contents}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .fld-l{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);margin:0;white-space:nowrap}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .fld-max{display:none}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .fld-in{grid-area:1/1;min-height:46px;min-width:0}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .fld-row .max{grid-area:1/2;min-height:46px;min-width:54px;padding-inline:8px}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .t-go{grid-area:1/3;width:112px;min-height:46px;padding:4px 8px;font-size:13.5px;letter-spacing:.03em;line-height:1.15;margin:0;text-wrap:balance}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) :is(.t-head,.t-prev,.t-gate){grid-column:1/-1}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) :is(.t-head,.t-prev,.t-gate,.t-res):is(:empty,:has(>.t-hint:only-child)){display:none}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .t-gate .gate{padding:4px 8px;font-size:12.5px;line-height:1.3}
+  /* the summary line: first figure only, with room on the right for the chevron */
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .t-prev{padding-right:46px;min-height:30px}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .pv{display:block;padding:0;border:0;background:transparent;box-shadow:none;margin:0}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .pv>div{display:none}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .pv>div:first-child{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:5px 2px 0}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .pv dt{font:500 13px/1.3 var(--f-body);color:var(--muted)}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .pv dd{font-size:15px;margin:0}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .t-hint{display:none;margin:0}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)).open .t-prev{padding-right:0}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)).open .pv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 8px;padding:5px 2px 2px}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)).open .pv>div,.panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)).open .pv>div:first-child{display:block;padding:0}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)).open .t-hint{display:block;padding:2px 36px 0 2px;font-size:12.5px;line-height:1.4}
+  /* the fold toggle sits at the right end of the summary line */
+  .panel .tool.stock .sell-more{display:none;position:absolute;right:8px;bottom:0;width:46px;height:36px;padding:0;border:0;background:transparent;cursor:pointer;color:var(--ink);
+    -webkit-tap-highlight-color:transparent}
+  .panel .tool.stock .sellbox:has(.t-prev .pv) .sell-more{display:block}
+  .panel .tool.stock .sell-more::before{content:"";position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-6px 0 0 -4px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+    transform:rotate(-135deg);transition:transform .2s var(--ease-out)}
+  .panel .tool.stock .sell-more[aria-expanded=true]::before{transform:rotate(45deg);margin-top:-8px}
+  .panel .tool.stock .sell-more:active::before{opacity:.6}
+  .panel .tool.stock .sell-more:focus-visible{outline:2px solid var(--collar);outline-offset:-3px;border-radius:4px}
+  /* the receipt: a toast above the bar that fades on its own */
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)) .t-res.pop{position:fixed;left:12px;right:12px;top:calc(var(--hdr-h,124px) + 8px);bottom:auto;z-index:60;padding:9px 12px;border:1px solid var(--ink);border-left:4px solid var(--good);border-radius:4px;
+    background:#FBF7EC;box-shadow:0 8px 18px -8px rgb(24 38 47/.6);font-size:13px;line-height:1.4;pointer-events:none;animation:phoneToast 5.2s var(--ease-out) both}
+  /* once the next amount is being typed, the old receipt goes so it never describes a different sale than the field shows */
+  .panel .tool.stock .sellbox:has(.fld-in:not(:placeholder-shown)) .t-res.pop{display:none}
+  @keyframes phoneToast{0%{opacity:0;transform:translateY(10px)}7%,82%{opacity:1;transform:none}100%{opacity:0;visibility:hidden}}
+  /* the rivals / rules sheet owns the screen while it is open: no Sell bar behind it */
+  .play:has(.rail.more-open) .panel .tool.stock .sellbox{display:none!important}
+
+  /* ------------------------------------------------ the countdown card: a raised paper plate that says what is sealed and what happens next
+     Shown while the sell form is folded to its reason. With nothing free it replaces the one-line SELL strip; the card is the reason. */
+  .panel .tool.stock:has(.sellbox .t-gate .gate):has(.sellbox .fld-in:placeholder-shown)>.lockcard:not([hidden]){display:grid;animation:lcIn .36s var(--ease-out) both}
+  .panel .tool.stock:has(.lockcard.solo:not([hidden])) .sellbox:has(.t-gate .gate):has(.fld-in:placeholder-shown){display:none}
+  @keyframes lcIn{from{opacity:0;transform:translateY(10px)}}
+  .lockcard{grid-template-columns:88px minmax(0,1fr) auto;grid-template-areas:"art h h" "s s count" "fuse fuse fuse" "run run run";align-items:center;column-gap:12px;row-gap:8px;
+    position:relative;margin:0 0 4px;padding:14px 16px 14px;border:1px solid var(--ink);border-radius:4px;overflow:hidden;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--paper) 55%,#fff),color-mix(in srgb,var(--paper) 88%,var(--paper-2)));
+    box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--paper-line),0 4px 0 -1px color-mix(in srgb,var(--ink) 55%,var(--paper-line)),0 16px 22px -12px rgb(24 38 47/.55)}
+  .lc-art{grid-area:art;width:88px;height:62px;display:grid;place-items:center}
   .lc-art img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;opacity:.92}
-  .lc-main{min-width:0}
-  .lc-k{font:600 10px/1 var(--f-body);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-  .lc-h{font:500 14px/1.25 var(--f-body);margin-top:5px;color:var(--ink);white-space:nowrap}
-  .lc-h b{font:600 17px/1 var(--f-num);color:var(--seal)}
-  .lc-s{font:500 13px/1.2 var(--f-num);color:var(--muted);margin-top:3px}
-  .lc-count{display:grid;justify-items:end;gap:3px;text-align:right}
-  .lc-count b{font:500 30px/1 var(--f-num);color:var(--ink);display:block;transform-origin:100% 50%}
-  .lc-count span{font:500 12px/1 var(--f-body);color:var(--muted)}
+  .lc-h{grid-area:h;margin:0;font:600 19px/1.2 var(--f-body);color:var(--ink);text-wrap:balance}
+  .lc-h b{font:600 19px/1.2 var(--f-num);color:var(--seal);white-space:nowrap}
+  .lc-s{grid-area:s;margin:0;font:500 15px/1.35 var(--f-body);color:var(--ink);min-width:0}
+  .lc-s b{font-weight:600}
+  .lc-count{grid-area:count;display:grid;justify-items:end;gap:1px;margin:0;text-align:right}
+  .lc-count b{font:500 34px/1 var(--f-num);color:var(--ink);display:block;transform-origin:100% 50%}
+  .lc-count span{font:500 13px/1.2 var(--f-body);color:var(--muted)}
   .lc-count b.tick{animation:lcTick .3s var(--ease-pop)}
   @keyframes lcTick{from{opacity:.25;transform:translateY(-5px) scale(1.12)}}
-  .lc-fuse{position:absolute;left:12px;right:12px;bottom:9px;height:3px;border-radius:2px;background:var(--paper-line)}
-  .lc-fuse i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 60%,#000),var(--gold));transition:width .3s var(--ease-out)}
+  .lc-fuse{grid-area:fuse;position:relative;height:8px;margin-top:2px;border-radius:4px;background:color-mix(in srgb,var(--paper-line) 80%,var(--paper-2));box-shadow:inset 0 1px 2px rgb(24 38 47/.3)}
+  .lc-fuse i{display:block;height:100%;min-width:8px;border-radius:4px;background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 70%,#fff),var(--gold) 50%,color-mix(in srgb,var(--gold) 70%,#000));
+    box-shadow:0 1px 0 rgb(255 255 255/.4) inset;transition:width .3s var(--ease-out)}
+  .lc-until{display:none}
+  /* the one verb: a full-width oxblood plate (the primary button), thumb height, that runs the clock to the release (stock.js presses 4x and play on the rail) */
+  .lc-run{grid-area:run;width:100%;min-height:52px;margin:2px 0 0;padding:10px 14px;font:700 16px/1.2 var(--f-body);letter-spacing:.02em;text-wrap:balance;cursor:pointer;
+    color:var(--ink);border:1px solid var(--ink);border-radius:4px;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 72%,#fff),var(--gold) 55%,color-mix(in srgb,var(--gold) 82%,#000));
+    box-shadow:inset 0 0 0 2px #fff6,inset 0 0 0 3px color-mix(in srgb,var(--ink) 35%,transparent),0 3px 0 var(--ink);
+    transition:transform .12s var(--ease-out),box-shadow .12s var(--ease-out)}
+  .lc-run:active{transform:translateY(3px);box-shadow:inset 0 0 0 2px #fff6,inset 0 0 0 3px color-mix(in srgb,var(--ink) 35%,transparent),0 0 0 var(--ink)}
+  .lc-run:focus-visible{outline:3px solid var(--collar);outline-offset:3px}
+  .panel .btn.lc-run.going,.panel .btn.lc-run.going:active{cursor:default;opacity:1;transform:translateY(3px);color:var(--ink);background:color-mix(in srgb,var(--paper-2) 75%,var(--paper-line));
+    box-shadow:inset 0 2px 3px rgb(24 38 47/.3);border-color:var(--paper-line)}
   /* inside five days the card turns oxblood and the fuse breathes: the one thing about to happen */
   .lockcard.near{border-color:var(--seal)}
   .lockcard.near .lc-count b{color:var(--seal)}
   .lockcard.near .lc-fuse i{background:var(--seal);animation:lcFuse 1.6s ease-in-out infinite}
   @keyframes lcFuse{50%{opacity:.45}}
   /* legend: the four marks every card uses, in one row that wraps instead of clipping; the rest appear on the desktop board */
-  .panel .keys{flex-wrap:wrap;overflow:visible;white-space:normal;gap:3px 12px;margin:0;padding:0 2px;font-size:11px}
-  .panel .keys li{flex:none;gap:5px}
-  .panel .keys i{width:14px}
+  .panel .keys{flex-wrap:wrap;overflow:visible;white-space:normal;gap:2px 10px;margin:0;padding:0 2px;font-size:12px;line-height:1.3}
+  .panel .keys li{flex:none;gap:4px}
+  .panel .keys i{width:12px}
   .panel .keys li:nth-child(n+5){display:none}
+
+  /* "Where your shares are": a plain sentence-case title, a two-column legend of the parts that hold shares; empty parts stay out of the way */
+  .panel .tool.stock .lower>.box:not(.sellbox)>h3{font:600 15px/1.2 var(--f-body);letter-spacing:0;text-transform:none;color:var(--ink);margin:0 0 8px}
+  .panel .tool.stock .sharelegend{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 18px;margin-top:8px}
+  .panel .tool.stock .sharelegend li.zero{display:none}
 
   /* paper-side plates: a double keyline, no hard offset */
   .panel .btn{border-radius:4px;box-shadow:inset 0 0 0 2px var(--paper),inset 0 0 0 3px color-mix(in srgb,var(--ink) 30%,transparent)}
@@ -297,13 +411,10 @@
   .page-body{padding:20px 16px}
 }
 
-@media (max-width:399px){
-  .paper .tab{font-size:10px}
-}
 /* narrow phones: the longest label gets a short form so nothing touches the edge; the full name stays the accessible name */
 @media (max-width:459px){
   .paper .tab#tab-exchange .lbl{font-size:0;letter-spacing:0}
-  .paper .tab#tab-exchange .lbl::after{content:"Exch." / "";font-size:10.5px;font-weight:600;letter-spacing:-.02em}
+  .paper .tab#tab-exchange .lbl::after{content:"Exch." / "";font-size:11px;font-weight:600;letter-spacing:0}
 }
 /* a little more room: the long form of the window lamp, then the closing date */
 @media (min-width:430px) and (max-width:899px){
@@ -321,14 +432,16 @@
   .rail-host .cashrow::before{display:none}
   .rail-host .lamp-row{padding:3px 6px}
   .rail-host .lamp-text{display:none}
-  .paper .tab{font-size:9.5px}
   .paper .tab .lbl{overflow-wrap:normal}
 }
 
 /* wider phones and small tablets: a little more air in the nav and board */
 @media (min-width:520px) and (max-width:899px){
-  .paper .tab{font-size:12px}
-  .paper .panel{padding:14px 18px 18px}
+  .paper .panel{padding:14px 18px 22px}
+}
+/* the narrowest of the common phones: the clock row drops "of 98" (the fuse under it shows the same thing) so the five keys fit */
+@media (max-width:369px){
+  .rail-host .daylabel .dt{display:none}
 }
 
 /* landscape phones: keep the chart on screen */
@@ -342,9 +455,25 @@
 
 @media (max-width:899px) and (prefers-reduced-motion:reduce){
   .rail-host .pause.paused,.rail-host .rail.more-open .rail-more{animation:none}
-  .lc-count b.tick,.lockcard.near .lc-fuse i{animation:none}
+  .lc-count b.tick,.lockcard.near .lc-fuse i,.panel .tool.stock>.lockcard{animation:none!important}
   .lc-fuse i{transition:none}
+  .lc-run{transition:none}
+  .panel .tool.stock .sell-more::before{transition:none}
+  .panel .tool.stock .sellbox .t-res.pop{animation:phoneToastRM 5.2s linear both}
 }
+@keyframes phoneToastRM{0%,90%{opacity:1}100%{opacity:0;visibility:hidden}}
 
 /* Cash tab glyph: a short stack of coins in the same single-weight engraved line as the other tabs (replaces the columned building) */
 .tab#tab-cash .ico img{content:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32' fill='none' stroke='%2318262F' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cellipse cx='12' cy='24' rx='8' ry='3'/%3E%3Cpath d='M4 24v-4M20 24v-4'/%3E%3Cellipse cx='12' cy='20' rx='8' ry='3'/%3E%3Cpath d='M4 20v-4M20 20v-4'/%3E%3Cellipse cx='12' cy='16' rx='8' ry='3'/%3E%3Ccircle cx='23' cy='10' r='5.5'/%3E%3Cpath d='M23 7.200v5.600M21.300 8.600c.4-.8 3.400-.9 3.600.4.200 1.400-3.400.9-3.400 2.300 0 1.100 3.100 1.100 3.600.2'/%3E%3C/svg%3E")}
+
+/* ------------------------------------------------ scroll edges and depth (gauntlet phone r13)
+   Rows that run past the scroller's bottom, or under the sticky Sell bar, fade out instead of being sliced.
+   Lock card and run button: soft layered depth and a single keyline, no hard offset block. */
+@media (max-width:899px){
+  .paper .panel-wrap::after{height:44px;margin-top:-44px;background:linear-gradient(color-mix(in srgb,var(--paper) 0%,transparent),var(--paper) 85%)}
+  .panel .tool.stock .sellbox:not(:has(.t-gate .gate):has(.fld-in:placeholder-shown)){
+    box-shadow:inset 0 3px 0 #FBF7EC,inset 0 4px 0 #B08A3E,0 -14px 18px -14px rgb(24 38 47/.55),0 -34px 22px -8px var(--paper)}
+  .lockcard{box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4px var(--paper-line),0 1px 2px rgb(24 38 47/.18),0 14px 24px -14px rgb(24 38 47/.5)}
+  .lc-run{box-shadow:inset 0 0 0 2px #fff6,0 1px 2px rgb(24 38 47/.25),0 8px 14px -8px rgb(24 38 47/.45)}
+  .lc-run:active{transform:translateY(1px);box-shadow:inset 0 2px 4px rgb(24 38 47/.35)}
+}

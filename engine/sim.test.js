@@ -753,6 +753,19 @@ test("collar: last SpaceX data day uses the options smile; flat vol otherwise", 
   // a collar opened with the smile marks at ~zero (the vol offset is kept for the life of the collar)
 });
 
+test("collar: quote returns floor and cap totals for a share count, in cents", () => {
+  const s = runToEnd(game(spcxLike, "engineer", { spcxOptions }));
+  const q = collarQuote(s, 12, 0.85, 50000);
+  near(q.floorValue, Math.round(50000 * q.Kp * 100) / 100, 1e-9);
+  near(q.capValue, Math.round(50000 * q.Kc * 100) / 100, 1e-9);
+  assert.equal(q.shares, 50000);
+  assert.ok(q.capValue > q.floorValue);
+  assert.equal(collarQuote(s, 12, 0.85).floorValue, undefined);
+  assert.equal(collarQuote(s, 12, 0.85, 0).capValue, undefined);
+  assert.equal(collarQuote(s, 12, 0.85, 1.5).capValue, undefined);
+  near(collarQuote(s, 12, 0.85, 50000).Kp, collarQuote(s, 12, 0.85).Kp, 1e-12);
+});
+
 // ================================================================ puts and exchange fund (should-haves)
 test("put: premium from cash, free shares stay sellable, settles to cash with premium as a loss", () => {
   const exp = "2020-07-30";

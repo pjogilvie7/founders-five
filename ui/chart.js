@@ -112,11 +112,59 @@ function layoutStrip(m, px, area, maxRows) {
   return { items, chip, rows };
 }
 
+// ---- narrow strip (plot under about 500px wide): every release is a small dot on the top axis (released = filled seal red,
+// future = outline); only the next release carries a label ("Aug 6 · 20%"), so two labels never compete for the same space.
+// When the next release is past the right edge of the axis, the "Next release in N days" chip takes the label row instead.
+const NARROW = 500, DOT = 4, LAB_H = 20;
+function narrowLayout(m) {
+  const dots = m.inDomain.length > 0;
+  const next = m.nextInDomain ? m.nextRel : null;
+  const label = !!(next || (m.nextRel && !m.nextInDomain));
+  return { dots, next, label, top: Math.max(8, 6 + (dots ? 14 : 0) + (label ? LAB_H + 4 : 0)) };
+}
+function narrowText(m) {
+  const nr = m.nextRel; if (!nr) return '';
+  if (m.nextInDomain) return `${m.blind ? `Day ${Math.round(nr.x) + 1}` : shortDate(nr.date)} \u00b7 ${nr.pct}%`;
+  return `Next release in ${m.nextDays} ${m.nextDays === 1 ? 'day' : 'days'}`;
+}
+function drawNarrow(chart, S) {
+  const { m, c, font } = S, area = chart.chartArea, xs = chart.scales.x, ctx = chart.ctx, L = narrowLayout(m);
+  const body = css('--f-body', 'sans-serif');
+  ctx.save();
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  const dy = area.top - 7;
+  // dots, with a faint rail they sit on
+  if (L.dots) {
+    ctx.strokeStyle = rgba(c.seal, 0.28); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(area.left, dy); ctx.lineTo(area.right, dy); ctx.stroke();
+    for (const t of m.inDomain) {
+      const cx = xs.getPixelForValue(t.x), isNext = L.next && L.next.id === t.id, r = isNext ? DOT + 1.5 : DOT;
+      ctx.beginPath(); ctx.arc(cx, dy, r, 0, Math.PI * 2);
+      if (t.released) { ctx.fillStyle = c.seal; ctx.fill(); ctx.strokeStyle = c.paperHi; ctx.lineWidth = 1.2; ctx.stroke(); }
+      else { ctx.fillStyle = c.paperHi; ctx.fill(); ctx.strokeStyle = c.seal; ctx.lineWidth = isNext ? 2 : 1.4; ctx.stroke(); }
+    }
+  }
+  if (L.label) {
+    const text = narrowText(m);
+    ctx.font = `${L.next ? 600 : 500} 11px ${L.next ? font : body}`;
+    const w = Math.ceil(ctx.measureText(text).width) + 16, yb = area.top - (L.dots ? 15 : 6), yt = yb - LAB_H + 2, h = LAB_H - 2;
+    let left;
+    if (L.next) left = Math.min(Math.max(xs.getPixelForValue(L.next.x) - w / 2, area.left), area.right - w);
+    else left = area.right - w;
+    ctx.beginPath(); (ctx.roundRect ? ctx.roundRect(left, yt, w, h, 3) : ctx.rect(left, yt, w, h));
+    if (L.next) { ctx.fillStyle = c.paperHi; ctx.fill(); ctx.strokeStyle = c.seal; ctx.lineWidth = 1.6; ctx.stroke(); ctx.fillStyle = c.seal; }
+    else { ctx.fillStyle = c.paper2; ctx.fill(); ctx.strokeStyle = c.line; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = c.ink; }
+    ctx.fillText(text, left + w / 2, yt + h / 2 + 0.5);
+  }
+  ctx.restore();
+}
+
 function stripPlugin(getCtx) {
   return {
     id: 'ffReleaseStrip',
     afterDraw(chart) {
       const S = getCtx(); if (!S || !S.m) return;
+      if (S.narrow) { drawNarrow(chart, S); return; }
       const { m, c, font } = S, area = chart.chartArea, xs = chart.scales.x, ctx = chart.ctx;
       const L = layoutStrip(m, (x) => xs.getPixelForValue(x), area, S.rows);
       ctx.save();
@@ -154,8 +202,8 @@ export function createPriceChart(host, api, getEvents = () => []) {
   host.innerHTML = '<canvas role="img" aria-label="Price chart"></canvas><p class="pchart-sr" aria-live="off"></p>';
   const canvas = host.querySelector('canvas'), sr = host.querySelector('.pchart-sr');
   let chart = null, key = '', fallback = null;
-  const S = { m: null, c: null, font: 'monospace', rows: 1 };
-  const R = { lab: (v) => String(v), blind: false };
+  const S = { m: null, c: null, font: 'monospace', rows: 1, narrow: false };
+  const R = { lab: (v) => String(v), blind: false, lastX: 30 };
   const Chart = window.Chart;
   const C = () => ({ ink: css('--ink', '#18262F'), muted: css('--muted', '#5B6870'), gold: css('--gold', '#B08A3E'), seal: css('--seal', '#9C2A23'), collar: css('--collar', '#2E6E72'), line: css('--paper-line', '#D9CEB4'), paper: css('--paper', '#F1ECDF'), paper2: css('--paper-2', '#E8E0CC'), paperHi: '#FBF7EC' });
 
@@ -173,7 +221,9 @@ export function createPriceChart(host, api, getEvents = () => []) {
         layout: { padding: { top: 30, right: 8, bottom: 0, left: 0 } },
         scales: {
           x: { type: 'linear', min: 0, max: m.lastX, grid: { color: rgba(c.line, 0.45), drawTicks: false }, border: { color: c.ink },
-            ticks: { color: c.muted, maxTicksLimit: 6, padding: 6, autoSkipPadding: 14, maxRotation: 0, font: { family: css('--f-num', 'monospace'), size: 11 }, callback: (v) => R.lab(v) } },
+            ticks: { color: c.muted, maxTicksLimit: 6, padding: 6, autoSkipPadding: 14, maxRotation: 0, font: { family: css('--f-num', 'monospace'), size: 11 }, callback: (v) => R.lab(v) },
+            // the last tick sits on the axis end: drop the one before it when the two labels would touch
+            afterBuildTicks: (sc) => { const t = sc.ticks; if (t.length > 3 && t[t.length - 1].value - t[t.length - 2].value < R.lastX * 0.15) t.splice(t.length - 2, 1); } },
           y: { grid: { color: rgba(c.line, 0.6) }, border: { color: c.ink },
             ticks: { color: c.muted, maxTicksLimit: 5, font: { family: css('--f-num', 'monospace'), size: 11 }, callback: (v) => (R.blind ? Number(v).toFixed(0) : '$' + Number(v).toFixed(0)) } },
         },
@@ -210,7 +260,7 @@ export function createPriceChart(host, api, getEvents = () => []) {
     if (!Chart) { fallbackSvg(m); return; }
     ensureChart(m);
     const c = C();
-    R.lab = m.label; R.blind = m.blind;
+    R.lab = m.label; R.blind = m.blind; R.lastX = m.lastX;
     const phone = window.innerWidth < 900;
     const last = m.pts[m.pts.length - 1];
     const ds = [
@@ -224,13 +274,20 @@ export function createPriceChart(host, api, getEvents = () => []) {
     if (m.calls.length) ds.push({ type: 'scatter', data: m.calls, pointRadius: 7, backgroundColor: c.seal, borderColor: '#F1ECDF', borderWidth: 2, order: 1 });
     chart.data.datasets = ds;
     const numFont = css('--f-num', 'monospace');
+    // Reference-line labels are small paper chips at the right edge of the plot, so the price line never runs through text.
+    // When the two lines are close together the chips step apart (the higher price goes up, the lower goes down).
+    const plotH = (chart.chartArea && chart.chartArea.height) || Math.max(120, host.clientHeight - 60);
+    const gapPx = Math.abs(m.first - m.offer) / (m.hi - m.lo) * plotH, shift = gapPx < 24 ? Math.ceil((24 - gapPx) / 2) : 0;
+    const apart = { first: m.first >= m.offer ? -shift : shift, offer: m.first >= m.offer ? shift : -shift };
+    const chip = (border, color, yAdjust, weight = '500') => ({ position: 'end', xAdjust: -2, yAdjust, backgroundColor: c.paperHi, borderColor: border, borderWidth: 1, borderRadius: 3,
+      color, font: { family: numFont, size: 11, weight }, padding: { x: 5, y: 2 } });
     const ann = {
       // the future is not drawn, only tinted: nothing here has happened yet
       future: { type: 'box', xMin: m.today, xMax: m.lastX, backgroundColor: rgba(c.ink, 0.03), borderWidth: 0, drawTime: 'beforeDatasetsDraw' },
       first: { type: 'line', yMin: m.first, yMax: m.first, xMin: 0, xMax: m.lastX, borderColor: rgba(c.ink, 0.38), borderWidth: 1, borderDash: [1.5, 3.5],
-        label: { display: m.pts.length < 40, content: m.blind ? `First ${m.first.toFixed(0)}` : `First close ${price(m.first)}`, position: 'end', backgroundColor: 'transparent', color: c.muted, font: { family: numFont, size: 10 }, padding: 2, yAdjust: -8 } },
+        label: { display: m.pts.length < 40, content: m.blind ? `First ${m.first.toFixed(0)}` : `First close ${price(m.first)}`, ...chip(c.line, c.muted, apart.first) } },
       offer: { type: 'line', yMin: m.offer, yMax: m.offer, borderColor: c.gold, borderWidth: 1.2, borderDash: [5, 4],
-        label: { display: true, content: m.blind ? 'Offer 100' : `Offer ${price(m.offer)}`, position: 'start', backgroundColor: 'transparent', color: c.gold, font: { family: numFont, size: 10, weight: '500' }, padding: 2, yAdjust: -8 } },
+        label: { display: true, content: m.blind ? 'Offer 100' : `Offer ${price(m.offer)}`, ...chip(c.gold, c.ink, apart.offer, '600') } },
     };
     // Release marks: every tranche keeps an entry, but only the next release inside the axis draws a full-height rule;
     // the rest are the short labelled ticks the strip plugin draws above the plot.
@@ -248,9 +305,14 @@ export function createPriceChart(host, api, getEvents = () => []) {
     const est = area && area.width > 40 ? { left: area.left, right: area.right } : { left: 46, right: w - 12 };
     const pxEst = (x) => est.left + (x / m.lastX) * (est.right - est.left);
     S.m = m; S.c = c; S.font = numFont;
-    S.rows = layoutStrip(m, pxEst, est, 2).rows;
-    chart.options.layout.padding.top = S.rows ? GAP + S.rows * ROW + 4 : 8;
+    // the chart may still be sized for the previous window width, so the host decides narrow, not the old plot area
+    S.narrow = (host.clientWidth || w) - 56 < NARROW;
+    if (S.narrow) { S.rows = 0; chart.options.layout.padding.top = narrowLayout(m).top; }
+    else { S.rows = layoutStrip(m, pxEst, est, 2).rows; chart.options.layout.padding.top = S.rows ? GAP + S.rows * ROW + 4 : 8; }
     chart.update('none');
+    // where the plot starts, so the phone's in-chart key can sit in its top-right corner
+    const pa = chart.chartArea;
+    if (pa) { host.style.setProperty('--plot-top', `${Math.round(pa.top)}px`); host.style.setProperty('--plot-right', `${Math.max(0, Math.round((host.clientWidth || 0) - pa.right))}px`); }
   }
   return { update, destroy() { if (chart) chart.destroy(); }, get chart() { return chart; } };
 }
