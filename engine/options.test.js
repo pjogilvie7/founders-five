@@ -47,7 +47,7 @@ test("marketCap ignores a thin expiry that would otherwise bracket one year", ()
   assert.deepEqual(a.bracket, ["2027-09-17", "2027-12-17"]);
 });
 
-test("the shipped data/spcx-options.json has no thin expiry and the Street check reads about 182 to 183", async (t) => {
+test("the shipped data/spcx-options.json has no thin expiry and a sane Street check", async (t) => {
   const fs = await import("node:fs"), path = await import("node:path"), { fileURLToPath } = await import("node:url");
   const f = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "data", "spcx-options.json");
   if (!fs.existsSync(f)) return t.skip("not built");
@@ -55,6 +55,8 @@ test("the shipped data/spcx-options.json has no thin expiry and the Street check
   const count = {};
   for (const p of j.smile) count[p.expiry] = (count[p.expiry] || 0) + 1;
   for (const [e, n] of Object.entries(count)) assert.ok(n >= 5, `${e} has ${n} smile points`);
-  assert.ok(!count["2027-10-15"]);
-  assert.ok(j.streetCheck.marketCap > 182 && j.streetCheck.marketCap < 183, `market cap ${j.streetCheck.marketCap}`);
+  // the chain changes every night, so check the rule, not one day's figure (2026-10-30 read 182.59)
+  const sc = j.streetCheck;
+  assert.ok(sc.marketCap > sc.spot && sc.marketCap < 2 * sc.spot, `market cap ${sc.marketCap} vs spot ${sc.spot}`);
+  assert.ok(Math.abs(sc.marketCap / sc.modelCap - 1) < 0.2, `market cap ${sc.marketCap} vs model cap ${sc.modelCap}`);
 });

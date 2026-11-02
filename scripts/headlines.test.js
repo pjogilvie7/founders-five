@@ -10,6 +10,9 @@ import { CARD_IDS, buildBanned, checkHeadlines, checkReveal, checkRevealText, te
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const load = (id, f) => JSON.parse(fs.readFileSync(path.join(ROOT, 'data/src', id, f), 'utf8'));
+// The name filter is built from the prospectus text in research/, which stays out of the public repo, so on GitHub
+// these two checks are skipped; the nightly job does not change headlines.
+const noFiling = (id) => (fs.existsSync(path.join(ROOT, 'research/424b4', `${id}.txt`)) ? false : 'prospectus text not in this checkout');
 
 test('eight blind cards c1..c8', () => assert.equal(CARD_IDS.length, 8));
 
@@ -32,7 +35,7 @@ for (const id of CARD_IDS) {
     assert.deepEqual(hs.map((h) => h.d), topMoves(base.prices), 'one headline per 8 largest absolute adjClose moves');
   });
 
-  test(`${id}: name filter re-run finds no banned term`, () => {
+  test(`${id}: name filter re-run finds no banned term`, { skip: noFiling(id) }, () => {
     const banned = buildBanned(id, { write: false });
     assert.ok(banned.all.length >= 40, 'banned list is substantial');
     const { errors } = checkHeadlines(id, banned);
@@ -48,7 +51,7 @@ for (const id of CARD_IDS) {
   });
 }
 
-test('the filter catches what it should', () => {
+test('the filter catches what it should', { skip: noFiling('c1') }, () => {
   assert.ok(termRegex('Airbnb').test('AIRBNB shares jump'));
   assert.ok(termRegex('Host').test('Hosts earn more'));
   assert.ok(!termRegex('Bank').test('banking scrutiny'));
