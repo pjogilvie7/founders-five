@@ -58,7 +58,7 @@ export function chartModel(api, snap, extra = {}) {
   const evs = extra.events || [];
   const tax = evs.filter((e) => e.type === 'taxPaid').map((e) => ({ x: Math.min(pos(e.d), today), y: closeAt(e.d) })).filter((p) => p.y != null);
   const calls = evs.filter((e) => (e.type === 'marginCall' && e.pause) || e.type === 'forcedSale').map((e) => ({ x: Math.min(pos(e.d), today), y: closeAt(e.d), forced: e.type === 'forcedSale' })).filter((p) => p.y != null);
-  const lastX = blind ? dates.length - 1 : Math.max(today + 2, ...tranches.map((t) => t.x), ...collars.map((c) => c.x1), today + 6);
+  const lastX = blind ? dates.length - 1 : Math.max(today + 6, ...tranches.map((t) => t.x + 3));
   let lo = Math.min(...pts.map((p) => p.y), snap.offerPrice, ...collars.map((c) => c.Kp));
   let hi = Math.max(...pts.map((p) => p.y), snap.offerPrice, ...collars.map((c) => c.Kc));
   const padv = (hi - lo) * 0.08 || 1;
@@ -138,8 +138,8 @@ export function createPriceChart(host, api, getEvents = () => []) {
     const nextRel = m.tranches.filter((t) => !t.released).sort((a, b) => a.x - b.x)[0];
     m.tranches.forEach((t, i) => {
       const show = t.pct >= 15 || (nextRel && nextRel.id === t.id);
-      ann['t' + i] = { type: 'line', xMin: t.x, xMax: t.x, borderColor: c.seal, borderWidth: t.released ? 1.6 : 1.2, borderDash: t.released ? [] : [3, 3],
-        label: show ? { display: true, content: `${t.pct}%`, position: 'start', backgroundColor: c.seal, color: '#F1ECDF', font: { family: css('--f-num', 'monospace'), size: 10 }, padding: { x: 4, y: 1 }, borderRadius: 1, yAdjust: 2 } : { display: false } };
+      ann['t' + i] = { type: 'line', xMin: t.x, xMax: t.x, borderColor: t.released ? rgba(c.seal, 0.75) : c.seal, borderWidth: t.released ? 1.3 : 1.2, borderDash: t.released ? [] : [3, 3],
+        label: show ? { display: true, content: `${t.pct}%`, position: 'end', backgroundColor: c.seal, color: '#F1ECDF', font: { family: css('--f-num', 'monospace'), size: 10 }, padding: { x: 4, y: 1 }, borderRadius: 1, yAdjust: 0 } : { display: false } };
     });
     m.wins.forEach((w, i) => { ann['w' + i] = { type: 'box', xMin: w.x0, xMax: w.x1, backgroundColor: rgba(c.ink, w.now ? 0.1 : 0.055), borderWidth: 0, drawTime: 'beforeDatasetsDraw' }; });
     m.collars.forEach((b, i) => { ann['c' + i] = { type: 'box', xMin: b.x0, xMax: b.x1, yMin: b.Kp, yMax: b.Kc, backgroundColor: rgba(c.collar, 0.16), borderColor: c.collar, borderWidth: 1, borderDash: [4, 3], drawTime: 'beforeDatasetsDraw' }; });

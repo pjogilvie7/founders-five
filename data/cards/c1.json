@@ -1446,14 +1446,14 @@
     ]
   },
   "headlines": [
-    {"d":"2021-02-26","text":"Quarterly revenue declines, but company calls demand resilient and expects rebound","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312521056952/d147144dex991.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2021-11-05","text":"Record quarterly revenue and net income as demand rebounds; outlook upbeat","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312521320113/d245727dex991.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2022-05-09","text":"Shares slide as sharp selloff hits growth stocks across the market","source":"market","nameFilter":"pass","review":"pending"},
-    {"d":"2022-11-02","text":"Record quarterly profit, but fourth-quarter revenue outlook points to slower growth","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312522274904/d408297dex991.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2023-02-15","text":"First full-year profit reported; company authorizes new share buyback","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312523039008/d451233dex991.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2024-08-07","text":"Quarterly revenue growth slows to 11%; outlook flags softer demand","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312524194849/d831385dex991.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2025-02-14","text":"Booking growth accelerates in fourth quarter as company outlines new services","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312525026054/d915198dex991.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2025-04-09","text":"Shares surge as markets rally on a pause in tariff increases","source":"market","nameFilter":"pass","review":"pending"}
+    {"d":"2021-02-26","text":"Quarterly results top expectations; company raises its outlook","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312521056952/d147144dex991.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2021-11-05","text":"Record quarterly revenue and profit; outlook upbeat","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312521320113/d245727dex991.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2022-05-09","text":"Shares slide sharply as the broader market declines","source":"market","nameFilter":"pass","review":"pending"},
+    {"d":"2022-11-02","text":"Record quarterly profit, but next-quarter revenue outlook disappoints","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312522274904/d408297dex991.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2023-02-15","text":"Profit beats forecasts; next-quarter outlook strong","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312523039008/d451233dex991.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2024-08-07","text":"Quarterly revenue growth slows; outlook flags softer demand","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312524194849/d831385dex991.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2025-02-14","text":"Fourth-quarter results beat expectations; company outlines new initiatives","source":"https://www.sec.gov/Archives/edgar/data/1559720/000119312525026054/d915198dex991.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2025-04-09","text":"Shares jump in a broad rally","source":"market","nameFilter":"pass","review":"pending"}
   ],
   "reveal": {
     "text": "Airbnb priced its IPO on December 9, 2020 at $68 a share and closed its first day at $144.71. The stock peaked at $216.84 on February 11, 2021, fell to a low of $82.49 on December 28, 2022, and closed the five years at $133.78 on December 17, 2025, 96.7% above the offer price. Its filings show revenue collapsing in the pandemic, then reaching records as travel returned, with growth slowing after the rebound.",

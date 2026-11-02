@@ -3,6 +3,7 @@
 import { art, artManifest, loadArt, loadGuilloche } from './data.js';
 import { money, moneyFull, longDate, esc, int } from './format.js';
 import { ACHIEVEMENT_META, medalHTML, canonicalId, loadEarned, saveEarned, markFinished, saveRun } from './achievements.js';
+import { renderCompare } from './compare.js';
 
 const MINUS = '−';
 const reduced = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
@@ -137,6 +138,111 @@ function nextBlind(ctx) {
   return nxt;
 }
 
+// ------------------------------------------------------------------ percentile section (PRD 4.8, should-have)
+const SVGNS = 'http://www.w3.org/2000/svg';
+const MARK = {
+  you: { letter: 'Y', color: 'var(--seal)' },
+  holder: { letter: 'H', color: 'var(--ink)' },
+  seller: { letter: 'S', color: 'var(--collar)' },
+  playbook: { letter: 'P', color: 'var(--gold)' },
+};
+const markOf = (c, watch) => MARK[c.you && watch ? 'playbook' : c.key] || MARK[c.key];
+
+const strategyCache = new Map(); // `${card}|${seat}|${days}` -> promise of [{afterTaxWealth, sharpe}]
+const progressTo = new Map();    // same key -> the latest progress callback
+
+function histogramSVG(uid, { title, values, marks, fmt }) {
+  const W = 400, H = 214, L = 10, R = 10, base = 184, plotTop = 82, bins = 24;
+  const all = values.concat(marks.map((m) => m.value)).filter(fin);
+  let lo = Math.min(...all), hi = Math.max(...all);
+  if (hi - lo < 1e-9) { lo -= 1; hi += 1; }
+  const pad = (hi - lo) * 0.02; lo -= pad; hi += pad;
+  const x = (v) => L + ((v - lo) / (hi - lo)) * (W - L - R);
+  const counts = new Array(bins).fill(0);
+  for (const v of values) if (fin(v)) counts[Math.min(bins - 1, Math.max(0, Math.floor(((v - lo) / (hi - lo)) * bins)))]++;
+  const top = Math.max(...counts, 1);
+  const bw = (W - L - R) / bins;
+  const bars = counts.map((c, i) => {
+    if (!c) return '';
+    const h = Math.max(2, (c / top) * (base - plotTop));
+    return `<rect class="hg-bar" x="${(L + i * bw + 0.8).toFixed(1)}" y="${(base - h).toFixed(1)}" width="${(bw - 1.6).toFixed(1)}" height="${h.toFixed(1)}" fill="url(#${uid}-h)"><title>${c} of ${values.length} strategies</title></rect>`;
+  }).join('');
+  // markers: a lettered seal on a stem; seals that would touch step up to the next lane
+  const placed = marks.filter((m) => fin(m.value)).map((m) => ({ ...m, px: x(m.value) })).sort((a, b) => a.px - b.px);
+  const laneX = [];
+  for (const m of placed) {
+    let lane = 0;
+    while (laneX[lane] != null && Math.abs(m.px - laneX[lane]) < 19) lane++;
+    laneX[lane] = m.px; m.lane = lane;
+  }
+  const marksSvg = placed.map((m) => {
+    const cy = 11 + m.lane * 19;
+    return `<g class="hg-mark${m.you ? ' you' : ''}" style="--mc:${m.color}"><line x1="${m.px.toFixed(1)}" x2="${m.px.toFixed(1)}" y1="${cy + 9}" y2="${base}" class="hg-stem"/>` +
+      `<circle cx="${m.px.toFixed(1)}" cy="${cy}" r="9" class="hg-seal"/><text x="${m.px.toFixed(1)}" y="${cy + 4.4}" text-anchor="middle" class="hg-letter">${m.letter}</text></g>`;
+  }).join('');
+  const mid = (lo + hi) / 2;
+  const desc = `${title}: 500 random legal strategies run from ${fmt(Math.min(...values.filter(fin)))} to ${fmt(Math.max(...values.filter(fin)))}. ` + placed.map((m) => `${m.name} ${fmt(m.value)}`).join('; ') + '.';
+  return `<svg class="hg" viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="${uid}-t" xmlns="${SVGNS}" preserveAspectRatio="xMidYMid meet">
+    <title id="${uid}-t">${esc(desc)}</title>
+    <defs><pattern id="${uid}-h" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" class="hg-bg"/><line x1="0" y1="0" x2="0" y2="4" class="hg-hatch"/></pattern></defs>
+    ${bars}
+    <line class="hg-base" x1="${L}" x2="${W - R}" y1="${base}" y2="${base}"/>
+    ${[lo + pad, mid, hi - pad].map((v, i) => `<line class="hg-tick" x1="${x(v).toFixed(1)}" x2="${x(v).toFixed(1)}" y1="${base}" y2="${base + 5}"/><text class="hg-axis" x="${Math.min(W - 2, Math.max(2, x(v))).toFixed(1)}" y="${base + 19}" text-anchor="${i === 0 ? 'start' : i === 2 ? 'end' : 'middle'}">${esc(fmt(v))}</text>`).join('')}
+    ${marksSvg}
+  </svg>`;
+}
+
+function strategiesFor(ctx, onProgress) {
+  const { card, seat } = ctx;
+  const key = `${card.id}|${seat}|${card.prices.length}`;
+  let p = strategyCache.get(key);
+  if (!p) {
+    p = import('../engine/percentile.js').then((m) => m.randomStrategiesInBackground(
+      { card, seat, market: ctx.data.market, spcxOptions: ctx.data.spcxOptions || null, n: 500 }, { onProgress: (x) => { const f = progressTo.get(key); if (f) f(x); } }));
+    strategyCache.set(key, p);
+    p.catch(() => strategyCache.delete(key));
+  }
+  progressTo.set(key, onProgress);
+  return p;
+}
+
+async function renderPercentile(el, ctx, cols) {
+  const watch = !!ctx.watch;
+  const host = el.querySelector('#sc-pct-body');
+  if (!host) return;
+  const status = host.querySelector('.sc-pct-status');
+  let results;
+  try {
+    results = await strategiesFor(ctx, (p) => { if (status && status.isConnected) status.textContent = `Running 500 random legal strategies: ${Math.round(p * 100)}%`; });
+  } catch (e) { console.warn('percentile failed', e); results = null; }
+  if (!host.isConnected) return;
+  if (!results || !results.length) { host.innerHTML = '<p class="sc-pct-status">The comparison with random strategies could not run in this browser.</p>'; return; }
+  const { percentileOf } = await import('../engine/percentile.js');
+  const wealth = results.map((r) => r.afterTaxWealth), sharpe = results.map((r) => r.sharpe);
+  const rows = cols.map((c) => {
+    const mk = markOf(c, watch);
+    return { key: c.key, you: c.you, name: c.you && !watch ? 'You' : (c.you ? BOT_NAMES.playbook : c.label), letter: mk.letter, color: mk.color,
+      w: c.score.afterTaxWealth, s: c.score.sharpe, pw: percentileOf(c.score.afterTaxWealth, wealth), ps: percentileOf(c.score.sharpe, sharpe) };
+  });
+  const me = rows[0];
+  const uid = 'hg' + Math.random().toString(36).slice(2, 7);
+  const n = results.length;
+  const pc = (x) => (fin(x) ? `${int(Math.round(x))}%` : 'n/a');
+  const subject = watch ? BOT_NAMES.playbook : 'You';
+  const fmtS = (v) => fixed(v, 1);
+  host.innerHTML = `
+    <p class="sc-pct-line" id="sc-pct-line">${esc(subject)} finished ahead of <b class="num">${esc(pc(me.pw))}</b> of ${n} random legal strategies on after-tax wealth.</p>
+    <p class="sc-pct-line2" id="sc-pct-line2">On Sharpe ratio, ${esc(subject === 'You' ? 'you' : subject)} finished ahead of <b class="num">${esc(pc(me.ps))}</b>.</p>
+    <div class="sc-pct-charts">
+      <figure class="sc-hg"><figcaption>After-tax family wealth</figcaption>${histogramSVG(uid + 'w', { title: 'After-tax family wealth', values: wealth, marks: rows.map((r) => ({ name: r.name, letter: r.letter, color: r.color, you: r.you, value: r.w })), fmt: (v) => money(v) })}</figure>
+      <figure class="sc-hg"><figcaption>Sharpe ratio</figcaption>${histogramSVG(uid + 's', { title: 'Sharpe ratio', values: sharpe, marks: rows.map((r) => ({ name: r.name, letter: r.letter, color: r.color, you: r.you, value: r.s })), fmt: fmtS })}</figure>
+    </div>
+    <ul class="sc-pct-key" aria-label="Where each strategy landed">${rows.map((r) => `<li data-key="${r.key}"><span class="sc-seal" style="--mc:${r.color}" aria-hidden="true">${r.letter}</span>
+      <span class="sc-pk-n">${esc(r.name)}</span><span class="sc-pk-v">Wealth <b class="num">${esc(money(r.w))}</b>, ahead of ${esc(pc(r.pw))}</span><span class="sc-pk-v">Sharpe <b class="num">${esc(fmtS(r.s))}</b>, ahead of ${esc(pc(r.ps))}</span></li>`).join('')}</ul>
+    <p class="sc-pct-note">Each random strategy is a made-up mix of sales, plans, collars, loans and index moves, and every move was one the rules allow on the day it was tried. They are a yardstick for how much the choices matter, not a list of things to do. The mix is fixed for this card and seat, so the same 500 appear every time.</p>`;
+  host.dataset.ready = 'true';
+}
+
 // ------------------------------------------------------------------ main
 export async function renderScoreboard(el, ctx) {
   await Promise.all([loadArt().catch(() => null), loadGuilloche().catch(() => null)]);
@@ -157,10 +263,12 @@ export async function renderScoreboard(el, ctx) {
   // Persistence (try/catch inside the helpers).
   const before = loadEarned();
   markFinished(cardId);
-  if (!watch) {
+  const shared = !!ctx.shared;
+  const runId = `${cardId}|${ctx.seat}|${score && score.afterTaxWealth}|${state && state.log ? state.log.length : 0}`;
+  if (!watch && !shared) {
     saveEarned(earnedNow);
     saveRun({
-      runId: `${cardId}|${ctx.seat}|${score && score.afterTaxWealth}|${state && state.log ? state.log.length : 0}`, at: Date.now(),
+      runId, at: Date.now(),
       cardId, seat: ctx.seat, blind: !!card.blind,
       sharpe: score && score.sharpe, maxDrawdown: score && score.maxDrawdown && score.maxDrawdown.pct, irr: score && score.irr, afterTaxWealth: score && score.afterTaxWealth,
       verdict: deb && deb.verdict || '',
@@ -202,9 +310,10 @@ export async function renderScoreboard(el, ctx) {
     : `<a class="btn primary" data-action="play-again" href="#/play/${encodeURIComponent(cardId)}/${encodeURIComponent(ctx.seat)}">Play again</a>
        <a class="btn" data-action="switch-seat" href="${seatHref}">Switch seat</a>${nb ? `<a class="btn" data-action="deal-another" href="#/seat/${encodeURIComponent(nb.id)}">Deal another card</a>` : ''}`;
 
-  const kicker = watch ? 'The Playbook, finished' : (card.blind ? 'Card finished' : 'Card finished so far');
-  const headline = watch ? 'A finished run, watched' : 'Your result';
+  const kicker = watch ? 'The Playbook, finished' : shared ? 'A shared run, replayed' : (card.blind ? 'Card finished' : 'Card finished so far');
+  const headline = watch ? 'A finished run, watched' : shared ? 'A shared result' : 'Your result';
   const live = !!card.live;
+  const showPct = !!(ctx.data && ctx.data.market && card.prices && card.prices.length);
 
   el.innerHTML = `<article class="sc" data-card="${esc(cardId)}" data-seat="${esc(ctx.seat || '')}" data-watch="${watch ? 'true' : 'false'}" data-blind="${card.blind ? 'true' : 'false'}">
     <header class="sc-head sc-in" style="--i:0"><p class="kicker">${esc(kicker)}</p><h1>${esc(headline)}</h1></header>
@@ -226,7 +335,12 @@ export async function renderScoreboard(el, ctx) {
       ${tableHTML(cols)}
     </section>
 
-    <section class="sc-in sc-debrief" style="--i:4" aria-labelledby="sc-d-h">
+    ${showPct ? `<section class="sc-in sc-pct" style="--i:4" aria-labelledby="sc-p-h">
+      <h2 id="sc-p-h">Against 500 random strategies${live ? ' <span class="sc-pct-tag">' + esc(`${score && score.days != null ? score.days : card.prices.length}-day card`) + '</span>' : ''}</h2>
+      <div id="sc-pct-body" aria-live="polite"><p class="sc-pct-status" role="status">Running 500 random legal strategies: 0%</p></div>
+    </section>` : ''}
+
+    <section class="sc-in sc-debrief" style="--i:5" aria-labelledby="sc-d-h">
       <h2 id="sc-d-h">Debrief</h2>
       ${verdict ? `<p class="sc-verdict" id="sc-verdict">${esc(verdict)}</p>` : ''}
       ${watch ? '<p class="sc-watchnote">You watched this run, so “you” below means The Playbook.</p>' : ''}
@@ -234,7 +348,7 @@ export async function renderScoreboard(el, ctx) {
       ${card.blind && card.reveal && card.reveal.text ? `<div class="sc-reveal"><h3>What the card was</h3><p class="sc-para" id="sc-reveal-text">${esc(card.reveal.text)}</p></div>` : ''}
     </section>
 
-    <section class="sc-in sc-ach" style="--i:5" aria-labelledby="sc-a-h">
+    <section class="sc-in sc-ach" style="--i:6" aria-labelledby="sc-a-h">
       <h2 id="sc-a-h">Achievements</h2>
       <p class="sc-ach-lede">${watch ? 'Watching earns none. Achievements come from your own play.' : esc(earnedSet.size ? `${earnedSet.size} earned this run.` : 'None earned this run.')}</p>
       ${forced.length && !watch ? `<div class="sc-lesson" role="note" data-lesson="forced-sale"><h3>A lesson from the bank sale</h3>
@@ -242,18 +356,73 @@ export async function renderScoreboard(el, ctx) {
       <ul class="sc-medals">${medals}</ul>
     </section>
 
-    <section class="sc-in sc-leaves" style="--i:6" aria-labelledby="sc-l-h">
+    <section class="sc-in sc-leaves" style="--i:7" aria-labelledby="sc-l-h">
       <h2 id="sc-l-h">What this replay leaves out</h2>
       <p>This is a simplified model of one stock. It does not include:</p>
       <ul class="sc-leaves-list">${LEAVES_OUT.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
     </section>
 
-    <footer class="sc-actions sc-in" style="--i:7">
+    <footer class="sc-actions sc-in" style="--i:8">
       ${buttons}
-      <button class="btn" type="button" data-action="compare-runs" data-hook="compare-runs" hidden>Compare runs</button>
-      <button class="btn" type="button" data-action="copy-share-code" data-hook="copy-share-code" hidden>Copy share code</button>
+      <button class="btn" type="button" data-action="compare-runs" data-hook="compare-runs" aria-expanded="false" aria-controls="sc-compare">Compare runs</button>
+      <button class="btn" type="button" data-action="copy-share-code" data-hook="copy-share-code" aria-controls="sc-share">Copy share code</button>
     </footer>
+    <section class="sc-compare" id="sc-compare" aria-label="Compare runs" hidden></section>
+    <div class="sc-share" id="sc-share" hidden>
+      <label for="sc-share-link" class="sc-share-l">Share link</label>
+      <input id="sc-share-link" class="sc-share-input" type="text" readonly spellcheck="false" autocomplete="off">
+      <p class="sc-share-note" id="sc-share-note" role="status"></p>
+    </div>
   </article>`;
+
+  // percentile histograms (background worker; the page stays responsive)
+  if (showPct) renderPercentile(el, ctx, cols).catch((e) => { console.warn('percentile failed', e); const b = el.querySelector('#sc-pct-body'); if (b) b.innerHTML = '<p class="sc-pct-status">The comparison with random strategies could not run.</p>'; });
+
+  // Compare runs
+  const cmpBtn = el.querySelector('[data-hook="compare-runs"]'), cmpBox = el.querySelector('#sc-compare');
+  if (cmpBtn && cmpBox) {
+    cmpBtn.addEventListener('click', () => {
+      const open = cmpBox.hidden;
+      cmpBox.hidden = !open; cmpBtn.setAttribute('aria-expanded', String(open));
+      if (open) {
+        renderCompare(cmpBox, {
+          cardId, seat: ctx.seat, watch, runId: watch ? null : runId,
+          current: !watch ? { runId, at: null, sharpe: score && score.sharpe, maxDrawdown: score && score.maxDrawdown && score.maxDrawdown.pct, irr: score && score.irr, afterTaxWealth: score && score.afterTaxWealth, label: shared ? 'Shared run' : 'This run' } : null,
+        });
+        cmpBox.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' });
+      }
+    });
+  }
+
+  // Copy share code
+  const shBtn = el.querySelector('[data-hook="copy-share-code"]'), shBox = el.querySelector('#sc-share');
+  if (shBtn && shBox) {
+    const input = shBox.querySelector('input'), note = shBox.querySelector('#sc-share-note');
+    shBtn.addEventListener('click', async () => {
+      shBox.hidden = false;
+      let link = '';
+      try {
+        const sc = await import('../engine/sharecode.js');
+        const code = sc.encodeShare({ cardId, seat: ctx.seat, log: (state && state.log) || [] });
+        link = sc.shareLink(code);
+        shBtn.dataset.code = code;
+      } catch (e) {
+        input.value = ''; input.hidden = true;
+        note.textContent = 'This run cannot be turned into a share code.';
+        return;
+      }
+      input.hidden = false; input.value = link; shBtn.dataset.link = link;
+      let copied = false;
+      try { await navigator.clipboard.writeText(link); copied = true; } catch { copied = false; }
+      if (!copied) {
+        try { input.focus(); input.select(); copied = !!document.execCommand('copy'); } catch { copied = false; }
+      }
+      note.textContent = copied
+        ? 'Link copied. Anyone who opens it sees this run replayed on the same card, with no account.'
+        : 'Select the link above and copy it. Anyone who opens it sees this run replayed on the same card.';
+      if (!copied) { try { input.focus(); input.select(); } catch { /* ignore */ } }
+    });
+  }
 
   // big number count-up (once)
   const big = el.querySelector('#sc-big');

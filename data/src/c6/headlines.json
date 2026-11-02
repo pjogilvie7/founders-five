@@ -8,49 +8,49 @@
   },
   {
     "d": "2022-05-12",
-    "text": "Quarterly revenue and transaction volume both grow more than 50%",
+    "text": "Quarterly revenue grows strongly and beats expectations",
     "source": "https://www.sec.gov/Archives/edgar/data/1522540/000152254022000025/mqearningsrelease-q1x2022.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2022-08-11",
-    "text": "Chief executive search begins as operating chief resigns; growth forecast slows",
+    "text": "Leadership change announced; growth forecast slows",
     "source": "https://www.sec.gov/Archives/edgar/data/1522540/000152254022000036/mqearningsrelease-q2x2022.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2023-03-01",
-    "text": "Quarterly revenue rises 31% but gross profit growth lags at 15%",
+    "text": "Quarterly revenue rises, but profit growth lags revenue growth",
     "source": "https://www.sec.gov/Archives/edgar/data/1522540/000152254023000014/mqearningsrelease-q42022.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2023-11-08",
-    "text": "Revenue falls on accounting change after contract renewal; growth return targeted",
+    "text": "Quarterly revenue dips, but company targets return to growth",
     "source": "https://www.sec.gov/Archives/edgar/data/1522540/000162828023037363/mqearningsrelease-q3x2023.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2024-11-05",
-    "text": "Company cuts fourth-quarter outlook, citing banking scrutiny and customer program changes",
+    "text": "Company cuts fourth-quarter outlook amid regulatory scrutiny",
     "source": "https://www.sec.gov/Archives/edgar/data/1522540/000162828024044997/mqearningsrelease-q3x2024.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2025-02-27",
-    "text": "Chief executive steps down; finance chief named interim leader amid revenue growth",
+    "text": "Leadership change announced",
     "source": "https://www.sec.gov/Archives/edgar/data/1522540/000121390025017424/ea023215601ex99-1_marqeta.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2025-08-07",
-    "text": "Quarterly revenue grows 20% and profit measures improve",
+    "text": "Quarterly revenue grows and profit measures improve",
     "source": "https://www.sec.gov/Archives/edgar/data/1522540/000152254025000020/mqearningsrelease-q2x2025.htm",
     "nameFilter": "pass",
     "review": "pending"

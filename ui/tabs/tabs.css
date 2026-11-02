@@ -202,3 +202,17 @@
 .t-go{white-space:normal}
 .tool,.aform,.fld,.segf,.box{grid-template-columns:minmax(0,1fr)}
 .fld-in{width:100%;size:1}
+
+/* second pass */
+.tool{max-width:900px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.lower{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.lower .sharelegend{grid-template-columns:1fr}
+.box>.t-hint{margin:10px 0}
+.t-stamp{top:auto;bottom:10px;margin-top:0;right:16px}
+.plate .t-lede{max-width:520px}
+@media (max-width:899px){
+  .lower{grid-template-columns:minmax(0,1fr)}
+  .big .v{font-size:16px;white-space:nowrap}
+  .t-stamp{bottom:6px}
+}

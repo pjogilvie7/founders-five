@@ -18,9 +18,11 @@ function build(k, c) {
       <li><i class="k-line"></i>Close</li><li><i class="k-offer"></i>Offer price</li><li><i class="k-seal"></i>Release</li>
       <li><i class="k-win"></i>Window closed</li><li><i class="k-band"></i>Collar band</li><li><i class="k-tax"></i>Tax paid</li><li><i class="k-call"></i>Margin call</li>
     </ul>
-    <section class="box" aria-labelledby="sb-h"><h3 id="sb-h">Where your shares are</h3>
-      <div class="sharebar" role="img" data-v="bar"></div><ul class="sharelegend" data-v="legend"></ul></section>
-    <section class="box sellbox" aria-labelledby="sell-h"><h3 id="sell-h">Sell</h3><div data-v="sell"></div></section>
+    <div class="lower">
+      <section class="box sellbox" aria-labelledby="sell-h"><h3 id="sell-h">Sell</h3><div data-v="sell"></div></section>
+      <section class="box" aria-labelledby="sb-h"><h3 id="sb-h">Where your shares are</h3>
+        <div class="sharebar" role="img" data-v="bar"></div><ul class="sharelegend" data-v="legend"></ul></section>
+    </div>
   </div>`;
   k.chart = createPriceChart(c.querySelector('[data-v=chart]'), c._api, () => events(c._api));
   k.legend = c.querySelector('[data-v=legend]');

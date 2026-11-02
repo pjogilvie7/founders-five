@@ -1437,13 +1437,13 @@
   },
   "headlines": [
     {"d":"2022-03-16","text":"Shares rally as markets rise ahead of a central bank rate decision","source":"market","nameFilter":"pass","review":"pending"},
-    {"d":"2022-05-12","text":"Quarterly revenue and transaction volume both grow more than 50%","source":"https://www.sec.gov/Archives/edgar/data/1522540/000152254022000025/mqearningsrelease-q1x2022.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2022-08-11","text":"Chief executive search begins as operating chief resigns; growth forecast slows","source":"https://www.sec.gov/Archives/edgar/data/1522540/000152254022000036/mqearningsrelease-q2x2022.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2023-03-01","text":"Quarterly revenue rises 31% but gross profit growth lags at 15%","source":"https://www.sec.gov/Archives/edgar/data/1522540/000152254023000014/mqearningsrelease-q42022.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2023-11-08","text":"Revenue falls on accounting change after contract renewal; growth return targeted","source":"https://www.sec.gov/Archives/edgar/data/1522540/000162828023037363/mqearningsrelease-q3x2023.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2024-11-05","text":"Company cuts fourth-quarter outlook, citing banking scrutiny and customer program changes","source":"https://www.sec.gov/Archives/edgar/data/1522540/000162828024044997/mqearningsrelease-q3x2024.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2025-02-27","text":"Chief executive steps down; finance chief named interim leader amid revenue growth","source":"https://www.sec.gov/Archives/edgar/data/1522540/000121390025017424/ea023215601ex99-1_marqeta.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2025-08-07","text":"Quarterly revenue grows 20% and profit measures improve","source":"https://www.sec.gov/Archives/edgar/data/1522540/000152254025000020/mqearningsrelease-q2x2025.htm","nameFilter":"pass","review":"pending"}
+    {"d":"2022-05-12","text":"Quarterly revenue grows strongly and beats expectations","source":"https://www.sec.gov/Archives/edgar/data/1522540/000152254022000025/mqearningsrelease-q1x2022.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2022-08-11","text":"Leadership change announced; growth forecast slows","source":"https://www.sec.gov/Archives/edgar/data/1522540/000152254022000036/mqearningsrelease-q2x2022.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2023-03-01","text":"Quarterly revenue rises, but profit growth lags revenue growth","source":"https://www.sec.gov/Archives/edgar/data/1522540/000152254023000014/mqearningsrelease-q42022.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2023-11-08","text":"Quarterly revenue dips, but company targets return to growth","source":"https://www.sec.gov/Archives/edgar/data/1522540/000162828023037363/mqearningsrelease-q3x2023.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2024-11-05","text":"Company cuts fourth-quarter outlook amid regulatory scrutiny","source":"https://www.sec.gov/Archives/edgar/data/1522540/000162828024044997/mqearningsrelease-q3x2024.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2025-02-27","text":"Leadership change announced","source":"https://www.sec.gov/Archives/edgar/data/1522540/000121390025017424/ea023215601ex99-1_marqeta.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2025-08-07","text":"Quarterly revenue grows and profit measures improve","source":"https://www.sec.gov/Archives/edgar/data/1522540/000152254025000020/mqearningsrelease-q2x2025.htm","nameFilter":"pass","review":"pending"}
   ],
   "reveal": {
     "text": "Marqeta priced its IPO on June 8, 2021 at $108 a share, split-adjusted, and closed its first day at $122.08. The stock peaked at $133.00 on November 1, 2021, fell to a low of $13.68 on November 5, 2024, and closed the five years at $15.56 on June 16, 2026, 85.6% below the offer price, all split-adjusted. Its filings show fast revenue growth stalling after its largest customer renewed at lower pricing, then a weaker outlook and leadership changes.",

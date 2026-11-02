@@ -1361,14 +1361,14 @@
     ]
   },
   "headlines": [
-    {"d":"2020-11-09","text":"Shares plunge as vaccine news pulls investors from pandemic favorites","source":"market","nameFilter":"pass","review":"pending"},
-    {"d":"2021-11-05","text":"Company cuts full-year forecast, citing softer demand and limited visibility","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982521000320/shareholderletter2022q1.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2022-01-20","text":"Shares tumble on report that company is pausing production","source":"market","nameFilter":"pass","review":"pending"},
-    {"d":"2022-02-08","text":"New chief executive named; company announces restructuring and large job cuts","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982522000007/pressreleaseannouncingrest.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2023-02-01","text":"Quarterly results beat company forecasts as cash burn narrows sharply","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982523000010/q22023shareholderletter.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2023-08-23","text":"Paying users decline in quarter as demand slows and recall costs mount","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982523000128/q42023shareholderletter.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2024-02-01","text":"Full-year revenue guided lower; company says it will miss cash-flow goal","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982524000004/q22024shareholderletter.htm","nameFilter":"pass","review":"pending"},
-    {"d":"2024-08-22","text":"Second straight quarter of positive cash flow; revenue returns to growth","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982524000120/q42024shareholderletter.htm","nameFilter":"pass","review":"pending"}
+    {"d":"2020-11-09","text":"Shares plunge in heavy trading","source":"market","nameFilter":"pass","review":"pending"},
+    {"d":"2021-11-05","text":"Company cuts full-year outlook, citing softer demand","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982521000320/shareholderletter2022q1.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2022-01-20","text":"Shares tumble on a report about weaker demand","source":"market","nameFilter":"pass","review":"pending"},
+    {"d":"2022-02-08","text":"Leadership change announced; company unveils broad cost-cutting plan","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982522000007/pressreleaseannouncingrest.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2023-02-01","text":"Quarterly results beat company forecasts as losses narrow sharply","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982523000010/q22023shareholderletter.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2023-08-23","text":"Quarterly results disappoint as demand slows and costs rise","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982523000128/q42023shareholderletter.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2024-02-01","text":"Full-year revenue outlook cut; company warns it will miss targets","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982524000004/q22024shareholderletter.htm","nameFilter":"pass","review":"pending"},
+    {"d":"2024-08-22","text":"Quarterly results beat expectations; outlook steadies","source":"https://www.sec.gov/Archives/edgar/data/1639825/000163982524000120/q42024shareholderletter.htm","nameFilter":"pass","review":"pending"}
   ],
   "reveal": {
     "text": "Peloton priced its IPO on September 25, 2019 at $29 a share and closed its first day at $25.76, below the offer. The stock peaked at $167.42 on January 13, 2021, fell to a low of $2.88 on August 14, 2024, and closed the five years at $4.68 on September 30, 2024, 83.9% below the offer price. Its filings show pandemic demand fading, then repeated forecast cuts, restructuring and leadership changes as sales slowed.",

@@ -89,6 +89,7 @@ async function streetBox(c, api) {
       <div><span class="k">Listed SPCX options</span><span class="v num">${price(s.marketCap)}</span><span class="sub num">cap implied by listed mid quotes on ${esc(shortDate(s.asOf))}</span></div>
     </div>
     <p class="t-hint">Model (flat ${vol}% vol): one-year 85% floor ${price(s.floor)}, zero-cost cap ${price(s.modelCap)}. Listed SPCX options on ${esc(shortDate(s.asOf))} imply a cap near ${price(s.marketCap)}. A dealer quoting a $100M block would charge a spread, so the real cap is lower.</p>
+    ${api.state().d !== s.asOf ? `<p class="t-hint"><b>These are the listed quotes from ${esc(shortDate(s.asOf))}, the latest day in the data.</b> Your game date is ${esc(dl(api, api.state().d))}, so the collar quote above can differ.</p>` : ''}
     <p class="t-hint">${esc(s.method)}${s.rate ? ` Rate used: 1-year Treasury ${s.rate}%${s.rateAsOf ? ` (${esc(shortDate(s.rateAsOf))})` : ''}.` : ''}</p>
   </details>`;
   box.querySelector('details').addEventListener('toggle', (e) => {

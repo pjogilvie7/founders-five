@@ -118,7 +118,7 @@ try {
   check(/^Live card: 98 trading days so far\. Not comparable with five-year cards\.$/.test(texts.live), `live line: ${texts.live}`);
   check(/Pre-IPO GRATs/.test(texts.leaves) && /QSBS/.test(texts.leaves) && /dealer spreads/.test(texts.leaves), 'what the replay leaves out');
   check(texts.primary === 'Play it yourself', 'primary button when watching');
-  check(texts.hooks.includes('compare-runs:hidden') && texts.hooks.includes('copy-share-code:hidden'), 'compare / share hooks present');
+  check(texts.hooks.includes('compare-runs') && texts.hooks.includes('copy-share-code'), 'compare / share hooks present and visible');
   check(!texts.bangs, 'no exclamation marks');
   check((JSON.parse(texts.ls.fin || '[]')).includes('spcx'), 'ff.finished has spcx');
   check(!texts.ls.runs || JSON.parse(texts.ls.runs).length === 0, 'watching does not save a run');

@@ -119,6 +119,8 @@ export function stamp(root, word, tone = '') {
   s.textContent = word;
   s.setAttribute('aria-hidden', 'true');
   plate.appendChild(s);
+  const wrap = root.closest('.panel-wrap');
+  if (wrap && wrap.scrollTop > 0) wrap.scrollTo({ top: 0, behavior: reduced() ? 'auto' : 'smooth' });
   setTimeout(() => s.remove(), 2800);
 }
 
@@ -151,7 +153,7 @@ export const readNum = (inp) => Number(String(inp.value).replace(/,/g, '')) || 0
 // ------------------------------------------------------------------ segmented choices
 let uid = 0;
 function segHTML(id, s) {
-  return `<div class="segf"><span class="segf-l" id="${id}-${s.name}-l">${esc(s.label)}</span>
+  return `<div class="segf"><span class="segf-l${s.hide ? ' sr' : ''}" id="${id}-${s.name}-l">${esc(s.label)}</span>
     <div class="seg2" role="radiogroup" aria-labelledby="${id}-${s.name}-l" data-seg="${s.name}">${s.options.map(([v, t]) =>
       `<button type="button" role="radio" aria-checked="${String(v) === String(s.def)}" data-v="${esc(v)}" tabindex="${String(v) === String(s.def) ? 0 : -1}">${esc(t)}</button>`).join('')}</div></div>`;
 }
@@ -228,7 +230,8 @@ export function actionForm(host, cfg) {
     let d = null;
     if (ready) d = dry(api, { type: withN.type, ...(withN.params || {}) });
     const dryErr = d && !d.ok && d.error ? d.error : '';
-    const valid = ready && d && d.ok;
+    const broken = !!(d && d.broken);
+    const valid = ready && d && (d.ok || broken);
     cur = { valid, action: { type: withN.type, ...(withN.params || {}) }, vals: v, n };
 
     if (hasIn) {
@@ -247,10 +250,10 @@ export function actionForm(host, cfg) {
     let gateHtml = gateG ? gateHTML(api, gateG) : dryErr ? `<p class="gate"><span class="lockdot" aria-hidden="true"></span><span>${esc(dryErr)}</span></p>` : '';
     setHTML(q('.t-gate'), gateHtml);
     let prev = '';
-    if (valid) prev = cfg.preview ? cfg.preview(v, n, d, snap, api) || '' : '';
+    if (valid && !broken) prev = cfg.preview ? cfg.preview(v, n, d, snap, api) || '' : '';
     else if (g0.allowed && !gateG && !dryErr) prev = `<p class="t-hint">${esc(cfg.hint ? cfg.hint(v, g0) : '')}</p>`;
     setHTML(q('.t-prev'), prev);
-    goBtn.textContent = valid ? cfg.confirm(v, n, d) : (cfg.idle ? cfg.idle(v) : 'Confirm');
+    goBtn.textContent = valid ? (broken ? (cfg.idle ? cfg.idle(v) : 'Confirm') : cfg.confirm(v, n, d)) : (cfg.idle ? cfg.idle(v) : 'Confirm');
     goBtn.setAttribute('aria-disabled', String(!valid));
     goBtn.classList.toggle('ready', !!valid);
   }

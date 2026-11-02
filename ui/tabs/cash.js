@@ -19,7 +19,7 @@ function build(k, c) {
   </div>`;
   k.form = actionForm(c.querySelector('[data-v=form]'), {
     kind: 'money',
-    segs: [{ name: 'mode', label: 'Direction', options: [['deposit', 'Deposit to index fund'], ['withdraw', 'Withdraw to cash']], def: 'deposit' }],
+    segs: [{ name: 'mode', label: 'Direction', hide: true, options: [['deposit', 'Deposit to index fund'], ['withdraw', 'Withdraw to cash']], def: 'deposit' }],
     label: (v) => (v.mode === 'deposit' ? 'Amount to deposit' : 'Amount to withdraw'),
     resolve: (v, n) => ({ type: v.mode, params: n > 0 ? { amount: n } : {} }),
     hint: (v) => (v.mode === 'deposit' ? 'Enter an amount, or press MAX for all the cash above what you owe.' : 'Enter an amount, or press MAX for the whole fund.'),

@@ -10,6 +10,8 @@ export const TAB_DEFS = [
   { id: 'collar', label: 'Collar', hotkey: '3', locked: 'Unlocks with your first release. Locked shares cannot be hedged.' },
   { id: 'credit', label: 'Credit Line', hotkey: '4', locked: 'Unlocks with your first release. Locked shares cannot be pledged.' },
   { id: 'cash', label: 'Cash & Index', hotkey: '5', locked: 'Cash and the index fund open with your first day.' },
+  { id: 'put', label: 'Put', hotkey: '6', locked: 'Unlocks with your first release. Locked shares cannot be hedged.' },
+  { id: 'exchange', label: 'Exchange Fund', hotkey: '7', locked: 'Unlocks with your first release. Locked shares cannot be contributed.' },
 ];
 export const START_UNLOCKED = ['stock', 'cash'];
 

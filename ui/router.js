@@ -1,4 +1,4 @@
-// Hash router: #/ #/seat/{card} #/play/{card}/{seat} #/watch #/score #/method #/data #/ai #/glossary
+// Hash router: #/ #/seat/{card} #/play/{card}/{seat} #/watch #/score #/code/{share code} #/method #/data #/ai #/glossary
 export function parseHash(h = location.hash) {
   const parts = h.replace(/^#\/?/, '').split('?')[0].split('/').filter(Boolean).map(decodeURIComponent);
   const [name, a, b] = parts;
@@ -8,6 +8,7 @@ export function parseHash(h = location.hash) {
     case 'play': return a && b ? { name: 'play', cardId: a, seat: b } : { name: 'title' };
     case 'watch': return { name: 'watch' };
     case 'score': return { name: 'score' };
+    case 'code': return a ? { name: 'code', code: a } : { name: 'title' };
     case 'method': case 'data': case 'ai': case 'glossary': return { name: 'page', page: name };
     default: return { name: 'title' };
   }

@@ -26,7 +26,7 @@ function build(k, c) {
   </div>`;
   k.p = actionForm(c.querySelector('[data-v=pform]'), {
     kind: 'int',
-    segs: [{ name: 'mode', label: 'Action', options: [['pledge', 'Pledge'], ['unpledge', 'Unpledge']], def: 'pledge' }],
+    segs: [{ name: 'mode', label: 'Action', hide: true, options: [['pledge', 'Pledge'], ['unpledge', 'Unpledge']], def: 'pledge' }],
     label: (v) => (v.mode === 'pledge' ? 'Shares to pledge' : 'Shares to unpledge'),
     resolve: (v, n) => ({ type: v.mode, params: n > 0 ? { shares: n } : {} }),
     hint: (v) => (v.mode === 'pledge' ? 'Enter a number of shares, or press MAX. Only free shares can be pledged.' : 'Enter a number of shares, or press MAX.'),
@@ -40,7 +40,7 @@ function build(k, c) {
   });
   k.l = actionForm(c.querySelector('[data-v=lform]'), {
     kind: 'money',
-    segs: [{ name: 'mode', label: 'Action', options: [['draw', 'Draw'], ['repay', 'Repay']], def: 'draw' }],
+    segs: [{ name: 'mode', label: 'Action', hide: true, options: [['draw', 'Draw'], ['repay', 'Repay']], def: 'draw' }],
     label: (v) => (v.mode === 'draw' ? 'Amount to draw' : 'Amount to repay'),
     resolve: (v, n) => ({ type: v.mode, params: n > 0 ? { amount: n } : {} }),
     hint: (v) => (v.mode === 'draw' ? 'Enter an amount, or press MAX for the most the bank will lend.' : 'Enter an amount, or press MAX. Repayment comes from cash.'),

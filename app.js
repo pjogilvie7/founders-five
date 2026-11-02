@@ -82,7 +82,7 @@ async function route(r) {
   const boot = getState().boot;
   $screen.dataset.screen = r.name;
   $screen.scrollTop = 0;
-  const needsData = ['seat', 'play', 'watch', 'score'].includes(r.name);
+  const needsData = ['seat', 'play', 'watch', 'score', 'code'].includes(r.name);
   if (needsData && boot.status === 'loading') { $screen.innerHTML = '<section class="center"><p class="loading-line" role="status">Loading prices…</p></section>'; return; }
   if (needsData && boot.status === 'error') { go('/'); return; }
   switch (r.name) {
@@ -96,6 +96,7 @@ async function route(r) {
     case 'play': dispose = await startGame({ cardId: r.cardId, seat: r.seat, watch: false }, my); break;
     case 'watch': dispose = await startGame({ cardId: 'spcx', seat: 'engineer', watch: true }, my); break;
     case 'score': dispose = await renderScore(my); break;
+    case 'code': dispose = await renderCodeRoute(r.code, my); break;
     case 'page': dispose = await renderPageRoute(r.page, my); break;
   }
 }
@@ -149,6 +150,21 @@ async function renderScore(my) {
     host.innerHTML = placeholderScore(res);
   }
   return null;
+}
+// #/code/{code}: replay a shared run with the engine and show its scoreboard (nothing is saved to ff.runs)
+async function renderCodeRoute(code, my) {
+  const fail = (msg) => { $screen.innerHTML = `<section class="center"><h1 class="page-h">That share code did not open</h1><p class="lede2">${esc(msg)}</p><div class="actions"><a class="btn primary" href="#/watch">Watch a finished run</a><a class="btn" href="#/">Home</a></div></section>`; return null; };
+  $screen.innerHTML = '<section class="center"><p class="loading-line" role="status">Replaying the shared run…</p></section>';
+  try {
+    const sc = await import('./engine/sharecode.js');
+    const dec = sc.decodeShare(code);
+    const data = getState().boot.data;
+    const card = await loadCard(dec.cardId);
+    const res = await sc.resultFromShare(dec, { card, market: data.market, spcxOptions: data.spcxOptions });
+    if (my !== gen) return null;
+    lastResult = res;
+  } catch (e) { return my === gen ? fail(e && e.name === 'ShareCodeError' ? e.message : 'The run could not be replayed on this card.') : null; }
+  return renderScore(my);
 }
 function placeholderScore(res) {
   const s = res.score || {};
@@ -222,7 +238,7 @@ async function startGame({ cardId, seat, watch }, my) {
     cardId, seat, watch, card, entry, engine, state, series, scores, replay: { list: replayList, ptr: 0 }, dctx, tr, span, first,
     userPaused: false, holds: new Set(), speed: watch ? 8 : 1, speeds: watch ? [2, 4, 8] : [1, 2, 4], mode: 'wealth',
     unlocked: new Set(START_UNLOCKED), notices: [], achievements: ach, marginSynthetic: null, marginText: '', lessonQueue: [], lessonBusy: false,
-    over: false, acc: 0, last: 0, snap: null, gameKey: `${cardId}|${seat}|${watch}|${Date.now()}`,
+    over: false, acc: 0, last: 0, snap: null, eventLog: [], gameKey: `${cardId}|${seat}|${watch}|${Date.now()}`,
   };
   const g = G;
   $screen.innerHTML = `<div class="play${watch ? ' watching' : ''}"><div class="rail-host"></div><div class="paper-host"></div></div>`;
@@ -230,6 +246,7 @@ async function startGame({ cardId, seat, watch }, my) {
     act: (a) => doAct(a), canDo: (t, p) => g.engine.canDo(g.state, t, p),
     pause: () => { g.userPaused = true; refresh(); }, resume: () => { g.userPaused = false; refresh(); },
     openLesson: (id) => openLesson(id), history: () => g.state.history || [], card: () => g.card, state: () => g.state, watch,
+    events: () => g.eventLog,
   };
   g.api = api;
   g.rail = createRail($screen.querySelector('.rail-host'), {
@@ -244,7 +261,7 @@ async function startGame({ cardId, seat, watch }, my) {
     const t = e.target, typing = t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
     if (overlayOpen() || typing) return;
     if (e.key === ' ') { e.preventDefault(); if (g.notices.length) continueNotices(); else togglePause(); }
-    else if (/^[1-5]$/.test(e.key)) { const id = TAB_IDS[Number(e.key) - 1]; g.paper.select(id, true); }
+    else if (/^[1-7]$/.test(e.key)) { const id = TAB_IDS[Number(e.key) - 1]; g.paper.select(id, true); }
   };
   g.onKeyUp = (e) => { if (e.key === ' ' && !overlayOpen() && !(e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) e.preventDefault(); };
   document.addEventListener('keydown', g.onKey); document.addEventListener('keyup', g.onKeyUp);
@@ -354,7 +371,9 @@ async function openChoice(ev) {
   const g = G, def = CHOICES[ev.type]; if (!def) return;
   g.holds.add('choice');
   const given = ev.data && Array.isArray(ev.data.choices) ? ev.data.choices : null;
-  const list = given ? given.map((c) => [c.choice || c.id, c.label, c.primary]) : def.list;
+  // The engine may send choices as plain ids ("cash") or as objects; labels come from CHOICES when missing.
+  const labelOf = (id) => { const hit = def.list.find((x) => x[0] === id); return hit ? hit : [id, id, false]; };
+  const list = given ? given.map((c) => (typeof c === 'string' ? labelOf(c) : [c.choice || c.id, c.label || labelOf(c.choice || c.id)[1], c.primary])) : def.list;
   let note = '';
   for (;;) {
     const choices = list.map(([id, label, primary]) => {
@@ -378,6 +397,7 @@ function saveAch() {
 
 function handleEvents(events, quiet) {
   const g = G;
+  if (g && events && events.length) { g.eventLog = g.eventLog || []; for (const ev of events) g.eventLog.push(ev); }
   for (const ev of events) {
     const watch = g.watch;
     switch (ev.type) {

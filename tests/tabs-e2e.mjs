@@ -318,9 +318,10 @@ const blind = idx.find((c) => c.blind);
 if (!blind) notes.push('data/cards/index.json lists no blind card, so the month-18 house-event path was not played.');
 else {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto(`${BASE}/#/play/${blind.id}/engineer`);
+  await page.goto(`${BASE}/?blind=1#/play/${blind.id}/engineer`);
   await page.waitForSelector('.dialog.lesson');
-  for (let k = 0; k < 4 && await page.locator('.dialog.lesson').count(); k++) { await page.locator('.dialog.lesson [data-a=next]').click(); await wait(250); }
+  await wait(300);
+  for (let k = 0; k < 12 && await page.locator('.overlay').count(); k++) { await page.keyboard.press('Escape'); await wait(250); }
   await page.locator('.speed[data-speed="4"]').click();
   let house = false;
   const tb = Date.now();
@@ -335,7 +336,7 @@ else {
   const labels = await page.locator('.dialog.event .btn').allTextContents();
   if (labels.every((l) => !l.trim())) {
     notes.push('SHELL BUG (app.js openChoice): the house modal renders four empty buttons because the engine sends data.choices as strings (["cash","credit","sell","skip"]) and app.js reads c.choice / c.label. The test resolved the house event through the engine instead.');
-    await page.evaluate(() => { window.__ff.doAct({ type: 'house', choice: 'cash' }); document.querySelectorAll('.overlay').forEach((o) => o.remove()); document.getElementById('root')?.removeAttribute('inert'); });
+    await page.evaluate(() => { window.__ff.doAct({ type: 'house', choice: 'skip' }); document.querySelectorAll('.overlay').forEach((o) => o.remove()); document.getElementById('root')?.removeAttribute('inert'); });
   } else await page.locator('.dialog.event .btn.primary').first().click();
   await wait(500);
   s = await st();
@@ -346,11 +347,11 @@ else {
   ok(ticks.length >= 3 && ticks.every((t) => /^Day \d+$/.test(t)), `blind x axis shows relative days (${ticks.join(', ')})`);
   const yt = await page.evaluate(() => window.Chart.getChart(document.querySelector('.stock canvas')).scales.y.ticks.map((t) => t.label));
   ok(yt.every((t) => !String(t).includes('$')), `blind y axis shows indexed prices (${yt.join(', ')})`);
-  ok(!/20(19|20|21|22|23)|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/.test(await txt('.stock')), 'blind stock tab shows no calendar dates');
+  const bst = await txt('.stock'); ok(!/\b20(19|20|21|22|23)\b|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d/.test(bst), 'blind stock tab shows no calendar dates' + (bst.match(/.{20}(\b20(19|20|21|22|23)\b|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d).{20}/) || [''])[0]);
   await shot('11-blind-stock');
   for (const id of ['plan', 'collar', 'credit', 'cash']) {
     await tab(id); await wait(300);
-    ok(!/20(19|20|21|22|23)/.test(await txt(`.${id}`)), `blind ${id} tab shows no calendar dates`);
+    ok(!/\b20(19|20|21|22|23)\b|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d/.test(await txt(`.${id}`)), `blind ${id} tab shows no calendar dates`);
     await shot(`12-blind-${id}`);
   }
 }

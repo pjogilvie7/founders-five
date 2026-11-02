@@ -1,56 +1,56 @@
 [
   {
     "d": "2019-08-02",
-    "text": "Quarterly revenue jumps more than 60% and user base reaches new high",
+    "text": "Quarterly revenue jumps sharply and beats expectations",
     "source": "https://www.sec.gov/Archives/edgar/data/1506293/000162828019009774/pins-ex991_20190630.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2019-11-01",
-    "text": "Quarterly revenue growth slows as company laps a strong prior year",
+    "text": "Quarterly revenue growth slows sharply from prior quarter",
     "source": "https://www.sec.gov/Archives/edgar/data/1506293/000150629319000018/pins-ex991_20190930.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2020-03-16",
-    "text": "Shares sink as pandemic fears trigger broad market rout",
+    "text": "Shares drop sharply with the broader market",
     "source": "market",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2020-07-31",
-    "text": "Revenue growth holds despite pandemic; advertiser demand improves each month",
+    "text": "Quarterly results beat expectations; outlook improves",
     "source": "https://www.sec.gov/Archives/edgar/data/1506293/000150629320000150/pins-ex991x20200630.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2020-10-29",
-    "text": "Quarterly revenue jumps 58% as advertiser demand rebounds; adjusted margin expands",
+    "text": "Quarterly revenue jumps sharply; profit margins expand",
     "source": "https://www.sec.gov/Archives/edgar/data/1506293/000150629320000244/pins-ex991x20200930.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2021-07-30",
-    "text": "Revenue more than doubles, but user growth slows as lockdowns ease",
+    "text": "Quarterly revenue surges, but outlook points to slower growth",
     "source": "https://www.sec.gov/Archives/edgar/data/1506293/000150629321000183/q2-21xpressrelease.htm",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2022-05-24",
-    "text": "Shares tumble after a peer's profit warning hits the whole sector",
+    "text": "Shares fall sharply in heavy trading",
     "source": "market",
     "nameFilter": "pass",
     "review": "pending"
   },
   {
     "d": "2023-10-31",
-    "text": "Revenue growth accelerates to 11% and users hit a record; margins expand",
+    "text": "Quarterly revenue growth accelerates; profit margins expand",
     "source": "https://www.sec.gov/Archives/edgar/data/1506293/000150629323000219/q3-23xpressrelease.htm",
     "nameFilter": "pass",
     "review": "pending"
