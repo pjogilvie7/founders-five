@@ -1,0 +1,123 @@
+/* Gauntlet overrides for the collar piece; loaded after the base stylesheets.
+   Goal: the whole move (pick tenor and floor, read three numbers, enter shares, confirm) fits one screen. */
+
+/* toasts must never sit on the input or the confirm button while this tab is open */
+.panel-wrap:has(.tool.collar) .toasts{top:10px;bottom:auto;right:10px;justify-items:end}
+
+/* header plate: single rule, teal top edge and an engraved scale, no double frame */
+.collar{gap:12px}
+.collar .plate{box-shadow:none;border-top:3px solid var(--collar);padding:10px 18px 16px}
+.collar .plate::before{inset:auto 0 0 0;height:6px;border:0;background:repeating-linear-gradient(90deg,var(--paper-line) 0 1px,transparent 1px 8px);opacity:.9}
+.collar .plate .tool-h h2{font-size:28px}
+.collar .plate .t-lede{max-width:none;font-size:14px}
+.collar .box{padding:12px 16px 14px}
+.collar .box h3{margin-bottom:8px;font-size:14px}
+
+/* form grid: tenor and floor share a row on desktop, everything else spans */
+.collar .aform{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
+.collar .aform>.t-head{grid-area:auto;align-self:stretch;padding-bottom:0;text-align:left}
+.collar .aform>.t-head,.collar .aform>.t-prev,.collar .aform>.t-gate,.collar .aform>.dock,.collar .aform>.t-res{grid-column:1/-1}
+.collar .segf-l{font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.collar .seg2{display:flex;width:100%}
+.collar .seg2 button{flex:1;min-width:0;min-height:40px;padding:4px 8px;font-size:14px}
+.collar .seg2 button[aria-checked=true]{background:var(--collar);border-color:var(--ink);color:#fff;box-shadow:inset 0 -3px 0 var(--gold)}
+.collar .seg2 button:focus-visible{outline:2px solid var(--gold);outline-offset:2px;position:relative;z-index:1}
+
+/* quote: three large figures in one row, then the band */
+.collar .quote{padding:10px 14px 10px;gap:8px}
+.collar .q-top{gap:4px 10px}
+.collar .tag.model{font-size:10px;padding:0 6px}
+.collar .q-meta{font-size:12px}
+.collar .q-grid{gap:0;grid-template-columns:repeat(3,minmax(0,1fr))}
+.collar .q-grid>div{padding:0 14px;border-left:1px solid color-mix(in srgb,var(--collar) 35%,transparent);gap:1px}
+.collar .q-grid>div:first-child{padding-left:0;border-left:0}
+.collar .q-grid .k{font-size:10.5px;letter-spacing:.1em;white-space:nowrap}
+.collar .q-grid .v{font-size:32px;line-height:1.1;letter-spacing:-.01em;color:var(--ink)}
+.collar .q-grid .q-cost .v{color:var(--good)}
+.collar .q-grid .sub{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.collar .quote.bad .q-grid .v{color:var(--seal)}
+
+.q-band{position:relative;height:34px;margin:2px 4px 0}
+.q-band::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;background:var(--paper-line)}
+.q-band .b-fill{position:absolute;top:2px;height:10px;left:var(--f);right:calc(100% - var(--c));
+  background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--collar) 42%,transparent) 0 3px,color-mix(in srgb,var(--collar) 16%,transparent) 3px 6px);
+  border:1px solid var(--collar);transition:left .35s var(--ease-out),right .35s var(--ease-out)}
+.q-band .b-pin{position:absolute;top:0;width:0;height:16px;border-left:2px solid var(--collar);margin-left:-1px;transition:left .35s var(--ease-out)}
+.q-band .b-f{left:var(--f)}
+.q-band .b-t{left:var(--t);border-left-color:var(--ink);height:20px;top:-2px}
+.q-band .b-c{left:var(--c);border-left-color:var(--gold)}
+.q-band em{position:absolute;top:19px;left:0;transform:translateX(-50%);font-style:normal;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.q-band .b-t em{top:21px;color:var(--ink);font-weight:600}
+.collar .q-rule{font-size:11.5px;line-height:1.35;margin:0}
+
+/* preview and gate stay short */
+.collar .t-prev .t-hint{font-size:12.5px;line-height:1.4;margin:0}
+.collar .t-hint:empty,.collar .t-prev:has(>.t-hint:empty){display:none}
+.collar .gate{font-size:13.5px}
+
+/* the dock: input, MAX and confirm as one unit */
+.collar .dock{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);grid-template-areas:"l l" "r go" "m go";gap:4px 14px;align-items:stretch;
+  padding:10px 12px 8px;border:1px solid var(--ink);background:color-mix(in srgb,var(--paper-2) 60%,var(--paper));position:relative}
+.collar .dock .fld{display:contents}
+.collar .dock .fld-l{grid-area:l;font-size:11px;letter-spacing:.12em;text-transform:uppercase;align-self:end}
+.collar .dock .fld-row{grid-area:r}
+.collar .dock .fld-max{grid-area:m;min-height:0;margin:0;font-size:12.5px;align-self:start}
+.collar .dock .fld-in{font-size:28px;min-height:56px;font-weight:500;letter-spacing:-.01em}
+.collar .dock .fld-in:focus-visible{outline:2px solid var(--collar);outline-offset:1px}
+.collar .dock .fld-row .max{min-height:56px;min-width:76px;padding:0 14px;background:var(--gold);color:var(--ink);font-weight:700;letter-spacing:.1em;box-shadow:0 3px 0 color-mix(in srgb,var(--gold) 55%,#000)}
+.collar .dock .fld-row .max:active{transform:translateY(3px);box-shadow:0 0 0 transparent}
+.collar .dock .fld-row .max:hover{background:#bb953f}
+.collar .dock .max[aria-disabled=true]{background:var(--paper-2);box-shadow:none}
+.collar .dock .t-go{grid-area:go;align-self:stretch;justify-self:stretch;min-width:0;width:100%;min-height:56px;padding:8px 16px;font-size:15px;line-height:1.25;letter-spacing:.02em;
+  box-shadow:inset 0 0 0 3px var(--seal),inset 0 0 0 4px color-mix(in srgb,var(--paper) 45%,transparent),0 3px 0 color-mix(in srgb,var(--seal) 55%,#000)}
+.collar .dock .t-go:hover{box-shadow:inset 0 0 0 3px #ad2f27,inset 0 0 0 4px color-mix(in srgb,var(--paper) 55%,transparent),0 3px 0 color-mix(in srgb,var(--seal) 55%,#000)}
+.collar .dock .t-go:active{transform:translateY(3px);box-shadow:inset 0 0 0 3px var(--seal),inset 0 0 0 4px color-mix(in srgb,var(--paper) 45%,transparent),0 0 0 transparent}
+.collar .dock .t-go[aria-disabled=true]{background:color-mix(in srgb,var(--ink) 22%,var(--paper-2));color:color-mix(in srgb,var(--ink) 70%,var(--paper));opacity:1;box-shadow:inset 0 0 0 1px var(--paper-line);cursor:default}
+.collar .dock .t-go:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+@keyframes collarReady{50%{box-shadow:inset 0 0 0 3px var(--seal),inset 0 0 0 4px color-mix(in srgb,var(--paper) 45%,transparent),0 3px 0 color-mix(in srgb,var(--seal) 55%,#000),0 0 0 5px color-mix(in srgb,var(--seal) 22%,transparent)}}
+.collar .dock .t-go.ready{animation:collarReady 2.2s ease-in-out 2}
+.collar .t-res{margin:0}
+
+/* your collars: stamped cards */
+.collar .row-item{padding:12px 14px;margin-top:10px;border:1px solid var(--paper-line);border-left:3px solid var(--collar);background:color-mix(in srgb,var(--paper) 80%,#fff)}
+.collar .row-item:first-child{margin-top:0;padding-top:12px}
+.collar .r-main b{font-size:16px}
+.collar .street summary{font-size:14px}
+
+/* phone: one column, dock pinned to the bottom of the panel so it never needs a scroll */
+@media (max-width:899px){
+  .panel-wrap:has(.tool.collar) .toasts{top:6px;right:6px}
+  .collar{gap:10px}
+  .collar .plate{padding:8px 12px 14px}
+  .collar .plate .tool-h h2{font-size:24px}
+  .collar .plate .t-lede{display:none}
+  .collar .plate .tool-h{margin:0}
+  .collar .box>h3{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .collar .box{padding:10px 12px 0}
+  .collar .box h3{margin-bottom:6px}
+  .collar .aform{grid-template-columns:minmax(0,1fr);gap:8px}
+  .collar .aform>.t-head{padding-bottom:0;text-align:left}
+  .collar .aform>.segf{display:grid;grid-template-columns:84px minmax(0,1fr);align-items:center;gap:8px}
+  .collar .segf-l{font-size:10.5px;line-height:1.15}
+  .collar .seg2 button{min-height:38px;font-size:13px;padding:2px 4px}
+  .collar .quote{padding:8px 10px}
+  .collar .q-grid>div{padding:0 8px}
+  .collar .q-grid .k{font-size:9.5px;letter-spacing:.05em}
+  .collar .q-grid .v{font-size:22px}
+  .collar .q-grid .sub{font-size:10.5px}
+  .collar .q-rule{display:none}
+  .q-band{height:30px}
+  .collar .dock{grid-template-columns:minmax(0,1fr);grid-template-areas:"l" "r" "m" "go";gap:3px;position:sticky;bottom:0;z-index:2;margin:0 -12px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));border-width:1px 0 0;
+    box-shadow:0 -8px 14px -10px rgba(24,38,47,.35)}
+  .collar .dock .fld-l{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .collar .dock .fld-in{font-size:24px;min-height:50px}
+  .collar .dock .fld-row .max{min-height:50px}
+  .collar .dock .fld-max{font-size:11.5px;line-height:1.2}
+  .collar .dock .t-go{min-height:50px;margin-top:3px;font-size:14px}
+  .collar .t-prev .t-hint{font-size:12px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .collar .dock .t-go.ready{animation:none}
+  .q-band .b-fill,.q-band .b-pin{transition:none}
+}

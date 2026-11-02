@@ -237,7 +237,7 @@ async function startGame({ cardId, seat, watch }, my) {
   G = {
     cardId, seat, watch, card, entry, engine, state, series, scores, replay: { list: replayList, ptr: 0 }, dctx, tr, span, first,
     userPaused: false, holds: new Set(), speed: watch ? 8 : 1, speeds: watch ? [2, 4, 8] : [1, 2, 4], mode: 'wealth',
-    unlocked: new Set(START_UNLOCKED), notices: [], achievements: ach, marginSynthetic: null, marginText: '', lessonQueue: [], lessonBusy: false,
+    unlocked: new Set(START_UNLOCKED), notices: [], achievements: ach, marginSynthetic: null, marginText: '', lessonQueue: [], lessonBusy: false, choiceQueue: [], choiceBusy: false,
     over: false, acc: 0, last: 0, snap: null, eventLog: [], gameKey: `${cardId}|${seat}|${watch}|${Date.now()}`,
   };
   const g = G;
@@ -260,7 +260,7 @@ async function startGame({ cardId, seat, watch }, my) {
     if (!G || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target, typing = t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
     if (overlayOpen() || typing) return;
-    if (e.key === ' ') { e.preventDefault(); if (g.notices.length) continueNotices(); else togglePause(); }
+    if (e.key === ' ') { e.preventDefault(); if (shownNotices().length) continueNotices(); else togglePause(); }
     else if (/^[1-7]$/.test(e.key)) { const id = TAB_IDS[Number(e.key) - 1]; g.paper.select(id, true); }
   };
   g.onKeyUp = (e) => { if (e.key === ' ' && !overlayOpen() && !(e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))) e.preventDefault(); };
@@ -283,7 +283,22 @@ async function startGame({ cardId, seat, watch }, my) {
 
 const running = () => G && !G.userPaused && G.holds.size === 0 && !G.over;
 function togglePause() { if (!G) return; G.userPaused = !G.userPaused; refresh(); }
-function continueNotices() { if (!G) return; G.notices = []; G.holds.delete('notice'); refresh(); }
+// One interrupt at a time. A maintenance call outranks everything, then the lesson that opens with a tool, then a house or
+// collar-expiry decision (it cannot be put off), then the release / notice card. Whatever is waiting stays out of the DOM
+// until its turn, so no card is ever drawn behind another.
+function interruptBlocked(g) {
+  return g.holds.has('margin') || g.holds.has('lesson') || g.holds.has('lesson-ref') || g.choiceBusy || g.choiceQueue.length > 0 || overlayOpen();
+}
+function shownNotices() { return G && !interruptBlocked(G) ? G.notices : []; }
+function continueNotices() { if (!G || !shownNotices().length) return; G.notices = []; G.holds.delete('notice'); refresh(); }
+function pumpChoices() {
+  const g = G;
+  if (!g || g.dead || g.choiceBusy || !g.choiceQueue.length) return;
+  if (g.holds.has('margin') || g.holds.has('lesson') || g.holds.has('lesson-ref') || overlayOpen()) return;
+  g.choiceBusy = true;
+  const ev = g.choiceQueue.shift();
+  queueMicrotask(() => openChoice(ev));
+}
 
 function frame(t) {
   if (!G || G.dead) return;
@@ -367,13 +382,38 @@ const CHOICES = {
   house: { kicker: 'Decision', title: 'The house', list: [['cash', 'Pay from cash and index fund', true], ['credit', 'Draw the credit line'], ['sell', 'Sell shares'], ['skip', 'Skip the house']] },
   collarExpiry: { kicker: 'Decision', title: 'Your collar has expired', list: [['roll', 'Roll at today’s prices', true], ['end', 'Let it end']] },
 };
+// The cost, in large type, between the copy and the choices (the amount is the engine's own).
+function stakeLine(ev) {
+  const amt = ev.data && ev.data.amount; if (typeof amt !== 'number') return;
+  const dlg = document.querySelector('.dialog.event .choices'); if (!dlg || dlg.parentNode.querySelector('.stake')) return;
+  const s = document.createElement('div'); s.className = 'stake';
+  s.innerHTML = `<span class="stake-l">Amount due</span><span class="num stake-n">${moneyFull(amt)}</span>`;
+  dlg.parentNode.insertBefore(s, dlg);
+}
+// A line of consequence under each house button. Only figures the engine put on the event: what cash and the index fund hold,
+// how much room the credit line has, how many shares a sale would take. Nothing is worked out here.
+function houseDetail(ev, id) {
+  const d = ev.data || {};
+  if (ev.type !== 'house') return '';
+  if (id === 'cash' && typeof d.liquid === 'number') return `Cash and index fund hold ${money(d.liquid)}`;
+  if (id === 'credit' && typeof d.headroom === 'number') return `Credit line has room for ${money(d.headroom)}`;
+  if (id === 'sell' && typeof d.sharesToSell === 'number') return `Sells ${int(d.sharesToSell)} shares`;
+  return '';
+}
+function decorateChoices(ev, choices) {
+  document.querySelectorAll('.dialog.event .choice .btn').forEach((b) => {
+    const c = choices.find((x) => x.id === b.dataset.id); if (!c) return;
+    const detail = c.detail || houseDetail(ev, c.id); if (!detail) return;
+    const label = b.textContent;
+    b.innerHTML = `<span class="c-l">${esc(label)}</span><span class="c-d num">${esc(detail)}</span>`;
+  });
+}
 async function openChoice(ev) {
-  const g = G, def = CHOICES[ev.type]; if (!def) return;
-  g.holds.add('choice');
+  const g = G, def = CHOICES[ev.type]; if (!def) { g.choiceBusy = false; return; }
   const given = ev.data && Array.isArray(ev.data.choices) ? ev.data.choices : null;
   // The engine may send choices as plain ids ("cash") or as objects; labels come from CHOICES when missing.
   const labelOf = (id) => { const hit = def.list.find((x) => x[0] === id); return hit ? hit : [id, id, false]; };
-  const list = given ? given.map((c) => (typeof c === 'string' ? labelOf(c) : [c.choice || c.id, c.label || labelOf(c.choice || c.id)[1], c.primary])) : def.list;
+  const list = given ? given.map((c) => (typeof c === 'string' ? labelOf(c) : [c.choice || c.id, c.label || labelOf(c.choice || c.id)[1], c.primary != null ? c.primary : labelOf(c.choice || c.id)[2]])) : def.list;
   let note = '';
   for (;;) {
     const choices = list.map(([id, label, primary]) => {
@@ -381,18 +421,36 @@ async function openChoice(ev) {
       try { c = g.engine.canDo(g.state, ev.type, { choice: id }) || c; } catch { /* engine may not model per-choice gates */ }
       return { id, label, primary, disabled: c.allowed === false, reason: c.allowed === false ? c.reason : '' };
     });
-    const id = await showModal({ kicker: def.kicker, title: def.title, text: ev.text + (note ? ` ${note}` : ''), choices });
+    const shown = showModal({ kicker: def.kicker, title: def.title, text: ev.text + (note ? ` ${note}` : ''), choices });
+    stakeLine(ev); decorateChoices(ev, choices);
+    const id = await shown;
     if (g.dead) return;
     const r = g.engine.act(g.state, { type: ev.type, choice: id });
     if (r.error) { note = r.error; continue; }
     g.state = r.state; handleEvents(r.events || []); break;
   }
-  g.holds.delete('choice'); refresh();
+  g.choiceBusy = false;
+  if (!g.choiceQueue.length) g.holds.delete('choice');
+  refresh();
 }
 
 function saveAch() {
   let life = []; try { life = JSON.parse(safeLS.get('ff.ach') || '[]'); } catch { /* ignore */ }
   safeLS.set('ff.ach', JSON.stringify([...new Set([...life, ...G.achievements])]));
+}
+
+// Presentation data for one notice card. Every number comes from the engine event, the snapshot or the tranche list.
+function momentFor(ev) {
+  const g = G, d = ev.data || {}, m = { text: ev.text, type: ev.type };
+  if (ev.type === 'release') {
+    if (Array.isArray(d.tranches) && d.shares != null && d.pct != null) {
+      const snap = g.engine.snapshot(g.state), ids = d.tranches;
+      m.kind = 'release'; m.pct = d.pct; m.shares = d.shares; m.free = snap.shares.free; m.locked = d.locked != null ? d.locked : snap.shares.locked;
+      m.total = g.tr.length; m.idx = ids.map((id) => g.tr.findIndex((t) => t.id === id) + 1).filter(Boolean).sort((a, b) => a - b);
+      m.pips = g.tr.map((t) => ({ pct: t.pct, void: t.void, state: ids.includes(t.id) ? 'new' : (t.date && t.date <= snap.d ? 'done' : 'wait') }));
+    } else m.kind = d.never ? 'never' : d.relocked ? 'relock' : 'release';
+  } else m.kind = ev.type;
+  return m;
 }
 
 function handleEvents(events, quiet) {
@@ -408,13 +466,13 @@ function handleEvents(events, quiet) {
       }
       case 'release': case 'windowOpen': case 'planLive':
         if (watch) g.paper.toast(ev.text, 'info');
-        else { g.notices = [...g.notices, { text: ev.text }]; g.holds.add('notice'); }
+        else { g.notices = [...g.notices, momentFor(ev)]; g.holds.add('notice'); }
         break;
       case 'windowClose': case 'planSale': g.paper.toast(ev.text, 'info'); break;
       case 'taxPaid': g.paper.toast(ev.text, 'warn'); break;
       case 'forcedSale':
         if (watch) g.paper.toast(ev.text, 'err');
-        else { g.notices = [...g.notices, { text: ev.text }]; g.holds.add('notice'); }
+        else { g.notices = [...g.notices, momentFor(ev)]; g.holds.add('notice'); }
         break;
       case 'news': g.paper.setNews(ev.text, dateLabel(g.dctx, ev.d)); break;
       case 'achievement': {
@@ -427,10 +485,10 @@ function handleEvents(events, quiet) {
         if (!g.state.loan || !g.state.loan.call) g.marginSynthetic = ev.data || {};
         if (!watch) g.holds.add('margin');
         break;
-      case 'house': case 'collarExpiry': if (!watch) openChoice(ev); break;
+      case 'house': case 'collarExpiry': if (!watch) { g.choiceQueue.push(ev); g.holds.add('choice'); } break;
       case 'cardEnd': break;
       case 'spend': break;
-      default: if (ev.pause && !watch && ev.text) { g.notices = [...g.notices, { text: ev.text }]; g.holds.add('notice'); }
+      default: if (ev.pause && !watch && ev.text) { g.notices = [...g.notices, momentFor(ev)]; g.holds.add('notice'); }
     }
   }
 }
@@ -467,10 +525,11 @@ function refresh() {
     vignette: g.card.vignette || null,
     tranches: g.tr.map((t) => ({ ...t, released: !!t.date && t.date <= snap.d })), rivals, mode: g.mode,
     progress: Math.min(1, Math.max(0, daysBetween(g.first, snap.d) / g.span)), speeds: g.speeds, speed: g.speed,
-    running: !!running(), watch: g.watch, dctx: g.dctx, achievements: [...g.achievements], unlocked: g.unlocked, notices: g.notices,
+    running: !!running(), watch: g.watch, dctx: g.dctx, achievements: [...g.achievements], unlocked: g.unlocked, notices: shownNotices(),
     marginText: g.marginText, seat: g.seat, cardId: g.cardId,
   };
   g.rail.update(view); g.paper.update(view);
+  pumpChoices();
 }
 
 // ------------------------------------------------------------------ start

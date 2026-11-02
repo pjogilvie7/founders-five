@@ -39,7 +39,7 @@ export function randomPolicy(rnd) {
   const sizeBias = 0.15 + 0.85 * rnd();               // typical share of the maximum used per move
   const frac = () => Math.min(1, Math.max(0.02, sizeBias * (0.4 + 1.2 * rnd())));
   const answers = {                                   // leanings for the three choices the clock forces
-    house: [rnd(), rnd(), rnd(), rnd() * 0.4],        // cash, credit, sell, skip
+    house: [rnd(), rnd(), rnd()],                     // cash, credit, sell
     margin: [0.6 + rnd(), rnd() * 0.6, rnd() * 0.4],  // post, sell, wait
     expiry: [rnd(), rnd()],                           // roll, end
   };
@@ -71,7 +71,7 @@ export function randomPolicy(rnd) {
     start: step,
     day: step,
     respond(s, e) {
-      if (e.type === "house") return { type: "house", choice: ["cash", "credit", "sell", "skip"][weighted(answers.house)] };
+      if (e.type === "house") return { type: "house", choice: ["cash", "credit", "sell"][weighted(answers.house)] };
       if (e.type === "marginCall") return { type: "marginCall", choice: ["post", "sell", "wait"][weighted(answers.margin)] };
       return { type: "collarExpiry", choice: ["roll", "end"][weighted(answers.expiry)] };
     },

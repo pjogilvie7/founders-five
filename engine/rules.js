@@ -68,20 +68,33 @@ export function dayNumber(prices, d) {
   return last + Math.max(1, extra);
 }
 
-// 10b5-1 cooling-off. seat "engineer": 30 calendar days. seat "founder": later of 90 days or 2 business days
-// after the first 10-Q/10-K filed after adoption, capped at 120 days. No report on file after adoption (a live
-// card's future) uses the 120-day cap, the choice that can never let a sale happen early.
-// Returns {endsOn, firstTradeOn, basis}
+// Last calendar day of the calendar quarter that contains d.
+export function quarterEndOf(d) {
+  const y = +d.slice(0, 4), m = +d.slice(5, 7);
+  const qm = Math.ceil(m / 3) * 3;
+  const last = new Date(Date.UTC(y, qm, 0)).getUTCDate();
+  return `${y}-${String(qm).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
+}
+
+// 10b5-1 cooling-off (17 CFR 240.10b5-1(c)(1)(ii)(B)). seat "engineer": 30 calendar days.
+// seat "founder" (director or officer): the later of 90 calendar days after adoption or 2 business days after the
+// 10-Q/10-K that reports the fiscal quarter IN WHICH the plan was adopted, capped at 120 days. The game takes the
+// fiscal quarter as the calendar quarter containing the adoption date; its report is the first 10-Q/10-K in `reports`
+// filed after that quarter's end. No such report on file (a live card's future) uses the 120-day cap, the choice
+// that can never let a sale happen early.
+// Returns {endsOn, firstTradeOn, basis, quarterEnd, reportOn}
 export function coolingOff({ seat, adoptedOn, prices, reports }) {
-  let endsOn, basis;
+  let endsOn, basis, quarterEnd = null, reportOn = null;
   if (seat === "founder") {
     const d90 = addCalendarDays(adoptedOn, 90);
     const d120 = addCalendarDays(adoptedOn, 120);
-    const rep = (reports || []).find((r) => r.d > adoptedOn);
+    quarterEnd = quarterEndOf(adoptedOn);
+    const rep = (reports || []).find((r) => r.d > quarterEnd);
     if (!rep) {
       endsOn = d120;
       basis = "cap";
     } else {
+      reportOn = rep.d;
       const afterReport = businessDaysAfter(rep.d, 2);
       if (afterReport <= d90) { endsOn = d90; basis = "90days"; }
       else if (afterReport >= d120) { endsOn = d120; basis = "cap"; }
@@ -91,7 +104,7 @@ export function coolingOff({ seat, adoptedOn, prices, reports }) {
     endsOn = addCalendarDays(adoptedOn, 30);
     basis = "30days";
   }
-  return { endsOn, firstTradeOn: tradingDateOnOrAfter(prices, endsOn), basis };
+  return { endsOn, firstTradeOn: tradingDateOnOrAfter(prices, endsOn), basis, quarterEnd, reportOn };
 }
 
 // Rule 144 volume cap for an affiliate: in any rolling 3 months, the greater of 1% of shares outstanding or the

@@ -11,13 +11,13 @@ const liquid = (s) => {
   return p.cash + p.index - p.overdraft;
 };
 
-// House: cash and index if they cover it, else sell if the window allows, else the credit line, else skip.
+// House: cash and index if they cover it, else sell if the window allows, else the credit line, else cash on the overdraft.
 function houseAnswer(s, e) {
   const d = e.data;
   if (d.liquid >= HOUSE) return { type: "house", choice: "cash" };
   if (d.canSell) return { type: "house", choice: "sell" };
   if (d.headroom >= HOUSE) return { type: "house", choice: "credit" };
-  return { type: "house", choice: "skip" };
+  return { type: "house", choice: "cash" };
 }
 
 function baseRespond(s, e) {
@@ -61,8 +61,11 @@ function seller() {
   return { respond: baseRespond, start: step, day: step };
 }
 
-// The Playbook: at each release sells a third, collars a third (85%, 12 months, rolled), holds a third; 5% monthly plan.
-// A collar that cannot roll (window closed) is re-set at the next open window.
+// The Playbook: at each release sells a third, collars a third (85%, 12 months, rolled), holds a third. Once the first
+// release's collar is placed and nothing is left to collar, it adopts a 5% monthly plan. A live or cooling-off plan voids
+// the defense of any new hedge (Rule 10b5-1(c)(1)(i)(C)), so while a plan runs it never collars: a later release has a third
+// sold and a third held, and the third that would have been collared is held. A collar that cannot roll (window closed) is
+// re-set at the next open window, unless a plan is then running.
 function playbook() {
   const mem = { processed: 0, collarOwed: 0 };
   const step = (s) => {
@@ -74,7 +77,6 @@ function playbook() {
       if (r.error) return false;
       cur = r.state; out.push(a); return true;
     };
-    if (!cur.plan && canDo(cur, "adoptPlan", { pct: 5, months: 18 }).allowed) run({ type: "adoptPlan", pct: 5, months: 18 });
     const released = cur.total - cur.shares.locked;
     const g = canDo(cur, "sell");
     if (g.allowed && released > mem.processed) {
@@ -84,14 +86,19 @@ function playbook() {
       if (third > 0) {
         const n = Math.min(third, g.max);
         if (n > 0) run({ type: "sell", shares: n });
-        mem.collarOwed += third;
+        if (!cur.plan) mem.collarOwed += third; // with a plan running, that third is simply held
       }
     }
+    if (cur.plan) mem.collarOwed = 0;
     if (mem.collarOwed > 0 && cur.shares.free > 0) {
       const n = Math.min(mem.collarOwed, cur.shares.free);
-      if (canDo(cur, "collar", { shares: n, tenorMonths: 12, putPct: 0.85 }).allowed) {
+      const cd = canDo(cur, "collar", { shares: n, tenorMonths: 12, putPct: 0.85 });
+      if (cd.allowed) {
         if (run({ type: "collar", shares: n, tenorMonths: 12, putPct: 0.85 })) mem.collarOwed -= n;
-      }
+      } else if (cd.quote && cd.quote.error) mem.collarOwed = 0; // a band the quote cannot meet: hold instead
+    }
+    if (!cur.plan && released > 0 && mem.processed >= released && mem.collarOwed <= 0 && canDo(cur, "adoptPlan", { pct: 5, months: 18 }).allowed) {
+      run({ type: "adoptPlan", pct: 5, months: 18 });
     }
     return out; // actions already applied to `cur` only for planning; runWithPolicy re-applies them to the real state
   };
@@ -99,7 +106,7 @@ function playbook() {
     respond(s, e) {
       if (e.type === "collarExpiry") {
         if (e.data.canRoll) return { type: "collarExpiry", choice: "roll" };
-        mem.collarOwed += e.data.shares;
+        if (!s.plan) mem.collarOwed += e.data.shares;
         return { type: "collarExpiry", choice: "end" };
       }
       return baseRespond(s, e);

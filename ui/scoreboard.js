@@ -78,6 +78,63 @@ function tableHTML(cols) {
     `<thead><tr><th scope="col"><span class="sr-only">Measure</span></th>${head}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 
+// Standings by after-tax family wealth, in the order the big number is shown. Rank is by the displayed figure, so two
+// results that look the same share a rank and are marked "Tied", not "Winner"; nobody wins when every figure looks the same.
+const ORD = ['first', 'second', 'third', 'fourth', 'fifth'];
+function standingsModel(cols, watch) {
+  const rows = cols.map((c) => ({ c, v: c.score && c.score.afterTaxWealth, txt: money(c.score && c.score.afterTaxWealth) }));
+  const ok = rows.filter((r) => fin(r.v));
+  const same = (a, b) => a.txt === b.txt;
+  rows.forEach((r) => { r.rank = fin(r.v) ? 1 + ok.filter((o) => !same(o, r) && o.v > r.v).length : null; });
+  rows.forEach((r) => { r.group = r.rank == null ? 1 : rows.filter((o) => o.rank === r.rank).length; });
+  rows.sort((a, b) => (a.rank == null) - (b.rank == null) || (a.rank || 0) - (b.rank || 0));
+  rows.forEach((r) => { r.name = r.c.you && !watch ? 'You' : (r.c.you ? BOT_NAMES.playbook : r.c.label); r.tied = r.group > 1; r.win = r.rank === 1 && r.group === 1; });
+  const me = rows.find((r) => r.c.you) || null;
+  const mates = me && me.tied ? rows.filter((o) => o !== me && o.rank === me.rank) : [];
+  return { rows, me, mates, n: rows.length, watch };
+}
+
+function standingsHTML(model, duels = {}) {
+  const items = model.rows.map((r, i) => {
+    const tag = r.win ? 'Winner' : r.tied ? 'Tied' : '';
+    return `<li class="sc-st${r.c.you ? ' you' : ''}${r.win ? ' win' : ''}${r.tied ? ' tie' : ''}" data-key="${esc(r.c.key)}" data-rank="${r.rank == null ? '' : r.rank}" style="--j:${i}">
+      <span class="sc-rk num" aria-hidden="true">${r.rank == null ? '' : r.rank}</span>${emblemFor(r.c.emblem)}
+      <span class="sc-nm"><span class="sr-only">Rank ${r.rank == null ? 'unknown' : r.rank}${r.tied ? ' (tied)' : ''}: </span>${esc(r.name)}${r.c.you && model.watch ? '<small>watched</small>' : ''}</span>
+      <span class="sc-ld" aria-hidden="true"></span>${duels[r.c.key] ? `<span class="sc-vs ${duels[r.c.key].state}"><span class="sc-pips" aria-hidden="true">${duels[r.c.key].pips}</span><span class="sc-vs-n"><b class="num">${duels[r.c.key].n}</b> of 4<span class="sr-only"> measures beaten</span></span></span>` : '<span class="sc-vs none"></span>'}<span class="sc-wv num">${esc(r.txt)}</span>
+      <span class="sc-wf${r.tied ? ' tie' : ''}">${tag}</span></li>`;
+  }).join('');
+  return `<ol class="sc-stand" aria-label="Standings by after-tax family wealth">${items}</ol>`;
+}
+
+// Hero rank line: the rank in words, with an explicit "tied with" line when two results show the same figure.
+function rankLine(model, watch) {
+  const m = model.me;
+  if (!m || m.rank == null) return { crest: '', big: 'No rank', sub: '' };
+  const who = watch ? BOT_NAMES.playbook : 'You';
+  const word = ORD[m.rank - 1] || `${m.rank}th`;
+  if (m.tied) {
+    const names = model.mates.map((o) => o.name);
+    const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+    return { crest: String(m.rank), tied: true, big: `${who} ${watch ? 'is' : 'are'} tied with ${list}`, sub: `Level for ${word} place of ${model.n} on after-tax wealth, as the figures are shown.` };
+  }
+  return { crest: String(m.rank), big: `${who} finished ${word} of ${model.n}`, sub: '' };
+}
+
+// Head to head: how many of the four measures the player's score beats each rival on (engine compare(), counted).
+function duelMap(ctx, cmp, watch) {
+  const out = {};
+  if (!cmp) return out;
+  const { score, botScores = {} } = ctx;
+  const names = { sharpe: 'Sharpe ratio', maxDrawdown: 'Max drawdown', irr: 'After-tax IRR', afterTaxWealth: 'After-tax wealth' };
+  for (const k of ['holder', 'seller', 'playbook']) {
+    if (!botScores[k] || (watch && k === 'playbook')) continue;
+    let c; try { c = cmp(score, botScores[k]); } catch { continue; }
+    out[k] = { n: c.count, state: c.count >= 3 ? 'won' : c.count <= 1 ? 'lost' : 'split',
+      pips: Object.entries(names).map(([m, label]) => `<i class="${c.wins[m] ? 'on' : ''}" title="${esc(label + (c.wins[m] ? ': ahead' : ': not ahead'))}"></i>`).join('') };
+  }
+  return out;
+}
+
 function certHTML(ctx) {
   const { card, score } = ctx;
   const entry = (ctx.data && ctx.data.cardsIndex || []).find((c) => c.id === card.id) || {};
@@ -107,7 +164,7 @@ function certHTML(ctx) {
         <div class="sc-face-in"><p class="sc-cert-head">Certificate of shares</p>${vig(card.vignette || entry.vignette, 'An engraved allegory')}
         <h2 class="sc-co">${esc(label)}</h2><p class="sc-tick">Sealed</p><p class="sc-live">Breaking the seal.</p></div></div>
       <div class="sc-face back" data-face="back" aria-hidden="true"><span class="sc-border" aria-hidden="true">${border}</span>
-        <div class="sc-face-in"><p class="sc-cert-head">Revealed</p>${vig(card.revealVignette || entry.revealVignette, 'An engraved vignette for the company')}${title}
+        <div class="sc-face-in"><p class="sc-cert-head">Certificate of shares</p>${vig(card.revealVignette || entry.revealVignette, 'An engraved vignette for the company')}${title}
         <dl class="sc-dl">${lines}</dl>
         <p class="sc-jpm">${esc(JPM_LINE)}</p><span class="stamp sc-stamp">Revealed</span></div></div>
     </div></div>`;
@@ -123,7 +180,7 @@ function countUp(node, final, text) {
     if (!node.isConnected) return;
     const k = Math.min(1, (t - t0) / dur);
     node.textContent = k >= 1 ? text(final) : text(final * ease(k));
-    if (k < 1) requestAnimationFrame(step);
+    if (k < 1) requestAnimationFrame(step); else node.classList.add('landed');
   };
   requestAnimationFrame(step);
 }
@@ -241,6 +298,8 @@ async function renderPercentile(el, ctx, cols) {
       <span class="sc-pk-n">${esc(r.name)}</span><span class="sc-pk-v">Wealth <b class="num">${esc(money(r.w))}</b>, ahead of ${esc(pc(r.pw))}</span><span class="sc-pk-v">Sharpe <b class="num">${esc(fmtS(r.s))}</b>, ahead of ${esc(pc(r.ps))}</span></li>`).join('')}</ul>
     <p class="sc-pct-note">Each random strategy is a made-up mix of sales, plans, collars, loans and index moves, and every move was one the rules allow on the day it was tried. They are a yardstick for how much the choices matter, not a list of things to do. The mix is fixed for this card and seat, so the same 500 appear every time.</p>`;
   host.dataset.ready = 'true';
+  const meta = el.querySelector('#sc-pct-meta');
+  if (meta) meta.textContent = `Ahead of ${pc(me.pw)} on wealth`;
 }
 
 // ------------------------------------------------------------------ main
@@ -304,72 +363,115 @@ export async function renderScoreboard(el, ctx) {
 
   const nb = nextBlind(ctx);
   const seatHref = `#/seat/${encodeURIComponent(cardId)}`;
-  const buttons = watch
-    ? `<a class="btn primary" data-action="play-yourself" href="${seatHref}">Play it yourself</a>
-       <a class="btn" data-action="watch-again" href="#/watch">Watch again</a>${nb ? `<a class="btn" data-action="deal-another" href="#/seat/${encodeURIComponent(nb.id)}">Deal another card</a>` : ''}`
-    : `<a class="btn primary" data-action="play-again" href="#/play/${encodeURIComponent(cardId)}/${encodeURIComponent(ctx.seat)}">Play again</a>
-       <a class="btn" data-action="switch-seat" href="${seatHref}">Switch seat</a>${nb ? `<a class="btn" data-action="deal-another" href="#/seat/${encodeURIComponent(nb.id)}">Deal another card</a>` : ''}`;
+  const dealHref = nb ? `#/seat/${encodeURIComponent(nb.id)}` : null;
+  // the same actions twice: once in the hero (always the first thing in reach) and once in a dock that
+  // slides up when the hero row has scrolled out of view. Only the dock carries the data-action / data-hook hooks.
+  const barHTML = (hero) => {
+    const a = (name) => (hero ? `data-cta="${name}"` : `data-action="${name}"`);
+    const mainBtn = watch
+      ? `<a class="btn primary" ${a('play-yourself')} href="${seatHref}">Play it yourself</a>`
+      : `<a class="btn primary" ${a('play-again')} href="#/play/${encodeURIComponent(cardId)}/${encodeURIComponent(ctx.seat)}">Play again</a>`;
+    const sideBtn = watch
+      ? `<a class="sc-q" ${a('watch-again')} href="#/watch">Watch again</a>`
+      : `<a class="sc-q" ${a('switch-seat')} href="${seatHref}">Switch seat</a>`;
+    return `${mainBtn}
+        ${dealHref ? `<a class="btn" ${a('deal-another')} href="${dealHref}">Deal another card</a>` : ''}
+        <button class="btn sc-sharebtn" type="button" ${a('copy-share-code')}${hero ? '' : ' data-hook="copy-share-code"'} aria-controls="sc-share"><span class="sc-sharebtn-t">Copy share code</span></button>
+        ${sideBtn}
+        ${hero ? '' : `<button class="sc-q" type="button" data-action="compare-runs" data-hook="compare-runs" aria-expanded="false" aria-controls="sc-compare">Compare runs</button>`}`;
+  };
+  const model = standingsModel(cols, watch);
+  const rk = rankLine(model, watch);
+  const duels = duelMap(ctx, cmp, watch);
 
   const kicker = watch ? 'The Playbook, finished' : shared ? 'A shared run, replayed' : (card.blind ? 'Card finished' : 'Card finished so far');
   const headline = watch ? 'A finished run, watched' : shared ? 'A shared result' : 'Your result';
   const live = !!card.live;
   const showPct = !!(ctx.data && ctx.data.market && card.prices && card.prices.length);
 
+  // hero seal strip: the seals earned this run, large, stamped in one after another with a NEW mark on first-time ones;
+  // below them a pip for each of the twelve (gold = earned this run, dark = earned before)
+  let trayN = 0;
+  const nowList = ACHIEVEMENT_META.filter((a) => earnedSet.has(a.id));
+  const fresh = nowList.filter((a) => !before.has(a.id));
+  const sealCards = nowList.map((a) => {
+    const isNew = !before.has(a.id), k = trayN++;
+    return `<li class="sc-slot now${isNew ? ' fresh' : ''}" data-id="${a.id}" style="--k:${k}" title="${esc(a.name + ': ' + a.lesson)}">${medalHTML(a, true, 64)}
+      <span class="sc-slot-n">${esc(a.name)}</span>${isNew ? '<span class="sc-new" aria-hidden="true">New</span>' : ''}<span class="sr-only">${isNew ? ', new' : ', earned before'}</span></li>`;
+  }).join('');
+  const pips = ACHIEVEMENT_META.map((a) => {
+    const now = earnedSet.has(a.id), ever = !now && before.has(a.id);
+    return `<li class="${now ? 'now' : ever ? 'before' : ''}" title="${esc(a.name)}"><span class="sr-only">${esc(a.name)}: ${now ? 'earned this run' : ever ? 'earned before' : 'not yet earned'}</span></li>`;
+  }).join('');
+  const collected = ACHIEVEMENT_META.filter((a) => earnedSet.has(a.id) || before.has(a.id)).length;
+  const sealsHTML = watch
+    ? `<div class="sc-seals quiet"><p class="sc-seals-l">Watching earns no seals. <a href="${seatHref}">Play it yourself</a> to collect them.</p></div>`
+    : `<div class="sc-seals${nowList.length ? '' : ' none'}" aria-labelledby="sc-seals-l">
+        <p class="sc-seals-l" id="sc-seals-l">${nowList.length
+          ? `<b class="num">${nowList.length}</b> ${nowList.length === 1 ? 'seal' : 'seals'} earned this run${fresh.length ? `, <b class="num">${fresh.length}</b> new` : ''}`
+          : 'No seals earned this run'}<span class="sc-seals-c num">${collected} of ${ACHIEVEMENT_META.length} collected</span></p>
+        ${nowList.length ? `<ul class="sc-tray-row" data-count="${nowList.length}">${sealCards}</ul>` : ''}
+        <ul class="sc-pips" aria-label="All seals">${pips}</ul></div>`;
+
+  const acc = (id, title, meta, body, open = false) => `<details class="sc-acc" id="${id}"${open ? ' open' : ''}><summary><span class="sc-acc-t">${title}</span><span class="sc-acc-m">${meta}</span><span class="sc-acc-x" aria-hidden="true"></span></summary><div class="sc-acc-b">${body}</div></details>`;
+  const leaveBody = `<div class="sc-leaves"><p>This is a simplified model of one stock. It does not include:</p>
+      <ul class="sc-leaves-list">${LEAVES_OUT.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
+  const measuresBody = `${tableHTML(cols)}
+      <details class="sc-big-more"><summary>How the big number is counted</summary>
+        <p class="sc-big-note">${watch ? 'This is The Playbook\'s number, not yours. ' : ''}Counts what the family spent, and takes out the tax you would owe if you sold everything on the last day. The starting figure takes out the tax already built into the shares on day one, so the change shows what the decisions did.${live ? ' The card is still running, so this is a result so far.' : ''}</p></details>`;
+  const debriefBody = `${watch ? '<p class="sc-watchnote">You watched this run, so “you” below means The Playbook.</p>' : ''}
+      ${paras.map((p) => `<p class="sc-para">${esc(p)}</p>`).join('')}`;
+  const achBody = `<p class="sc-ach-lede">${watch ? 'Watching earns none. Achievements come from your own play.' : esc(earnedSet.size ? `${earnedSet.size} earned this run.` : 'None earned this run.')}</p>
+      <ul class="sc-medals">${medals}</ul>`;
+  const revealBlock = card.blind && card.reveal && card.reveal.text
+    ? `<section class="sc-in sc-reveal" style="--i:3" aria-labelledby="sc-rev-h"><h3 id="sc-rev-h">What the card was</h3><p class="sc-para" id="sc-reveal-text">${esc(card.reveal.text)}</p></section>` : '';
+  const lessonBlock = forced.length && !watch
+    ? `<section class="sc-in sc-lesson" style="--i:3" role="note" data-lesson="forced-sale"><h3>A lesson from the bank sale</h3>
+        <p>The bank sold ${esc(int(forcedShares))} of your pledged shares at the close${forced.length > 1 ? ` in ${forced.length} sales` : ''}, ignoring the trading window, and each sale was taxed. A loan against one stock lets the bank choose the day, and it chooses the day the price is low. This is a lesson, not a badge.</p></section>` : '';
+
   el.innerHTML = `<article class="sc" data-card="${esc(cardId)}" data-seat="${esc(ctx.seat || '')}" data-watch="${watch ? 'true' : 'false'}" data-blind="${card.blind ? 'true' : 'false'}">
     <header class="sc-head sc-in" style="--i:0"><p class="kicker">${esc(kicker)}</p><h1>${esc(headline)}</h1></header>
     <div class="sc-top">
       <section class="sc-in sc-cert-wrap" style="--i:1" aria-label="Certificate">${certHTML(ctx)}</section>
-      <section class="sc-in sc-bigcard" style="--i:2" aria-labelledby="sc-big-l">
-        <p class="sc-big-l" id="sc-big-l">After-tax family wealth</p>
-        <p class="sc-big num" id="sc-big" data-value="${fin(final) ? final : ''}">${fin(final) ? esc(moneyFull(final)) : '—'}</p>
-        <dl class="sc-big-dl">
-          <div><dt>Starting wealth, after tax</dt><dd class="num" id="sc-w0">${fin(W0) ? esc(moneyFull(W0)) : '—'}</dd></div>
-          <div><dt>Change</dt><dd class="num ${change != null && change < 0 ? 'down' : 'up'}" id="sc-chg">${change == null ? '—' : (change < 0 ? '' : '+') + esc(moneyFull(change))}</dd></div>
-        </dl>
-        <p class="sc-big-note">${watch ? 'This is The Playbook\'s number, not yours. ' : ''}Counts what the family spent, and takes out the tax you would owe if you sold everything on the last day. The starting figure takes out the tax already built into the shares on day one, so the change shows what the decisions did.${live ? ' The card is still running, so this is a result so far.' : ''}</p>
+      <section class="sc-in sc-bigcard" style="--i:2" aria-label="Result">
+        <div class="sc-rank${rk.tied ? ' tied' : ''}" id="sc-rank">
+          ${rk.crest ? `<span class="sc-crest" aria-hidden="true"><b class="num">${esc(rk.crest)}</b>${rk.tied ? '<i>tied</i>' : ''}</span>` : ''}
+          <div class="sc-rank-t"><p class="sc-rank-h" id="sc-rank-h">${esc(rk.big)}</p><p class="sc-rank-s">${esc(rk.sub)}</p></div>
+        </div>
+        <div class="sc-numrow">
+          <div class="sc-numcol"><p class="sc-big-l" id="sc-big-l">After-tax family wealth</p>
+            <p class="sc-big num" id="sc-big" data-value="${fin(final) ? final : ''}">${fin(final) ? esc(moneyFull(final)) : '—'}</p></div>
+          <dl class="sc-big-dl">
+            <div><dt>Starting, after tax</dt><dd class="num" id="sc-w0">${fin(W0) ? esc(moneyFull(W0)) : '—'}</dd></div>
+            <div><dt>Change</dt><dd class="num ${change != null && change < 0 ? 'down' : 'up'}" id="sc-chg">${change == null ? '—' : (change < 0 ? '' : '+') + esc(moneyFull(change))}</dd></div>
+          </dl>
+        </div>
+        ${verdict ? `<p class="sc-verdict" id="sc-verdict">${esc(verdict)}</p>` : ''}
+        <p class="sc-stand-c">Rank by wealth. The bars count the four measures you beat each rival on.</p>
+        ${standingsHTML(model, duels)}
+        ${sealsHTML}
+        <div class="sc-cta" id="sc-cta">${barHTML(true)}</div>
       </section>
     </div>
+    ${revealBlock}${lessonBlock}
 
-    <section class="sc-in sc-measures" style="--i:3" aria-labelledby="sc-m-h">
-      <h2 id="sc-m-h">Four measures</h2>
-      ${tableHTML(cols)}
+    <section class="sc-in sc-report" style="--i:4" aria-labelledby="sc-r-h">
+      <div class="sc-report-h"><h2 id="sc-r-h">The full report</h2><button class="sc-q" type="button" id="sc-toggle-all" aria-pressed="false">Open all</button></div>
+      <p class="sc-report-lede">Everything behind the number. Open what you want to check.</p>
+      ${acc('sc-m-h', 'Four measures', 'Sharpe, drawdown, IRR, wealth', measuresBody)}
+      ${showPct ? acc('sc-p-h', `Against 500 random strategies${live ? ` <span class="sc-pct-tag">${esc(`${score && score.days != null ? score.days : card.prices.length}-day card`)}</span>` : ''}`, '<span id="sc-pct-meta">Running now</span>',
+        '<div id="sc-pct-body" aria-live="polite"><p class="sc-pct-status" role="status">Running 500 random legal strategies: 0%</p></div>') : ''}
+      ${acc('sc-d-h', 'Debrief', `${paras.length} short ${paras.length === 1 ? 'paragraph' : 'paragraphs'}`, debriefBody)}
+      ${acc('sc-a-h', 'All twelve seals', watch ? 'None from watching' : `${collected} of ${ACHIEVEMENT_META.length} collected`, achBody)}
+      ${acc('sc-l-h', 'What this replay leaves out', `${LEAVES_OUT.length} things`, leaveBody)}
     </section>
 
-    ${showPct ? `<section class="sc-in sc-pct" style="--i:4" aria-labelledby="sc-p-h">
-      <h2 id="sc-p-h">Against 500 random strategies${live ? ' <span class="sc-pct-tag">' + esc(`${score && score.days != null ? score.days : card.prices.length}-day card`) + '</span>' : ''}</h2>
-      <div id="sc-pct-body" aria-live="polite"><p class="sc-pct-status" role="status">Running 500 random legal strategies: 0%</p></div>
-    </section>` : ''}
-
-    <section class="sc-in sc-debrief" style="--i:5" aria-labelledby="sc-d-h">
-      <h2 id="sc-d-h">Debrief</h2>
-      ${verdict ? `<p class="sc-verdict" id="sc-verdict">${esc(verdict)}</p>` : ''}
-      ${watch ? '<p class="sc-watchnote">You watched this run, so “you” below means The Playbook.</p>' : ''}
-      ${paras.map((p) => `<p class="sc-para">${esc(p)}</p>`).join('')}
-      ${card.blind && card.reveal && card.reveal.text ? `<div class="sc-reveal"><h3>What the card was</h3><p class="sc-para" id="sc-reveal-text">${esc(card.reveal.text)}</p></div>` : ''}
-    </section>
-
-    <section class="sc-in sc-ach" style="--i:6" aria-labelledby="sc-a-h">
-      <h2 id="sc-a-h">Achievements</h2>
-      <p class="sc-ach-lede">${watch ? 'Watching earns none. Achievements come from your own play.' : esc(earnedSet.size ? `${earnedSet.size} earned this run.` : 'None earned this run.')}</p>
-      ${forced.length && !watch ? `<div class="sc-lesson" role="note" data-lesson="forced-sale"><h3>A lesson from the bank sale</h3>
-        <p>The bank sold ${esc(int(forcedShares))} of your pledged shares at the close${forced.length > 1 ? ` in ${forced.length} sales` : ''}, ignoring the trading window, and each sale was taxed. A loan against one stock lets the bank choose the day, and it chooses the day the price is low. This is a lesson, not a badge.</p></div>` : ''}
-      <ul class="sc-medals">${medals}</ul>
-    </section>
-
-    <section class="sc-in sc-leaves" style="--i:7" aria-labelledby="sc-l-h">
-      <h2 id="sc-l-h">What this replay leaves out</h2>
-      <p>This is a simplified model of one stock. It does not include:</p>
-      <ul class="sc-leaves-list">${LEAVES_OUT.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
-    </section>
-
-    <footer class="sc-actions sc-in" style="--i:8">
-      ${buttons}
-      <button class="btn" type="button" data-action="compare-runs" data-hook="compare-runs" aria-expanded="false" aria-controls="sc-compare">Compare runs</button>
-      <button class="btn" type="button" data-action="copy-share-code" data-hook="copy-share-code" aria-controls="sc-share">Copy share code</button>
-    </footer>
     <section class="sc-compare" id="sc-compare" aria-label="Compare runs" hidden></section>
-    <div class="sc-share" id="sc-share" hidden>
-      <label for="sc-share-link" class="sc-share-l">Share link</label>
+    <footer class="sc-actions" aria-label="Next steps">
+      <div class="sc-bar-in">${barHTML(false)}</div>
+    </footer>
+    <div class="sc-share" id="sc-share" role="group" aria-label="Share link" hidden>
+      <div class="sc-share-top"><label for="sc-share-link" class="sc-share-l">Share link</label><button type="button" class="sc-q sc-share-x" id="sc-share-x">Close</button></div>
       <input id="sc-share-link" class="sc-share-input" type="text" readonly spellcheck="false" autocomplete="off">
       <p class="sc-share-note" id="sc-share-note" role="status"></p>
     </div>
@@ -379,11 +481,11 @@ export async function renderScoreboard(el, ctx) {
   if (showPct) renderPercentile(el, ctx, cols).catch((e) => { console.warn('percentile failed', e); const b = el.querySelector('#sc-pct-body'); if (b) b.innerHTML = '<p class="sc-pct-status">The comparison with random strategies could not run.</p>'; });
 
   // Compare runs
-  const cmpBtn = el.querySelector('[data-hook="compare-runs"]'), cmpBox = el.querySelector('#sc-compare');
+  const cmpBtn = el.querySelector('[data-hook="compare-runs"]'), cmpAll = [...el.querySelectorAll('[aria-controls="sc-compare"]')], cmpBox = el.querySelector('#sc-compare');
   if (cmpBtn && cmpBox) {
-    cmpBtn.addEventListener('click', () => {
+    cmpAll.forEach((b) => b.addEventListener('click', () => {
       const open = cmpBox.hidden;
-      cmpBox.hidden = !open; cmpBtn.setAttribute('aria-expanded', String(open));
+      cmpBox.hidden = !open; cmpAll.forEach((x) => x.setAttribute('aria-expanded', String(open)));
       if (open) {
         renderCompare(cmpBox, {
           cardId, seat: ctx.seat, watch, runId: watch ? null : runId,
@@ -391,15 +493,20 @@ export async function renderScoreboard(el, ctx) {
         });
         cmpBox.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' });
       }
-    });
+    }));
   }
 
-  // Copy share code
-  const shBtn = el.querySelector('[data-hook="copy-share-code"]'), shBox = el.querySelector('#sc-share');
+  // Copy share code: the link opens in a small card above the bar, and the button confirms the copy at once
+  const shBtn = el.querySelector('[data-hook="copy-share-code"]'), shAll = [...el.querySelectorAll('.sc-sharebtn')], shBox = el.querySelector('#sc-share');
   if (shBtn && shBox) {
-    const input = shBox.querySelector('input'), note = shBox.querySelector('#sc-share-note');
-    shBtn.addEventListener('click', async () => {
-      shBox.hidden = false;
+    const input = shBox.querySelector('input'), note = shBox.querySelector('#sc-share-note'), x = shBox.querySelector('#sc-share-x');
+    let timer = 0, last = shBtn;
+    const closeShare = (refocus) => { shBox.hidden = true; shAll.forEach((b) => b.setAttribute('aria-expanded', 'false')); if (refocus) last.focus(); };
+    x.addEventListener('click', () => closeShare(true));
+    shBox.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); closeShare(true); } });
+    const onShare = async (ev) => {
+      last = (ev && ev.currentTarget) || shBtn;
+      shBox.hidden = false; shAll.forEach((b) => b.setAttribute('aria-expanded', 'true'));
       let link = '';
       try {
         const sc = await import('../engine/sharecode.js');
@@ -421,7 +528,30 @@ export async function renderScoreboard(el, ctx) {
         ? 'Link copied. Anyone who opens it sees this run replayed on the same card, with no account.'
         : 'Select the link above and copy it. Anyone who opens it sees this run replayed on the same card.';
       if (!copied) { try { input.focus(); input.select(); } catch { /* ignore */ } }
-    });
+      if (copied) {
+        shAll.forEach((b) => { b.querySelector('.sc-sharebtn-t').textContent = 'Link copied'; b.classList.add('done'); }); clearTimeout(timer);
+        timer = setTimeout(() => shAll.forEach((b) => { b.querySelector('.sc-sharebtn-t').textContent = 'Copy share code'; b.classList.remove('done'); }), 1800);
+      }
+    };
+    shAll.forEach((b) => b.addEventListener('click', onShare));
+  }
+
+  // report accordions: open or close them all
+  const tAll = el.querySelector('#sc-toggle-all');
+  if (tAll) tAll.addEventListener('click', () => {
+    const accs = [...el.querySelectorAll('.sc-report > .sc-acc')];
+    const open = accs.some((d) => !d.open);
+    accs.forEach((d) => { d.open = open; });
+    tAll.textContent = open ? 'Close all' : 'Open all'; tAll.setAttribute('aria-pressed', String(open));
+  });
+
+  // the dock appears once the hero's own action row has scrolled out of view
+  const art_ = el.querySelector('.sc'), cta = el.querySelector('#sc-cta');
+  if (art_ && cta) {
+    if (typeof IntersectionObserver === 'function') {
+      const io = new IntersectionObserver((es) => { art_.classList.toggle('docked', !es[es.length - 1].isIntersecting); }, { threshold: 0.6 });
+      io.observe(cta);
+    } else art_.classList.add('docked');
   }
 
   // big number count-up (once)

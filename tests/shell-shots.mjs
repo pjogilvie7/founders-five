@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const out = join(root, 'tests/out/shell');
+const out = join(root, process.env.OUT || 'tests/out/shell');
 mkdirSync(out, { recursive: true });
 const PORT = Number(process.env.PORT || 8765);
 const BASE = process.env.BASE_URL || `http://127.0.0.1:${PORT}`;
@@ -62,8 +62,10 @@ async function session(name, viewport, mobile) {
   await noOverflow('seat');
   // intro
   await page.click('[data-seat-go=engineer]'); await page.waitForSelector('.dialog.lesson'); await wait(500); await shot('03-intro');
-  await page.keyboard.press('Enter'); await page.keyboard.press('Enter');
-  check((await page.textContent('.dialog.lesson .lesson-body')).includes('3 of 3'), 'intro reached card 3 with Enter');
+  // The intro has N cards ("k of N"); Enter advances through all of them.
+  const introN = Number(((await page.textContent('.dialog.lesson .lesson-body')).match(/of (\d+)/) || [0, 3])[1]);
+  for (let k = 1; k < introN; k++) await page.keyboard.press('Enter');
+  check((await page.textContent('.dialog.lesson .lesson-body')).includes(`${introN} of ${introN}`), `intro reached card ${introN} with Enter`);
   await page.keyboard.press('Enter'); await page.waitForSelector('.dialog.lesson', { state: 'detached' });
   // play: clock runs, Space pauses
   await page.waitForSelector('.play .rail'); await wait(900); await shot('04-play-start');

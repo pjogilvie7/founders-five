@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const out = join(root, 'tests/out/score');
+const out = join(root, process.env.OUT || 'tests/out/score');
 mkdirSync(out, { recursive: true });
 const PORT = Number(process.env.PORT || 8772);
 const BASE = `http://127.0.0.1:${PORT}`;

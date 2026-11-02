@@ -14,6 +14,8 @@ export const TAB_DEFS = [
   { id: 'exchange', label: 'Exchange Fund', hotkey: '7', locked: 'Unlocks with your first release. Locked shares cannot be contributed.' },
 ];
 export const START_UNLOCKED = ['stock', 'cash'];
+// What the tab itself says. The full name stays on the tab as its title and accessible name, and in lessons.
+const TAB_SHORT = { plan: '10b5-1', credit: 'Credit', cash: 'Cash', exchange: 'Exchange' };
 
 const GLYPH = {
   stock: '<path d="M3 17V9M8 17V5M13 17v-6M18 17V3" /><path d="M2 19h18"/>',
@@ -50,9 +52,13 @@ export function createPaper(el, ctx) {
   const tabsEl = $('.tabs'), panel = $('.panel'), banner = $('.banner-slot'), notices = $('.notice-slot'), toasts = $('.toasts'), tk = $('.tk-text');
   let active = 'stock', unlocked = new Set(START_UNLOCKED), view = null, lastRender = 0, bannerKey = '', noticeKey = '';
   const conts = new Map();
+  // The maintenance-call banner stays above any moment card; the card's scrim starts where the banner ends.
+  const paperEl = $('.paper');
+  const syncBannerH = () => paperEl.style.setProperty('--banner-h', banner.offsetHeight + 'px');
+  if (typeof ResizeObserver === 'function') new ResizeObserver(syncBannerH).observe(banner);
 
-  tabsEl.innerHTML = defs.map((d) => `<button class="tab" role="tab" id="tab-${d.id}" data-tab="${d.id}" aria-selected="false" aria-controls="panel" tabindex="-1">
-      <span class="ico"></span><span class="lbl">${esc(d.label)}</span><kbd aria-hidden="true">${esc(d.hotkey)}</kbd></button>`).join('');
+  tabsEl.innerHTML = defs.map((d) => `<button class="tab" role="tab" id="tab-${d.id}" data-tab="${d.id}" aria-selected="false" aria-controls="panel" tabindex="-1" title="${esc(d.label)}">
+      <span class="ico"></span><span class="lbl">${esc(TAB_SHORT[d.id] || d.label)}</span><kbd aria-hidden="true">${esc(d.hotkey)}</kbd></button>`).join('');
   const tabEls = Object.fromEntries(defs.map((d) => [d.id, tabsEl.querySelector(`[data-tab=${d.id}]`)]));
   panel.id = 'panel';
   function setIcon(d, locked) {
@@ -168,19 +174,73 @@ export function createPaper(el, ctx) {
     bannerKey = key;
     if (!call) { banner.innerHTML = ''; return; }
     const text = v.marginText || `Maintenance call. Loan-to-value is ${(call.ltv * 100).toFixed(1)}%; the limit is 35%. Post ${money(call.toPost)} by ${dateLabel(v.dctx, call.deadline)}, or the bank sells shares at that day’s close. The sale is taxable.`;
-    banner.innerHTML = `<div class="margin" role="alert"><div class="m-txt"><b>Maintenance call</b><p>${esc(text.replace(/^Maintenance call\.\s*/, ''))}</p></div>
+    const stake = (label, val, cls = '') => `<div class="${cls}"><dt>${label}</dt><dd class="num">${esc(val)}</dd></div>`;
+    banner.innerHTML = `<div class="margin" role="alert">
+      <div class="m-main"><b class="m-h">Maintenance call</b><p>${esc(text.replace(/^Maintenance call\.\s*/, ''))}</p></div>
+      <dl class="m-stakes">${stake('To post', money(call.toPost), 'big')}${stake('Loan to value', (call.ltv * 100).toFixed(1) + '%')}${stake('Post by', dateLabel(v.dctx, call.deadline))}</dl>
       <div class="m-btns"><button class="btn" data-mc="post">Post ${esc(money(call.toPost))}</button><button class="btn" data-mc="sell">Sell shares now</button><button class="btn" data-mc="wait">Wait</button></div></div>`;
     banner.querySelectorAll('[data-mc]').forEach((b) => b.addEventListener('click', () => h.onChoice('marginCall', b.dataset.mc)));
     if (v.snap.gates?.sell && !v.snap.gates.sell.allowed) { const s = banner.querySelector('[data-mc=sell]'); s.setAttribute('aria-disabled', 'true'); s.title = v.snap.gates.sell.reason; }
   }
 
+  // Moments: one designed card for every pause. Release leads with the free-share count; the rest are plain notes under it.
+  const MOMENT_HEAD = {
+    windowOpen: ['Trading window', 'The window is open'], planLive: ['Your plan', 'Your plan is live'],
+    forcedSale: ['The bank', 'The bank sold shares'], relock: ['Window closed', 'Some shares are locked again'], never: ['Release', 'One release will not come early'],
+  };
+  const KIND_RANK = { release: 0, relock: 1, forcedSale: 2, planLive: 3, windowOpen: 4, never: 5 };
+  let countRaf = 0;
+  function countUp(el, from, to) {
+    cancelAnimationFrame(countRaf);
+    if (reduced() || from === to) { el.textContent = int(to); return; }
+    el.textContent = int(from);
+    const t0 = performance.now() + 380, D = 950;
+    const tick = (t) => {
+      if (!el.isConnected) return;
+      const p = Math.min(1, Math.max(0, (t - t0) / D)), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = int(Math.round(from + (to - from) * e));
+      if (p < 1) countRaf = requestAnimationFrame(tick);
+    };
+    countRaf = requestAnimationFrame(tick);
+  }
+  const lockable = () => el.querySelectorAll('.tabbar, .panel-wrap, .ticker');
+  function momentHtml(list) {
+    const items = list.map((n) => ({ ...n, kind: n.kind || n.type || 'note' }));
+    const lead = items.slice().sort((a, b) => (KIND_RANK[a.kind] ?? 9) - (KIND_RANK[b.kind] ?? 9))[0];
+    const rest = items.filter((n) => n !== lead);
+    const notes = [];
+    let head = '', kick = '', body = '', pips = '', hero = '';
+    if (lead.kind === 'release' && lead.shares != null) {
+      const ix = lead.idx || [];
+      kick = ix.length && lead.total ? `Release ${ix.length > 1 ? `${ix[0]} to ${ix[ix.length - 1]}` : ix[0]} of ${lead.total}` : 'Release';
+      head = `${lead.pct}% of your shares are now free`;
+      const extra = String(lead.text || '').replace(/^\d+% of your shares are free\.\s*/, '');
+      if (extra) notes.push(extra);
+      pips = `<div class="m-pips" aria-hidden="true">${(lead.pips || []).map((p, i) => `<span class="pip ${p.void ? 'void' : p.state}" style="--i:${i}"><span class="num">${p.void ? '' : esc(p.pct)}</span></span>`).join('')}</div>`;
+      hero = `<div class="m-hero"><div class="m-free"><span class="num m-count" data-from="${lead.free - lead.shares}" data-to="${lead.free}">${int(lead.free)}</span><span class="m-unit">free shares</span></div>
+        <div class="m-delta num">+${int(lead.shares)}<span>just released</span></div></div>
+        ${lead.locked != null ? `<p class="m-left"><span class="num">${int(lead.locked)}</span> shares are still locked.</p>` : ''}`;
+    } else {
+      const k = MOMENT_HEAD[lead.kind];
+      const t = String(lead.text || ''), cut = t.search(/[.:]\s/), first = cut > 0 ? t.slice(0, cut) : t, tail = cut > 0 ? t.slice(cut + 1).trim() : '';
+      kick = k ? k[0] : 'Notice'; head = k ? k[1] : first;
+      body = k ? `<p class="m-body">${esc(t)}</p>` : (tail ? `<p class="m-body">${esc(tail)}</p>` : '');
+    }
+    for (const n of rest) notes.push(n.text);
+    return { kick, head, html: `<p class="m-kick">${esc(kick)}</p><h2 class="m-head">${esc(head)}</h2>${pips}${hero}${body}
+      ${notes.length ? `<ul class="m-notes">${notes.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}` };
+  }
+
   function setNotices(list) {
     const key = JSON.stringify(list.map((n) => n.text));
     if (key === noticeKey) return; noticeKey = key;
-    if (!list.length) { notices.innerHTML = ''; return; }
-    const shown = list.slice(-3), more = list.length - shown.length;
-    notices.innerHTML = `<div class="notice"><div class="n-txt">${more > 0 ? `<p class="more">${more} earlier ${more === 1 ? 'notice' : 'notices'}</p>` : ''}${shown.map((n) => `<p>${esc(n.text)}</p>`).join('')}</div><button class="btn sm primary" data-a="go">Continue</button></div>`;
-    const b = notices.querySelector('button'); b.addEventListener('click', () => h.onContinue());
+    cancelAnimationFrame(countRaf);
+    if (!list.length) { notices.innerHTML = ''; lockable().forEach((e) => e.removeAttribute('inert')); return; }
+    const m = momentHtml(list);
+    notices.innerHTML = `<div class="notice moment-scrim"><div class="moment" role="group" aria-label="${esc(m.kick + ': ' + m.head)}"><div class="m-body-wrap">${m.html}</div><button class="btn primary m-go" data-a="go">Continue</button></div></div>`;
+    lockable().forEach((e) => e.setAttribute('inert', ''));
+    const c = notices.querySelector('.m-count'); if (c) countUp(c, Number(c.dataset.from), Number(c.dataset.to));
+    const b = notices.querySelector('.m-go'); b.addEventListener('click', () => h.onContinue());
     if (!list.some((n) => n.noFocus)) b.focus({ preventScroll: true });
   }
 

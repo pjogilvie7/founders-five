@@ -11,20 +11,24 @@ function quoteHTML(v, snap, api) {
   try { q = sim.collarQuote(api.state(), v.tenor, v.put); } catch { return ''; }
   const blind = api.card().blind;
   const fmt = (x) => (blind ? x.toFixed(2) : price(x));
+  // Band diagram: display positions only (ratios the engine already returned), no money maths.
+  const lo = 0.7, hi = Math.max(1.4, q.capPct + 0.1);
+  const at = (r) => `${Math.max(2, Math.min(98, ((r - lo) / (hi - lo)) * 100)).toFixed(1)}%`;
   return `<div class="quote ${q.error ? 'bad' : ''}" role="group" aria-label="Live collar quote">
-    <div class="q-top"><span class="tag model">model price</span><span class="num q-meta">${v.tenor}-month collar, ends ${esc(dl(api, q.expiry))}</span></div>
+    <div class="q-top"><span class="tag model">model price</span><span class="num q-meta">${v.tenor} months, ends ${esc(dl(api, q.expiry))}</span></div>
     <div class="q-grid">
-      <div><span class="k">Floor (put)</span><span class="v num">${fmt(q.Kp)}</span><span class="sub num">${Math.round(v.put * 100)}% of today’s ${fmt(q.S)}</span></div>
-      <div><span class="k">Cap (call), zero cost</span><span class="v num">${fmt(q.Kc)}</span><span class="sub num">${Math.round(q.capPct * 100)}% of today’s price</span></div>
-      <div><span class="k">Cost up front</span><span class="v num">$0</span><span class="sub">the call pays for the put</span></div>
+      <div class="q-floor"><span class="k">Floor (put)</span><span class="v num">${fmt(q.Kp)}</span><span class="sub num">${Math.round(v.put * 100)}% of ${fmt(q.S)}</span></div>
+      <div class="q-cap"><span class="k">Cap (call)</span><span class="v num">${fmt(q.Kc)}</span><span class="sub num">${Math.round(q.capPct * 100)}% of today</span></div>
+      <div class="q-cost"><span class="k">Cost up front</span><span class="v num">$0</span><span class="sub">call pays for put</span></div>
     </div>
-    <p class="t-hint">Band rule: the floor is at most 90% and the cap at least 110% of today’s price. ${q.error ? `<b class="bad-t">${esc(q.error)}</b>` : ''}</p>
+    <div class="q-band" aria-hidden="true" style="--f:${at(v.put)};--t:${at(1)};--c:${at(q.capPct)}"><i class="b-fill"></i><i class="b-pin b-f"><em>floor</em></i><i class="b-pin b-t"><em>today</em></i><i class="b-pin b-c"><em>cap</em></i></div>
+    <p class="t-hint q-rule">Band rule: the floor is at most 90% and the cap at least 110% of today’s price.${q.error ? ` <b class="bad-t">${esc(q.error)}</b>` : ''}</p>
   </div>`;
 }
 
 function build(k, c) {
   c.innerHTML = `<div class="tool collar">
-    ${plateHTML('Collar', 'A floor under your shares paid for by a cap above them. You keep the shares and the vote; collared shares cannot be sold until the collar ends.', '<span class="chip" data-v="n"></span>')}
+    ${plateHTML('Collar', 'A floor under your shares, paid for by a cap above them. Collared shares stay locked until it ends.', '<span class="chip" data-v="n"></span>')}
     <section class="box" aria-labelledby="co-h"><h3 id="co-h">Set a collar</h3><div data-v="form"></div></section>
     <section class="box" data-v="street" hidden></section>
     <section class="box" aria-labelledby="co-a"><h3 id="co-a">Your collars</h3><div data-v="list"></div></section>
@@ -33,12 +37,12 @@ function build(k, c) {
     kind: 'int',
     segs: [
       { name: 'tenor', label: 'Tenor', options: [[6, '6 months'], [12, '12 months'], [24, '24 months']], def: 12 },
-      { name: 'put', label: 'Floor, as a share of today’s price', options: [[0.8, '80%'], [0.85, '85%'], [0.9, '90%']], def: 0.85 },
+      { name: 'put', label: 'Floor, % of price', options: [[0.8, '80%'], [0.85, '85%'], [0.9, '90%']], def: 0.85 },
     ],
     label: () => 'Shares to collar',
     head: quoteHTML,
     resolve: (v, n) => ({ type: 'collar', params: { tenorMonths: v.tenor, putPct: v.put, ...(n > 0 ? { shares: n } : {}) } }),
-    hint: () => 'Enter a number of shares, or press MAX.',
+    hint: () => '',
     idle: () => 'Collar shares',
     confirm: (v, n, d) => {
       const c0 = d.after.collars.find((x) => !d.before.collars.some((y) => y.id === x.id));
@@ -47,10 +51,15 @@ function build(k, c) {
     word: () => 'COLLARED', tone: () => 'tone-collar',
     preview: (v, n, d, snap, api) => {
       const c0 = d.after.collars.find((x) => !d.before.collars.some((y) => y.id === x.id)); if (!c0) return '';
-      return `<p class="t-hint">${int(n)} shares are held until ${esc(dl(api, c0.expiry))}. At expiry you receive the put’s payoff if the close is under ${price(c0.Kp)}, or pay the call’s payoff if it is over ${price(c0.Kc)}. Either settlement is taxed then. Unwinding early costs 1% of the notional.</p>`;
+      return `<p class="t-hint">Held until ${esc(dl(api, c0.expiry))}. Under ${price(c0.Kp)} you receive the put’s payoff; over ${price(c0.Kc)} you pay the call’s. Taxed at settlement. Unwinding early costs 1%.</p>`;
     },
     onDone: () => safe('collar', () => draw(c, snapOf(c._api) || c._snap, c._api)),
   });
+  // Layout: segs side by side, then quote, then one dock holding the input, MAX and confirm.
+  const fh = k.form.el, dock = document.createElement('div');
+  dock.className = 'dock';
+  fh.insertBefore(dock, fh.querySelector('.t-res'));
+  dock.append(fh.querySelector('.fld'), fh.querySelector('.t-go'));
   c.querySelector('[data-v=list]').addEventListener('click', (e) => {
     const b = e.target.closest('[data-unwind]'); if (!b) return;
     const api = c._api, r = api.act({ type: 'unwindCollar', id: b.dataset.unwind });

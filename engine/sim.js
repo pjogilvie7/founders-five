@@ -24,8 +24,16 @@ export const COST = 0.0025;          // sale cost, share of proceeds
 export const EXCHANGE_MIN = 1_000_000;
 export const EXCHANGE_FEE = 0.01;    // per year
 export const UNWIND_FEE = 0.01;      // of collar notional
-export const CALL_DEADLINE_DAYS = 3; // business days
+export const CALL_DEADLINE_DAYS = 3; // trading days after the call day; the bank sells at the close of the next trading day
+export const MIN_HISTORY = 20;       // trading days of price history before an option can be priced (index of the first day)
+export const AUTO_INVEST_KEEP = 2_000_000; // auto-invest leaves this much cash (a year of spending)
+export const RULE_PLAN_ACTIVE = "A 10b5-1 plan is active: a new hedge on the stock would void the plan's defense (Rule 10b5-1(c)(1)(i)(C)). Cancel the plan first, which starts a new cooling-off.";
 const EPS = 1e-9;
+export const HOUSE_CHOICES = [
+  { choice: "cash", label: "Pay from cash and the index fund" },
+  { choice: "credit", label: "Draw the credit line" },
+  { choice: "sell", label: "Sell shares" },
+];
 
 // ---------------------------------------------------------------- context (data that never changes in a game)
 const REG = new Map();
@@ -82,6 +90,15 @@ function buildCtx(card, seat, market, spcxOptions, group) {
       r.window = { endDate: t.windowEnd, relockIdx, reopenIdx: later.length ? Math.min(...later) : -1 };
     }
   });
+  // Cash dividends from the adjusted series: D_t = close_{t-1} * adj_t / adj_{t-1} - close_t, kept when above 0.01% of the close.
+  const div = new Array(n).fill(0);
+  for (let j = 1; j < n; j++) {
+    const c0 = prices[j - 1][1], c1 = prices[j][1], a0 = prices[j - 1][2], a1 = prices[j][2];
+    if (a0 > 0 && c1 > 0) {
+      const d = (c0 * a1) / a0 - c1;
+      if (d > 0.0001 * c1) div[j] = d;
+    }
+  }
   const first = (card.ipo && card.ipo.firstTrade) || dates[0];
   const headIdx = new Map();
   for (const h of card.headlines || []) {
@@ -92,6 +109,7 @@ function buildCtx(card, seat, market, spcxOptions, group) {
     card, seat, group, prices, n, dates, total,
     close: prices.map((r) => r[1]),
     adj: prices.map((r) => r[2]),
+    div,
     spy: alignSeries(dates, market && market.spy, 100),
     dgs1mo: alignSeries(dates, rates.dgs1mo, 0),
     dgs1: alignSeries(dates, rates.dgs1, 0),
@@ -195,7 +213,7 @@ export function createGame({ card, seat, market, spcxOptions = null, opts = {} }
     collars: [], puts: [], plan: null, exchange: null,
     tax: { realized: 0, paid: 0 },
     log: [], history: [],
-    flags: { houseDone: false, houseSkipped: false, seenTranches: [], firstUse: {}, achievements: [] },
+    flags: { houseDone: false, seenTranches: [], firstUse: {}, achievements: [] },
     pendingEvent: null, pendingQueue: [],
     spentToday: 0, nextId: 1, windowOpen: windowAt(ctx, 0).open,
     sales144: [],
@@ -204,7 +222,7 @@ export function createGame({ card, seat, market, spcxOptions = null, opts = {} }
     stats: {
       sells: 0, sharesSold: 0, saleGross: 0, planSells: 0, planShares: 0, blackoutPlanSale: false,
       collarCount: 0, collarNet: 0, putCount: 0, putNet: 0, interest: 0, overdraftInterest: 0, drawn: 0,
-      marginCalls: 0, forced: [], spendTotal: 0, houseChoice: null, exchangeContrib: 0, curedWithCash: false,
+      marginCalls: 0, dividends: 0, forced: [], spendTotal: 0, houseChoice: null, exchangeContrib: 0, curedWithCash: false,
     },
   };
   // Tranches already due on the first day are free from the start, silently.
@@ -275,6 +293,27 @@ function partsOf(s, ctx) {
   const tax = taxLiability(s);
   const W = stock + collars + puts + index + exchange + s.cash - loan - overdraft - tax;
   return { stock, collars, puts, index, exchange, cash: s.cash, loan, overdraft, tax, W };
+}
+
+// Tax still to come if everything were sold or settled on the last day (PRD 4.8, decision of 2026-11-02):
+//   0.238 * max(0, G + U) - 0.238 * max(0, G)
+// G is the realized gain in the ledger and U the unrealized gains on shares, the index fund and the exchange fund plus the
+// open collars (zero cost, so the whole mark) and puts (mark less premium). Losses net against gains. The result is floored
+// at minus what the ledger already owes, so the two together are never negative.
+export function terminalTax(state) {
+  const ctx = getCtx(state);
+  return terminalTaxOf(state, ctx);
+}
+function terminalTaxOf(s, ctx) {
+  const P = ctx.close[s.i];
+  let U = stockShares(s) * (P - s.basis);
+  U += indexValue(s, ctx) - s.index.cost;
+  if (s.exchange) U += s.exchange.value - s.exchange.basisShares * s.basis;
+  for (const c of s.collars) U += c.shares * collarMarkPerShare(s, ctx, c);
+  for (const p of s.puts) U += p.shares * putMarkPerShare(s, ctx, p) - p.premium;
+  const G = s.tax.realized;
+  const raw = RATE * Math.max(0, G + U) - RATE * Math.max(0, G);
+  return { unrealizedTax: Math.max(-taxLiability(s), raw), U, G };
 }
 
 function pushRow(s, ctx, replace) {
@@ -467,7 +506,7 @@ function settleCollars(s, ctx, ev) {
     const rollBlock = rollGate(s, ctx);
     const side = payoff > 0 ? `The put paid ${money(net)}.` : payoff < 0 ? `The call cost you ${money(-net)}.` : "Neither side paid.";
     const text = `Your ${c.tenorMonths}-month collar on ${commas(c.shares)} shares ended at $${S.toFixed(2)}. ${side} The shares are free again. ` +
-      (rollBlock ? `${rollBlock.reason}. You can let it end now.` : "Roll it at today's prices or let it end.");
+      (rollBlock ? `${rollBlock.reason.replace(/\.$/, "")}. You can let it end now.` : "Roll it at today's prices or let it end.");
     const e = {
       type: "collarExpiry", d: s.d, pause: true, text,
       data: {
@@ -483,9 +522,8 @@ function settleCollars(s, ctx, ev) {
 function Kc(c) { return c.Kc; }
 
 function rollGate(s, ctx) {
-  const w = windowAt(ctx, s.i);
-  if (!w.open) return { reason: `Window closed until ${labelDate(ctx, w.opensOn)}: a new collar can be set up then`, opensOn: w.opensOn };
-  return null;
+  const g = hedgeBlock(s, ctx, "Collars", "a new collar can be set up then");
+  return g ? { reason: g.reason, opensOn: g.opensOn } : null;
 }
 
 function settlePuts(s, ctx, ev) {
@@ -542,6 +580,26 @@ function windowBlock(s, ctx, then) {
   return no(`Window closed until ${labelDate(ctx, w.opensOn)}${proj}: ${then}`, w.opensOn);
 }
 
+// The sell gate's window text claims a plan only when one exists: live ("keeps selling") or in cooling-off ("starts selling").
+function sellWindowBlock(s, ctx) {
+  const w = windowAt(ctx, s.i);
+  if (w.open) return null;
+  const proj = w.projected ? " (projected)" : "";
+  let tail = ".";
+  if (s.plan) tail = s.d < s.plan.firstTradeOn ? `, your plan starts selling ${labelDate(ctx, s.plan.firstTradeOn)}.` : ", your 10b5-1 plan keeps selling.";
+  return no(`Window closed until ${labelDate(ctx, w.opensOn)}${proj}${tail}`, w.opensOn);
+}
+
+// New hedges (collars, puts): need 20 trading days of price history, no 10b5-1 plan adopted, and an open window.
+function hedgeBlock(s, ctx, kind, then) {
+  if (s.i < MIN_HISTORY) {
+    const when = ctx.dates[MIN_HISTORY];
+    return no(`Options need ${MIN_HISTORY} trading days of price history to price. ${kind} open on ${labelDate(ctx, when)}.`, when);
+  }
+  if (s.plan) return no(RULE_PLAN_ACTIVE);
+  return windowBlock(s, ctx, then);
+}
+
 function founderGate(s, ctx) {
   if (s.seat !== "founder") return null;
   const open = addCalendarDays(ctx.firstTrade, 90); // IPO day 91 counting the first trade as day 1
@@ -573,7 +631,7 @@ function sellCheck(s, ctx, shares) {
   if (s.shares.free <= 0) return noFreeShares(s, ctx);
   const fg = founderGate(s, ctx);
   if (fg) return fg;
-  const wb = windowBlock(s, ctx, s.plan ? "your 10b5-1 plan is still selling" : "a 10b5-1 plan can still sell");
+  const wb = sellWindowBlock(s, ctx);
   if (wb) return wb;
   const room = rule144Room(s, ctx);
   if (room <= 0) {
@@ -617,7 +675,7 @@ function check(s, ctx, type, p) {
       return s.plan ? yes() : no("You have no plan to cancel");
     case "collar": {
       if (s.shares.free <= 0) return noFreeShares(s, ctx);
-      const wb = windowBlock(s, ctx, "a new collar can be set up then");
+      const wb = hedgeBlock(s, ctx, "Collars", "a new collar can be set up then");
       if (wb) return wb;
       if (p.tenorMonths !== undefined && ![6, 12, 24].includes(p.tenorMonths)) return no("A collar runs 6, 12 or 24 months");
       if (p.putPct !== undefined && ![0.8, 0.85, 0.9].includes(p.putPct)) return no("The floor is 80%, 85% or 90% of today's price");
@@ -688,7 +746,7 @@ function check(s, ctx, type, p) {
     case "setAutoInvest": return yes();
     case "buyPut": {
       if (s.shares.free <= 0) return noFreeShares(s, ctx);
-      const wb = windowBlock(s, ctx, "a put can be bought then");
+      const wb = hedgeBlock(s, ctx, "Puts", "a put can be bought then");
       if (wb) return wb;
       if (p.putPct !== undefined && ![0.8, 0.85, 0.9].includes(p.putPct)) return no("The strike is 80%, 85% or 90% of today's price");
       if (p.tenorMonths !== undefined && ![6, 12].includes(p.tenorMonths)) return no("A put runs 6 or 12 months");
@@ -709,7 +767,15 @@ function check(s, ctx, type, p) {
       }
       return yes({ max: s.shares.free });
     }
-    case "house": case "marginCall": case "collarExpiry": case "flag":
+    case "house": {
+      if (p.choice === "credit") {
+        const h = headroom(s, ctx);
+        return h >= HOUSE - 0.005 ? yes() : no(`The credit line has ${money(h)} of room, short of ${money(HOUSE)}. Pledge more shares or choose another way.`);
+      }
+      if (p.choice === "sell") { const g = houseCanSell(s, ctx).check; return g.allowed ? yes() : g; }
+      return yes();
+    }
+    case "marginCall": case "collarExpiry": case "flag":
       return yes();
     default:
       return no("Unknown action");
@@ -847,9 +913,8 @@ function answerHouse(s, ctx, a, ev) {
   if (!expect(s, "house")) return "There is no house payment waiting.";
   const choice = a.choice;
   if (choice === "cash") {
-    const liquid = s.cash + indexValue(s, ctx);
-    if (liquid < HOUSE - 0.005) return `Cash and the index fund hold ${money(liquid)}, short of ${money(HOUSE)}. Use the credit line, sell shares, or skip the house.`;
-    const r = pay(s, ctx, HOUSE, { credit: false, overdraft: false });
+    // cash, then the index fund (taxed); anything still short goes on the overdraft
+    const r = pay(s, ctx, HOUSE, { credit: false, overdraft: true });
     ev.push({ type: "spend", d: s.d, pause: false, text: payText("for the house", HOUSE, r), data: { source: "house", ...r } });
   } else if (choice === "credit") {
     const h = headroom(s, ctx);
@@ -864,11 +929,8 @@ function answerHouse(s, ctx, a, ev) {
     s.stats.sells++; s.stats.sharesSold += n;
     receive(s, ctx, sale.net - HOUSE, true);
     ev.push({ type: "spend", d: s.d, pause: false, text: `Sold ${commas(n)} shares at $${sale.price.toFixed(2)} and paid ${money(HOUSE)} for the house. Tax on the gain is paid at quarter end.`, data: { source: "house", sale } });
-  } else if (choice === "skip") {
-    s.flags.houseSkipped = true;
-    ev.push({ type: "note", d: s.d, pause: false, text: "You skipped the house. It has no effect on your score, and the debrief says so.", data: {} });
-  } else return "Choose cash, credit, sell or skip.";
-  if (choice !== "skip") { s.spentToday += HOUSE; s.stats.spendTotal += HOUSE; }
+  } else return "Choose cash, credit or sell.";
+  s.spentToday += HOUSE; s.stats.spendTotal += HOUSE;
   s.flags.houseDone = true;
   s.stats.houseChoice = choice;
   resolvePending(s, "house");
@@ -893,7 +955,14 @@ function answerCollar(s, ctx, a, ev) {
 
 function estShares(s, ctx) {
   const P = ctx.close[s.i];
-  return forcedSaleShares(loanDebt(s), P, s.shares.pledged, COST, RATE, s.basis);
+  return forcedSaleShares(loanDebt(s), P, s.shares.pledged, COST);
+}
+
+// Date of the nth trading day after index i: the card's own price dates, then weekdays past the end of a live card.
+function tradingDayDate(ctx, i, n) {
+  const j = i + n;
+  if (j < ctx.n) return ctx.dates[j];
+  return businessDaysAfter(ctx.dates[ctx.n - 1], j - (ctx.n - 1));
 }
 
 function answerCall(s, ctx, a, ev) {
@@ -925,14 +994,14 @@ function answerCall(s, ctx, a, ev) {
     } else {
       resolvePending(s, "marginCall");
       s.loan.call = { ...call, toPost: callCure(loanDebt(s), coll), ltv: Math.min(r, 9.99) };
-      ev.push({ type: "marginCall", d: s.d, pause: false, text: `You posted ${money(total)}. Loan-to-value is still ${pctText(r)}; post ${money(s.loan.call.toPost)} more by ${labelDateWd(ctx, call.deadline)} or the bank sells.`, data: { resolved: false, posted: total } });
+      ev.push({ type: "marginCall", d: s.d, pause: false, text: `You posted ${money(total)}. Loan-to-value is still ${pctText(r)}; post ${money(s.loan.call.toPost)} more by ${labelDateWd(ctx, call.deadline)} or the bank sells at the close of ${labelDateWd(ctx, call.sellOn)}.`, data: { resolved: false, posted: total } });
     }
     return null;
   }
   if (a.choice === "sell") {
     const cs = cureSellCheck(s, ctx);
     if (!cs.allowed) return cs.reason;
-    const aPer = netPerShare(P, COST, RATE, s.basis);
+    const aPer = netPerShare(P, COST);
     let cap = cs.max;
     let applied = 0, soldN = 0, leftover = 0;
     // free shares first: they do not shrink the collateral
@@ -941,9 +1010,9 @@ function answerCall(s, ctx, a, ev) {
     const sellBucket = (n, bucket) => {
       if (n <= 0) return;
       const sale = doSale(s, ctx, n, bucket);
-      const toLoan = Math.min(n * aPer, loanDebt(s));
+      const toLoan = Math.min(sale.net, loanDebt(s));
       repayLoan(s, toLoan);
-      s.cash += sale.net - toLoan; // the tax reserve (and any excess) stays in cash
+      s.cash += sale.net - toLoan; // any excess stays in cash; the tax on the gain is accrued in the ledger
       applied += toLoan; soldN += n; cap -= n;
       s.stats.sells++; s.stats.sharesSold += n;
       if (s.seat === "founder") s.sales144.push({ d: s.d, shares: n });
@@ -951,7 +1020,7 @@ function answerCall(s, ctx, a, ev) {
     sellBucket(nFree, "free");
     const coll2 = pledgedValue(s, ctx);
     if (ltvOf(loanDebt(s), coll2) > CURE_LTV + EPS && cap > 0) {
-      const n = Math.min(cap, forcedSaleShares(loanDebt(s), P, s.shares.pledged, COST, RATE, s.basis));
+      const n = Math.min(cap, forcedSaleShares(loanDebt(s), P, s.shares.pledged, COST));
       sellBucket(n, "pledged");
     }
     const r = ltvOf(loanDebt(s), pledgedValue(s, ctx));
@@ -1033,24 +1102,37 @@ function checkLoan(s, ctx, ev) {
   const coll = pledgedValue(s, ctx);
   const r = ltvOf(debt, coll);
   const call = s.loan.call;
+  const callChoices = ["post", "sell", "wait"];
   if (call) {
     if (r <= CALL_LTV + EPS) {
       s.loan.call = null;
       resolvePending(s, "marginCall");
       ev.push({ type: "marginCall", d: s.d, pause: false, text: `The maintenance call is cleared. Loan-to-value is ${pctText(r)}.`, data: { cleared: true } });
-    } else if (s.d >= call.deadline) {
-      forcedSale(s, ctx, ev);
+    } else if (s.d > call.deadline) {
+      forcedSale(s, ctx, ev); // the deadline day has closed with the loan still above 35%: the bank sells at this close
+    } else if (s.d === call.deadline) {
+      const toPost = callCure(debt, coll);
+      const est = forcedSaleShares(debt, P, s.shares.pledged, COST);
+      s.loan.call = { ...call, toPost, ltv: Math.min(r, 9.99) };
+      const e = {
+        type: "marginCall", d: s.d, pause: true,
+        text: `Last day to meet the call. Loan-to-value is ${pctText(r)}. Post ${money(toPost)} today, or if the loan is still above ${pctText(CALL_LTV, 0)} after today's close the bank sells about ${aboutShares(est)} shares at the close of ${labelDateWd(ctx, call.sellOn)}. The sale is taxable.`,
+        data: { ltv: Math.min(r, 9.99), toPost, deadline: call.deadline, sellOn: call.sellOn, estShares: est, lastDay: true, choices: callChoices, canPost: s.cash + indexValue(s, ctx) },
+      };
+      ev.push(e);
+      setPending(s, e);
     }
   } else if (r > CALL_LTV + EPS) {
     const toPost = callCure(debt, coll);
-    const deadline = businessDaysAfter(s.d, CALL_DEADLINE_DAYS);
-    s.loan.call = { issuedOn: s.d, deadline, toPost, ltv: Math.min(r, 9.99) };
+    const deadline = tradingDayDate(ctx, s.i, CALL_DEADLINE_DAYS);
+    const sellOn = tradingDayDate(ctx, s.i, CALL_DEADLINE_DAYS + 1);
+    s.loan.call = { issuedOn: s.d, deadline, sellOn, toPost, ltv: Math.min(r, 9.99) };
     s.stats.marginCalls++;
-    const est = forcedSaleShares(debt, P, s.shares.pledged, COST, RATE, s.basis);
+    const est = forcedSaleShares(debt, P, s.shares.pledged, COST);
     const e = {
       type: "marginCall", d: s.d, pause: true,
-      text: `Maintenance call. Loan-to-value is ${pctText(r)}; the limit is ${pctText(CALL_LTV, 0)}. Post ${money(toPost)} by ${labelDateWd(ctx, deadline)}, or the bank sells about ${aboutShares(est)} shares at that day's close. The sale is taxable.`,
-      data: { ltv: Math.min(r, 9.99), toPost, deadline, estShares: est, choices: ["post", "sell", "wait"], canPost: s.cash + indexValue(s, ctx) },
+      text: `Maintenance call. Loan-to-value is ${pctText(r)}; the limit is ${pctText(CALL_LTV, 0)}. Post ${money(toPost)} by ${labelDateWd(ctx, deadline)}, the third trading day. If the loan is still above ${pctText(CALL_LTV, 0)} after that day's close, the bank sells about ${aboutShares(est)} shares at the close of ${labelDateWd(ctx, sellOn)}. The sale is taxable.`,
+      data: { ltv: Math.min(r, 9.99), toPost, deadline, sellOn, estShares: est, choices: callChoices, canPost: s.cash + indexValue(s, ctx) },
     };
     ev.push(e);
     setPending(s, e);
@@ -1060,10 +1142,10 @@ function checkLoan(s, ctx, ev) {
 function forcedSale(s, ctx, ev) {
   const P = ctx.close[s.i];
   const debt = loanDebt(s);
-  const n = forcedSaleShares(debt, P, s.shares.pledged, COST, RATE, s.basis);
+  const n = forcedSaleShares(debt, P, s.shares.pledged, COST);
   const sale = doSale(s, ctx, n, "pledged");
-  const aPer = netPerShare(P, COST, RATE, s.basis);
-  const toLoan = Math.min(n * aPer, debt);
+  if (s.seat === "founder" && n > 0) s.sales144.push({ d: s.d, shares: n });
+  const toLoan = Math.min(sale.net, debt);
   repayLoan(s, toLoan);
   s.cash += sale.net - toLoan;
   let moved = 0;
@@ -1076,7 +1158,7 @@ function forcedSale(s, ctx, ev) {
   const taxApprox = Math.max(0, RATE * sale.gain);
   s.stats.forced.push({ d: s.d, shares: n, price: P, gross: sale.gross, gain: sale.gain });
   const text = `The bank sold ${commas(n)} pledged shares at $${P.toFixed(2)}, ignoring the trading window, to bring the loan back to 25% of the shares left. ` +
-    `${money(toLoan)} went against the loan and the sale is taxable, about ${money(taxApprox)} on a gain of ${money(sale.gain)}. ` +
+    `${money(toLoan)} went against the loan. The sale is taxable: the tax, about ${money(taxApprox)} on a gain of ${money(sale.gain)}, is your bill and is paid at quarter end. ` +
     `Lesson: a credit line against one stock can be called when the price falls, and the bank sells at the worst moment, whatever the window says.` +
     (moved > 0 ? ` No pledged shares are left, so the remaining ${money(moved)} moved to the overdraft at SOFR + 4.00%.` : "");
   ev.push({ type: "forcedSale", d: s.d, pause: true, text, data: { shares: n, price: P, gross: sale.gross, gain: sale.gain, toLoan } });
@@ -1104,6 +1186,19 @@ function advance(s, ctx, ev) {
   sweepOverdraft(s);
   if (s.exchange) {
     s.exchange.value *= (ctx.spy[i] / ctx.spy[i - 1]) * Math.pow(1 - EXCHANGE_FEE, days / 365);
+  }
+
+  // 1b. cash dividends from the adjusted series, on every share held (locked included); taxed through the ledger
+  const dps = ctx.div[i];
+  if (dps > 0) {
+    const held = stockShares(s);
+    if (held > 0) {
+      const amt = held * dps;
+      receive(s, ctx, amt, false);
+      s.tax.realized += amt;
+      s.stats.dividends += amt;
+      ev.push({ type: "dividend", d, pause: false, text: `Dividend of $${dps.toFixed(2)} a share on ${commas(held)} shares: ${money(amt)} paid to cash. It is taxed at 23.8%, paid at quarter end.`, data: { perShare: dps, shares: held, amount: amt } });
+    }
   }
 
   if (i === 1) ev.push({ type: "toolUnlock", d, pause: true, text: "New tool: Cash and Index Fund. Open it to see how your cash earns interest and how the index fund is taxed.", data: { tool: "cash" } });
@@ -1167,7 +1262,9 @@ function advance(s, ctx, ev) {
     if (w.open) {
       ev.push({ type: "windowOpen", d, pause: true, text: w.closesOn ? `The trading window is open until ${labelDate(ctx, w.closesOn)}${w.projected ? " (projected)" : ""}.` : "The trading window is open.", data: { closesOn: w.closesOn, projected: w.projected } });
     } else {
-      ev.push({ type: "windowClose", d, pause: false, text: `The trading window is closed until ${labelDate(ctx, w.opensOn)}${w.projected ? " (projected)" : ""}. Plans keep selling.`, data: { opensOn: w.opensOn, projected: w.projected } });
+      let tail = "";
+      if (s.plan) tail = s.d < s.plan.firstTradeOn ? ` Your plan starts selling ${labelDate(ctx, s.plan.firstTradeOn)}.` : " Your 10b5-1 plan keeps selling.";
+      ev.push({ type: "windowClose", d, pause: false, text: `The trading window is closed until ${labelDate(ctx, w.opensOn)}${w.projected ? " (projected)" : ""}.${tail}`, data: { opensOn: w.opensOn, projected: w.projected } });
     }
   }
 
@@ -1195,6 +1292,14 @@ function advance(s, ctx, ev) {
     }
   }
 
+  // 7b. auto-invest: on the first trading day of each month, cash above a year of spending goes into the index fund,
+  // but never borrowed money (cash less the loan and the overdraft must stay at or above zero)
+  if (s.autoInvest && ctx.ftdom.has(i)) {
+    const owed = loanDebt(s) + s.overdraft + s.overdraftAccrued;
+    const amt = Math.min(s.cash - AUTO_INVEST_KEEP, s.cash - owed);
+    if (amt > 0.005) { s.cash -= amt; s.index.units += amt / ctx.spy[i]; s.index.cost += amt; }
+  }
+
   // 8. credit line
   checkLoan(s, ctx, ev);
 
@@ -1202,9 +1307,9 @@ function advance(s, ctx, ev) {
   if (ctx.houseIdx === i && !s.flags.houseDone) {
     const sellInfo = houseCanSell(s, ctx);
     const e = {
-      type: "house", d, pause: true, text: "$10M due in 30 days.",
+      type: "house", d, pause: true, text: "$10M is due for the family's house in 30 days. Choose how to pay.",
       data: {
-        amount: HOUSE, choices: ["cash", "credit", "sell", "skip"],
+        amount: HOUSE, choices: HOUSE_CHOICES.map((c) => ({ ...c })),
         liquid: s.cash + indexValue(s, ctx), headroom: headroom(s, ctx),
         canSell: sellInfo.check.allowed, sellReason: sellInfo.check.reason, sharesToSell: sellInfo.n,
       },
@@ -1244,7 +1349,7 @@ function defaultRespond(s, e) {
     if (d.liquid >= HOUSE) return { type: "house", choice: "cash" };
     if (d.headroom >= HOUSE) return { type: "house", choice: "credit" };
     if (d.canSell) return { type: "house", choice: "sell" };
-    return { type: "house", choice: "skip" };
+    return { type: "house", choice: "cash" };
   }
   if (e.type === "marginCall") return { type: "marginCall", choice: "post" };
   if (e.type === "collarExpiry") return { type: "collarExpiry", choice: "end" };
@@ -1270,7 +1375,7 @@ export function runWithPolicy(state, policy = {}, onDay = null) {
       let r = act(s, respond(s, e) || defaultRespond(s, e));
       if (r.error) {
         // fall back to the safest answer so the run cannot stall
-        const fb = e.type === "house" ? { type: "house", choice: "skip" } : e.type === "collarExpiry" ? { type: "collarExpiry", choice: "end" } : { type: "marginCall", choice: "wait" };
+        const fb = e.type === "house" ? { type: "house", choice: "cash" } : e.type === "collarExpiry" ? { type: "collarExpiry", choice: "end" } : { type: "marginCall", choice: "wait" };
         r = act(s, fb);
         if (r.error) break;
       }
@@ -1320,6 +1425,16 @@ function dayLabelOf(s, ctx) {
   return `Year ${year} of 5 · Month ${month}`;
 }
 
+// Trading days from index i to a date (0 when the date is today or past); weekdays past the end of a live card.
+function tradingDaysTo(ctx, i, date) {
+  if (date <= ctx.dates[i]) return 0;
+  const last = ctx.dates[ctx.n - 1];
+  if (date <= last) return Math.max(0, tradingIndexOnOrAfter(ctx.prices, date) - i);
+  let k = ctx.n - 1 - i, x = last;
+  while (x < date) { x = businessDaysAfter(x, 1); k++; }
+  return k;
+}
+
 export function snapshot(state, rivals = null) {
   const ctx = getCtx(state);
   const s = state;
@@ -1330,6 +1445,7 @@ export function snapshot(state, rivals = null) {
   const debt = loanDebt(s);
   const w = windowAt(ctx, i);
   const nr = nextReleaseOf(s, ctx);
+  const tt = terminalTaxOf(s, ctx);
   let nextRelease = null;
   if (nr) {
     const same = ctx.releases.filter((r) => r.status === "resolved" && r.date === nr.date && !s.flags.seenTranches.includes(r.id));
@@ -1345,13 +1461,14 @@ export function snapshot(state, rivals = null) {
     index: { value: parts.index, units: s.index.units, cost: s.index.cost },
     loan: {
       balance: s.loan.balance, accrued: s.loan.accrued, owed: debt,
-      ltv: Math.min(ltvOf(debt, pledgedValue(s, ctx)), 9.99), maxDraw: headroom(s, ctx), call: s.loan.call ? { ...s.loan.call } : null,
+      ltv: Math.min(ltvOf(debt, pledgedValue(s, ctx)), 9.99), maxDraw: headroom(s, ctx), call: s.loan.call ? { ...s.loan.call, daysLeft: tradingDaysTo(ctx, i, s.loan.call.deadline) } : null,
     },
     collars: s.collars.map((c) => ({ ...c, mark: c.shares * collarMarkPerShare(s, ctx, c), markPerShare: collarMarkPerShare(s, ctx, c), daysLeft: daysBetween(s.d, c.expiry) })),
     puts: s.puts.map((p) => ({ ...p, mark: p.shares * putMarkPerShare(s, ctx, p) })),
     plan: s.plan ? { ...s.plan, status: s.d < s.plan.firstTradeOn ? "cooling-off" : "live" } : null,
     exchange: s.exchange ? { ...s.exchange } : null,
     taxOwed: parts.tax, taxPaid: s.tax.paid, W: parts.W, profit: parts.W - W0, parts,
+    unrealizedTax: tt.unrealizedTax, afterTaxW: parts.W - tt.unrealizedTax,
     window: { open: w.open, closesOn: w.closesOn, opensOn: w.opensOn, projected: w.projected },
     nextRelease, gates: gates(s), rivals: riv, pendingEvent: s.pendingEvent, achievements: s.flags.achievements.slice(),
     spentToday: s.spentToday,
@@ -1368,11 +1485,7 @@ export function score(state) {
   }
   const dd = maxDrawdown(V, h.map((r) => r.d));
   const last = h[h.length - 1];
-  const shares = state.shares.locked + state.shares.free + state.shares.collared + state.shares.pledged;
-  const idxVal = state.index.units * state.px.spy;
-  const gains = Math.max(0, shares * (state.px.close - state.basis)) + Math.max(0, idxVal - state.index.cost) +
-    (state.exchange ? Math.max(0, state.exchange.value - state.exchange.basisShares * state.basis) : 0);
-  const unrealizedTax = RATE * gains;
+  const unrealizedTax = terminalTax(state).unrealizedTax;
   const totalSpending = h.reduce((a, r) => a + r.S, 0);
   // Both ends after tax (decision RUN-5): day-0 wealth net of the tax embedded in the stake.
   const embeddedTax0 = RATE * Math.max(0, state.total * (h[0].close - state.basis));

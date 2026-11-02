@@ -11,7 +11,7 @@
 @keyframes scIn{from{opacity:0;transform:translateY(10px)}}
 
 /* paper sheets */
-.sc-bigcard,.sc-measures,.sc-debrief,.sc-ach,.sc-leaves{background:var(--paper);color:var(--ink);border:1px solid var(--ink);
+.sc-bigcard{background:var(--paper);color:var(--ink);border:1px solid var(--ink);
   box-shadow:4px 4px 0 var(--gold),0 0 0 6px var(--rail),0 0 0 7px var(--gold);padding:26px 28px}
 .sc h2{font-size:26px;letter-spacing:.07em;margin-bottom:14px}
 .sc h3{font-size:19px;letter-spacing:.06em;margin-bottom:8px}
@@ -137,7 +137,7 @@
 /* phone: stacked cards, the table becomes four cards, buttons full width */
 @media (max-width:640px){
   .sc{padding:20px 16px 40px;gap:22px}
-  .sc-bigcard,.sc-measures,.sc-debrief,.sc-ach,.sc-leaves{padding:20px 16px;box-shadow:3px 3px 0 var(--gold),0 0 0 4px var(--rail),0 0 0 5px var(--gold)}
+  .sc-bigcard{padding:20px 16px;box-shadow:3px 3px 0 var(--gold),0 0 0 4px var(--rail),0 0 0 5px var(--gold)}
   .sc h2{font-size:23px}
   .sc-face{padding:42px 26px 48px}
   .sc-dl>div{flex-wrap:wrap}
@@ -170,8 +170,6 @@
 }
 
 /* ---------------------------------------------------------------- percentile histograms (should-have) */
-.sc-pct{background:var(--paper);color:var(--ink);border:1px solid var(--ink);
-  box-shadow:4px 4px 0 var(--gold),0 0 0 6px var(--rail),0 0 0 7px var(--gold);padding:26px 28px}
 .sc-pct-tag{display:inline-block;vertical-align:middle;margin-left:10px;font-family:var(--f-body);font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
   border:1px solid var(--gold);padding:2px 8px;border-radius:var(--radius);background:var(--paper-2);color:var(--ink)}
 .sc-pct-status{color:var(--muted);font-size:14.5px}
@@ -235,7 +233,6 @@
   .sc-cmp-table th,.sc-cmp-table td{padding:8px 6px}
   .sc-cmp-tag{display:block;margin:2px 0 0;width:max-content}
 }
-@media (prefers-reduced-motion:reduce){ .sc-pct{animation:none} }
 
 /* keep every section inside the phone width: the grid column may shrink below the charts' natural size */
 .sc{grid-template-columns:minmax(0,1fr)}

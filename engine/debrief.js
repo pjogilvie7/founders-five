@@ -19,16 +19,41 @@ export const ACHIEVEMENTS = {
 
 export const BOT_NAMES = { holder: "The Holder", seller: "The Seller", playbook: "The Playbook" };
 
+// The scoreboard shows Sharpe to one decimal, max drawdown and IRR as a percent to one decimal, and wealth in dollars
+// ($131.4M from $10M up, $1.23B from $1B up, whole dollars below $10M). Two scores that show the same number are tied.
+const shown = {
+  sharpe: (x) => Number(x.toFixed(1)),
+  maxDrawdown: (x) => Number((x * 100).toFixed(1)),
+  irr: (x) => Number((x * 100).toFixed(1)),
+  afterTaxWealth: (x) => {
+    const a = Math.abs(x), sign = x < 0 ? -1 : 1;
+    if (a >= 1e9) return sign * Number((a / 1e9).toFixed(2)) * 1e9;
+    if (a >= 1e7) return sign * Number((a / 1e6).toFixed(1)) * 1e6;
+    return Math.round(x);
+  },
+};
+const finite = (x) => typeof x === "number" && Number.isFinite(x);
+
 // How many of the four measures `a` beats `b` on: Sharpe, max drawdown (shallower), after-tax IRR, after-tax wealth.
+// Compared at the displayed precision, so a near-tie is a tie: neither side wins it.
 export function compare(a, b) {
-  const val = (x) => (x == null || Number.isNaN(x) ? -Infinity : x);
-  const wins = {
-    sharpe: val(a.sharpe) > val(b.sharpe),
-    maxDrawdown: a.maxDrawdown.pct > b.maxDrawdown.pct,
-    irr: val(a.irr) > val(b.irr),
-    afterTaxWealth: a.afterTaxWealth > b.afterTaxWealth,
+  const pick = {
+    sharpe: [a.sharpe, b.sharpe],
+    maxDrawdown: [a.maxDrawdown && a.maxDrawdown.pct, b.maxDrawdown && b.maxDrawdown.pct],
+    irr: [a.irr, b.irr],
+    afterTaxWealth: [a.afterTaxWealth, b.afterTaxWealth],
   };
-  return { wins, count: Object.values(wins).filter(Boolean).length };
+  const wins = {}, ties = {};
+  for (const k of Object.keys(pick)) {
+    const [x, y] = pick[k];
+    const fx = finite(x), fy = finite(y);
+    if (!fx && !fy) { wins[k] = false; ties[k] = true; continue; }
+    if (fx !== fy) { wins[k] = fx; ties[k] = false; continue; }
+    const sx = shown[k](x), sy = shown[k](y);
+    wins[k] = sx > sy;
+    ties[k] = sx === sy;
+  }
+  return { wins, ties, count: Object.values(wins).filter(Boolean).length, tied: Object.values(ties).filter(Boolean).length };
 }
 
 export function achievements(state, sc, botScores) {
@@ -74,9 +99,9 @@ export function debrief(state, sc, botScores = {}) {
   if (st.putNet !== 0 || st.putCount > 0) bits.push(`Your protective puts ${st.putNet >= 0 ? "paid you" : "cost you"} ${money(Math.abs(st.putNet))} net of premiums.`);
   if (st.exchangeContrib > 0) bits.push(`You put ${commas(st.exchangeContrib)} shares into the exchange fund, which stays locked beyond the end of the card.`);
   if (!bits.length) bits.push("You made no sales and used none of the tools, so your wealth followed the stock.");
-  bits.push(`You paid ${money(sc.taxesPaid)} of tax during the card and would owe about ${money(sc.unrealizedTax)} more if you sold everything at the end.`);
-  if (state.flags.houseSkipped) bits.push("You skipped the house, so your results are not directly comparable with the rivals, who paid for it.");
-  else if (state.flags.houseDone) bits.push("You paid for the house when it came due.");
+  bits.push(`You paid ${money(sc.taxesPaid)} of tax during the card and would owe about ${money(Math.max(0, sc.unrealizedTax))} more if you sold everything at the end.`);
+  if (st.dividends > 0) bits.push(`The stock paid ${money(st.dividends)} in dividends on your shares, taxed at 23.8%.`);
+  if (state.flags.houseDone) bits.push("You paid for the house when it came due.");
   const p2 = bits.join(" ");
 
   // 3. How you compare with the bots, and why

@@ -25,19 +25,19 @@ export function fallToCall(from = CURE_LTV, to = CALL_LTV) {
   return 1 - from / to;
 }
 
-// Cash applied to the loan per share sold: sale price less the 0.25% cost, less tax on the gain.
-export function netPerShare(price, costRate, taxRate, basis) {
-  const net = price * (1 - costRate);
-  return net - taxRate * Math.max(0, net - basis);
+// Cash applied to the loan per share sold: the sale price less the 0.25% cost. Tax on the gain is the client's own bill
+// (it goes in the tax ledger like any sale); the bank does not withhold it from the loan repayment.
+export function netPerShare(price, costRate) {
+  return price * (1 - costRate);
 }
 
-// Shares the bank sells so that the loan after net proceeds is 25% of the remaining collateral:
-//   (balance - n*a) = 0.25 * (pledged - n) * price,  a = netPerShare  =>  n = (balance - 0.25*C) / (a - 0.25*price)
-// Rounded up to whole shares and capped at the pledged shares.
-export function forcedSaleShares(balance, price, pledgedShares, costRate, taxRate, basis) {
+// Fewest shares the bank sells so that  loan - n * price * (1 - cost)  <=  0.25 * (pledged - n) * price:
+//   n = (balance - 0.25*C) / (a - 0.25*price),  a = netPerShare,  C = pledged * price
+// Rounded up to whole shares and capped at the pledged shares. Extra arguments (the old tax rate and basis) are ignored.
+export function forcedSaleShares(balance, price, pledgedShares, costRate) {
   const C = pledgedShares * price;
   if (!(balance > CURE_LTV * C)) return 0;
-  const a = netPerShare(price, costRate, taxRate, basis);
+  const a = netPerShare(price, costRate);
   const denom = a - CURE_LTV * price;
   if (!(denom > 0)) return pledgedShares;
   const n = Math.ceil((balance - CURE_LTV * C) / denom - 1e-9);

@@ -176,12 +176,13 @@ test("7: engineer adopting 2026-10-22 first trades 2026-11-23", () => {
   assert.match(two.error, /^Cooling-off: plan trades from Nov 23/);
 });
 
-test("7b: founder cooling-off: 90-day, report, and 120-day-cap cases", () => {
+test("7b: founder cooling-off: 90-day, report, and 120-day-cap cases; the report is the one for the quarter of adoption", () => {
   const prices = weekdays("2026-01-02", 400).map((d) => [d, 100, 100, 1]);
-  const adopt = "2026-01-05"; // +90 = 2026-04-05, +120 = 2026-05-05
-  const near90 = coolingOff({ seat: "founder", adoptedOn: adopt, prices, reports: [{ d: "2026-02-10" }] });
+  const adopt = "2026-01-05"; // quarter ends 2026-03-31; +90 = 2026-04-05, +120 = 2026-05-05
+  const near90 = coolingOff({ seat: "founder", adoptedOn: adopt, prices, reports: [{ d: "2026-04-01" }] });
   assert.equal(near90.endsOn, "2026-04-05"); assert.equal(near90.basis, "90days");
   assert.equal(near90.firstTradeOn, "2026-04-06"); // Sunday -> Monday
+  assert.equal(near90.quarterEnd, "2026-03-31"); assert.equal(near90.reportOn, "2026-04-01");
   const rep = coolingOff({ seat: "founder", adoptedOn: adopt, prices, reports: [{ d: "2026-04-20" }] });
   assert.equal(rep.endsOn, "2026-04-22"); assert.equal(rep.basis, "report"); // two business days after Mon Apr 20
   const cap = coolingOff({ seat: "founder", adoptedOn: adopt, prices, reports: [{ d: "2026-06-01" }] });
@@ -190,9 +191,28 @@ test("7b: founder cooling-off: 90-day, report, and 120-day-cap cases", () => {
   assert.equal(none.endsOn, "2026-05-05");
   const eng = coolingOff({ seat: "engineer", adoptedOn: adopt, prices, reports: [{ d: "2026-02-10" }] });
   assert.equal(eng.endsOn, "2026-02-04");
-  // report filed before adoption is ignored: the first report AFTER adoption counts
-  const skip = coolingOff({ seat: "founder", adoptedOn: adopt, prices, reports: [{ d: "2025-11-01" }, { d: "2026-02-10" }] });
-  assert.equal(skip.basis, "90days");
+  // a report filed before the quarter ends is not the report for that quarter: the first one filed AFTER the quarter end counts
+  const early = coolingOff({ seat: "founder", adoptedOn: adopt, prices, reports: [{ d: "2025-11-01" }, { d: "2026-02-10" }, { d: "2026-04-20" }] });
+  assert.equal(early.reportOn, "2026-04-20"); assert.equal(early.basis, "report"); assert.equal(early.endsOn, "2026-04-22");
+  // adoption on the last day of a quarter still uses the report filed after that quarter
+  const eoq = coolingOff({ seat: "founder", adoptedOn: "2026-03-31", prices, reports: [{ d: "2026-02-10" }, { d: "2026-05-12" }] });
+  assert.equal(eoq.reportOn, "2026-05-12"); assert.equal(eoq.endsOn, "2026-06-29"); assert.equal(eoq.basis, "90days");
+});
+
+test("7b2: banker repro: a founder adopting 2022-01-03 on c6 first trades on 2022-05-03 (the 120-day cap), not 2022-04-04", (t) => {
+  const f = path.join(here, "..", "data", "cards", "c6.json");
+  if (!fs.existsSync(f)) return t.skip("data/cards/c6.json not built");
+  const card = JSON.parse(fs.readFileSync(f, "utf8"));
+  const co = coolingOff({ seat: "founder", adoptedOn: "2022-01-03", prices: card.prices, reports: card.reports });
+  assert.equal(co.quarterEnd, "2022-03-31");
+  assert.equal(co.reportOn, "2022-05-11");
+  assert.equal(co.basis, "cap");
+  assert.equal(co.endsOn, "2022-05-03");
+  assert.equal(co.firstTradeOn, "2022-05-03");
+  // adopting 2022-04-04 instead: the Q2 report (filed in August) is later than the cap, so the cap rules again
+  const co2 = coolingOff({ seat: "founder", adoptedOn: "2022-04-04", prices: card.prices, reports: card.reports });
+  assert.equal(co2.quarterEnd, "2022-06-30");
+  assert.ok(co2.firstTradeOn >= "2022-07-04");
 });
 
 test("7c: founder plan in the sim uses the card's reports; sales start after cooling-off, then monthly on the first trading day", () => {
@@ -261,16 +281,17 @@ test("8: loan math: 25% LTV reaches 35% after a 28.57% fall; cure and forced-sal
   const C2 = C * (1 - 0.30);
   assert.equal(callCure(bal, C2), bal - 0.25 * C2);
   near(ltv(bal - callCure(bal, C2), C2), 0.25, 1e-12);
-  // forced sale closed form: n = (L - 0.25 C) / (a - 0.25 P)
-  const P = 70, pledged = 1_000_000, basis = 1;
-  const a = P * (1 - 0.0025) - 0.238 * (P * (1 - 0.0025) - basis);
-  near(netPerShare(P, 0.0025, 0.238, basis), a, 1e-12);
+  // forced sale closed form: n = (L - 0.25 C) / (a - 0.25 P), a = P (1 - cost). Tax is the client's bill, not withheld from the loan repayment.
+  const P = 70, pledged = 1_000_000;
+  const a = P * (1 - 0.0025);
+  near(netPerShare(P, 0.0025), a, 1e-12);
   const exact = (bal - 0.25 * pledged * P) / (a - 0.25 * P);
-  const n = forcedSaleShares(bal, P, pledged, 0.0025, 0.238, basis);
+  const n = forcedSaleShares(bal, P, pledged, 0.0025);
   assert.equal(n, Math.ceil(exact));
-  assert.ok((bal - n * a) / ((pledged - n) * P) <= 0.25 + 1e-12);
-  assert.ok((bal - (n - 1) * a) / ((pledged - n + 1) * P) > 0.25);
-  assert.equal(forcedSaleShares(10, 100, 1000, 0.0025, 0.238, 1), 0); // already under 25%
+  assert.equal(n, 143335);
+  assert.ok(bal - n * a <= 0.25 * (pledged - n) * P + 1e-6);
+  assert.ok(bal - (n - 1) * a > 0.25 * (pledged - n + 1) * P);
+  assert.equal(forcedSaleShares(10, 100, 1000, 0.0025), 0); // already under 25%
 });
 
 function marginScenario() {

@@ -4,7 +4,7 @@ Orchestrator: Opus 5.5 session started 2026-11-02 00:21 ET. Builders: Sonnet sub
 Resume rule: this file alone is enough to continue. Statuses: todo, running, check, done, failed, cut.
 
 ## Now
-- Wave: 2 (01:06 ET). Drawn blind cards (draw order): c1 ABNB, c2 PTON, c3 BEKE, c4 PINS, c5 AVTR, c6 MQ, c7 WMG, c8 LYFT, c9 OSCR, c10 REYN
+- Wave: 3 (01:40 ET), gauntlet round 1 and accuracy critics. Drawn blind cards (draw order): c1 ABNB, c2 PTON, c3 BEKE, c4 PINS, c5 AVTR, c6 MQ, c7 WMG, c8 LYFT, c9 OSCR, c10 REYN
 - Live URL: not yet (target https://pjogilvie7.github.io/founders-five/)
 - Higgsfield credits used: 28.5 of 150
 
@@ -25,14 +25,14 @@ Resume rule: this file alone is enough to continue. Statuses: todo, running, che
 | 1 | T11 Pages: Method, Data, AI, Glossary | sonnet | ui/pages.js, ui/glossary.js | done | every 4.8 formula verbatim; every rule links a source | ~130 checks pass; formulas verbatim vs PRD; 9 rules linked; 19 screenshots |
 | 1.5 | T3c SpaceX reconciler | sonnet | data/src/spcx/lockup.json | done | matches filing; diffs vs PRD 4.1 listed | 10 tranches reconciled; Dec 9 proposal overruled to Dec 8 (fact 3, specific clause); data/cards/spcx.json shipped |
 | 1.5 | T3 blind-card lockup reads A/B + reconciler for drawn cards; T3c SpaceX reconciler | sonnet | data/src/*/lockup*.json | done | reconciled or dropped; >= 4 blind cards | 8 of 8 reconciled, none dropped; ship first 6 in draw order (ABNB, PTON, BEKE, PINS, AVTR, MQ); Pinterest engineer took later date; Airbnb 7-day window re-lock added to engine |
-| 2 | T8 Headlines and reveals | sonnet | data/src/c*/headlines.json, reveal.json, scripts/check-headlines.mjs | check | 8 per card; check passes | 8x8 headlines + reveals pass name filter and number check; identification check: 4 of 6 IDENTIFIED -> rewrite round 2 running |
-| 2 | T9 Tool tabs + events + chart wired to engine | sonnet | ui/tabs/*.js, ui/events.js, ui/chart.js | running | scripted run hits release, window close, margin call, house | launched 00:58 |
+| 2 | T8 Headlines and reveals | sonnet | data/src/c*/headlines.json, reveal.json, scripts/check-headlines.mjs | done | 8 per card; check passes | 4 identification rounds: Cards 1,3,5,6 blind; Card 2 (Peloton) identifiable 85%, Card 4 weak 60% (logged) |
+| 2 | T9 Tool tabs + events + chart wired to engine | sonnet | ui/tabs/*.js, ui/events.js, ui/chart.js | done | scripted run hits release, window close, margin call, house | 87 e2e checks, 7 tabs incl. put + exchange; orchestrator wired tabs 6-7, fixed house modal labels, added api.events() |
 | 2 | T10 Scoreboard, reveal, debrief, achievements | sonnet | ui/scoreboard.js, ui/achievements.js | done | scoreboard values equal score() | all values match score(); orchestrator fixed after-tax starting wealth and run-only achievements |
 | 2 | X1 golden.xlsx | sonnet | tests/golden.xlsx | done | live formulas match JS | all 6 tests PASS (LibreOffice recalc) |
-| 2 | S1 Percentile, share code, compare runs | sonnet | engine/percentile.js, engine/sharecode.js, ui/compare.js, ui/scoreboard.* | running | histogram < 10 s; code round-trips | |
-| 3 | Integration, e2e, grader path | orchestrator + sonnet | tests/e2e.spec.mjs | todo | scoreboard < 60 s via Watch | |
-| 3 | Accuracy critics: banker, quant | sonnet x2 | reports only | todo | findings fixed or logged | |
-| 3 | Gauntlet x8 pieces vs Stax | sonnet builders + critics | per piece | todo | wins blind or logged | |
+| 2 | S1 Percentile, share code, compare runs | sonnet | engine/percentile.js, engine/sharecode.js, ui/compare.js, ui/scoreboard.* | done | histogram < 10 s; code round-trips | 152 tests; 500 strategies 1.2 s in a worker; share code replays to the cent |
+| 3 | Integration, e2e, grader path | orchestrator + sonnet | tests/e2e.spec.mjs | done | scoreboard < 60 s via Watch | tests/e2e.mjs 14/14: Watch -> scoreboard 4.5 s at 375 and 1280, no console errors, data fresh |
+| 3 | Accuracy critics: banker, quant | sonnet x2 | reports only | done | findings fixed or logged | banker 9 findings, quant 8 + clean core (W_t, metrics, no look-ahead); fixes accepted -> E1 running; house skip removed (panel RUN-6) |
+| 3 | Gauntlet x8 pieces vs Stax | sonnet builders + critics | per piece | running | wins blind or logged | see research/gauntlet/LOG.md: lesson WIN r1, title WIN r2; others in rounds 2-3 |
 | 4 | Repo, Pages, workflow run, live check | orchestrator | .github | todo | live URL passes no-login check | |
 | 4 | Should-haves in order | sonnet | | todo | | |
 | 4 | Demo video, submission PDF, REPORT, NEEDS-PJ | sonnet | submission/, REPORT.md | todo | | |

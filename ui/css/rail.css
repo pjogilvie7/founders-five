@@ -1,0 +1,208 @@
+/* Rail (Intaglio): sticky clock + score plate, banknote strip, engraved certificate, rivals as a gap-to-you list.
+   Loaded after app.css, so rules here carry a .rail prefix to win over it at every width. */
+
+/* ground: two offset sets of fine concentric rings read as a guilloche lattice */
+.rail {
+  background:
+    linear-gradient(to top, var(--rail) 8%, transparent 55%),
+    repeating-radial-gradient(circle at 0% 0%, transparent 0 9px, color-mix(in srgb, var(--gold) 7%, transparent) 9px 10px),
+    repeating-radial-gradient(circle at 100% 38%, transparent 0 9px, color-mix(in srgb, var(--gold) 6%, transparent) 9px 10px),
+    var(--rail);
+  scrollbar-gutter: stable;
+}
+.rail .lbl { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--rail-muted); }
+
+/* banknote strip: ruled gold edges with a fine cross-hatch between them */
+.rail .rail-top::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 7px;
+  background:
+    linear-gradient(var(--gold), var(--gold)) top / 100% 1px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) bottom / 100% 1px no-repeat,
+    repeating-linear-gradient(135deg, transparent 0 2px, color-mix(in srgb, var(--gold) 70%, transparent) 2px 3px),
+    repeating-linear-gradient(45deg, transparent 0 2px, color-mix(in srgb, var(--gold) 38%, transparent) 2px 3px),
+    var(--rail);
+}
+
+@media (min-width: 900px) {
+  .rail { gap: 11px; }
+  /* ---------- sticky plate: clock, progress, window, score */
+  .rail .rail-top {
+    position: sticky; top: 0; z-index: 5;
+    margin: -14px -16px 0; padding: 14px 16px 16px;
+    gap: 9px;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--rail-2) 88%, #000) 0%, var(--rail-2) 100%);
+    box-shadow: 0 10px 18px -8px #000c;
+  }
+  .rail .clock-row { gap: 8px; }
+  .rail .clock { gap: 3px; }
+  .rail .daylabel { font-size: 23px; }
+  .rail .yearbar { height: 12px; margin: 2px 0 0; background: var(--rail); border-color: var(--rail-line); }
+  .rail .yearbar .fill { background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 70%, #000), var(--gold)); box-shadow: 2px 0 0 #f3d78f; }
+  .rail .marks i { top: -3px; bottom: -3px; }
+  .rail .marks i.done { background: var(--gold); }
+  .rail .lamp-row { min-height: 20px; gap: 9px; }
+}
+
+/* ---------- net worth: the score */
+@media (min-width: 900px) {
+  .rail .nw { display: grid; gap: 2px; padding-top: 10px; margin-top: 2px; border-top: 1px solid var(--rail-line); }
+  .rail .nw-head { min-height: 28px; }
+  .rail .nwv { font-size: 32px; font-weight: 600; line-height: 1.05; letter-spacing: -.02em; color: var(--rail-text); white-space: nowrap; font-variant-numeric: tabular-nums; text-shadow: 0 1px 0 #000a; }
+}
+.rail .nwv.pos { color: var(--good-lit); }
+.rail .nwv.neg { color: var(--seal-lit); }
+.rail .nw-delta { display: flex; align-items: baseline; gap: 7px; min-height: 22px; color: var(--rail-muted); font-size: 12px; flex-wrap: wrap; }
+.rail .nw-delta .dv { font-size: 15px; font-weight: 600; color: var(--rail-muted); }
+.rail .nw-delta .since { letter-spacing: .02em; }
+.rail .nw-arr { align-self: center; width: 10px; height: 9px; background: currentColor; clip-path: polygon(50% 0, 100% 100%, 0 100%); display: none; color: var(--rail-muted); }
+.rail .nw-delta[data-dir="1"] .dv, .rail .nw-delta[data-dir="1"] .nw-arr { color: var(--good-lit); }
+.rail .nw-delta[data-dir="-1"] .dv, .rail .nw-delta[data-dir="-1"] .nw-arr { color: var(--seal-lit); }
+.rail .nw-delta:not([data-dir="0"]) .nw-arr { display: block; }
+.rail .nw-delta[data-dir="-1"] .nw-arr { transform: scaleY(-1); }
+.rail .nwv.flash-up { animation: nwUp .5s var(--ease-out); }
+.rail .nwv.flash-down { animation: nwDown .5s var(--ease-out); }
+@keyframes nwUp { 0% { color: var(--good-lit); text-shadow: 0 0 16px color-mix(in srgb, var(--good) 90%, transparent), 0 1px 0 #000a; } 100% { } }
+@keyframes nwDown { 0% { color: var(--seal-lit); text-shadow: 0 0 16px color-mix(in srgb, var(--seal) 90%, transparent), 0 1px 0 #000a; } 100% { } }
+.rail .nw-delta.tick-up .dv, .rail .nw-delta.tick-up .nw-arr { animation: tickUp .7s var(--ease-pop); }
+.rail .nw-delta.tick-down .dv, .rail .nw-delta.tick-down .nw-arr { animation: tickDown .7s var(--ease-pop); }
+@keyframes tickUp { 0% { translate: 0 3px; scale: 1.12; filter: brightness(1.5); } 100% { } }
+@keyframes tickDown { 0% { translate: 0 -3px; scale: 1.12; filter: brightness(1.4); } 100% { } }
+.rail .seg { border-color: var(--rail-line); background: var(--rail); }
+
+/* ---------- certificate: cut corners, no tilt, one engraved plate */
+.rail .rcert {
+  position: relative; background: linear-gradient(165deg, #f6f1e4, var(--paper) 50%, var(--paper-2));
+  color: var(--ink); padding: 22px 24px 14px; text-align: center;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px), 0 14px);
+  filter: drop-shadow(3px 3px 0 var(--gold));
+  margin-top: 4px;
+}
+.rail .rcert .cert-border { position: absolute; inset: 0; color: var(--gold); pointer-events: none; }
+.rail .rcert .cert-border svg { width: 100%; height: 100%; display: block; }
+.rail .rcert .cert-in { position: relative; display: grid; gap: 4px; justify-items: center; }
+.rail .rcert .cert-head { font-family: var(--f-display); font-size: 12.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--muted); }
+.rail .rcert .cert-vig { height: 54px; width: 100%; display: flex; justify-content: center; align-items: center; margin: 2px 0; overflow: hidden; }
+.rail .rcert .cert-vig img { height: 100%; max-width: 100%; object-fit: contain; mix-blend-mode: multiply; }
+.rail .rcert .cert-vig svg { height: 100%; width: auto; color: var(--gold); }
+.rail .rcert .cert-name { font-family: var(--f-display); font-size: 16px; letter-spacing: .09em; text-transform: uppercase; }
+.rail .rcert .cert-shares { display: flex; align-items: baseline; gap: 6px; }
+.rail .rcert .cert-shares .count { font-size: 25px; font-weight: 500; line-height: 1.15; }
+.rail .rcert .cert-shares .u { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.rail .rcert .cert-sub { font-size: 12px; color: var(--muted); }
+.rail .rcert .seals { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 5px 0 0; }
+.rail .rcert .seal { width: 25px; height: 25px; display: block; position: relative; }
+.rail .rcert .seal svg { width: 100%; height: 100%; overflow: visible; }
+.rail .rcert .seal .half { fill: var(--seal); stroke: #5e1712; stroke-width: .7; transition: transform .55s var(--ease-pop), opacity .5s, fill .5s; }
+.rail .rcert .seal .pct { font: 600 8.4px var(--f-num); fill: var(--paper); transition: opacity .2s; }
+.rail .rcert .seal.broken .half.l { transform: translate(-3px, 1.6px) rotate(-16deg); transform-origin: 11px 14px; fill: var(--muted); opacity: .5; }
+.rail .rcert .seal.broken .half.r { transform: translate(3px, -1px) rotate(15deg); transform-origin: 13px 10px; fill: var(--muted); opacity: .5; }
+.rail .rcert .seal.broken .pct { opacity: 0; }
+.rail .rcert .seal.void .half { fill: none; stroke: var(--muted); stroke-dasharray: 2 1.6; }
+.rail .rcert .seal.void .pct { fill: var(--muted); }
+.rail .rcert .seal.cracking svg { animation: crack .8s var(--ease-out); }
+.rail .rcert .stamps { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; min-height: 6px; margin-top: 6px; }
+
+@media (min-width: 900px) {
+  /* ---------- cash */
+  .rail .money { display: grid; gap: 0; }
+  .rail .cashrow { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 2px 2px 10px; border-bottom: 1px solid var(--rail-line); }
+  .rail .cashrow .val { font-size: 17px; font-weight: 500; color: var(--rail-text); }
+  .rail .rivals-toggle { display: none; }
+}
+
+/* ---------- rivals: gap to you, rank arrows */
+.rail .rail-more { gap: 14px; }
+.rail .rivals h3 { font-family: var(--f-body); display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; letter-spacing: 0; text-transform: none; }
+.rail .rivals h3 .lbl { font-size: 11px; }
+.rail .rivals .gapnote { margin-left: auto; font-size: 11px; color: var(--rail-muted); letter-spacing: .04em; }
+.rail .rank-flag { font-size: 11px; font-weight: 600; letter-spacing: .06em; }
+.rail .rivals li {
+  height: 32px; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 0 10px 0 6px;
+  background: var(--rail-2); border: 1px solid var(--rail-line); font-size: 14px;
+  transition: transform .6s var(--ease-pop), background .4s;
+}
+.rail .rivals li.you { border-color: var(--gold); box-shadow: inset 3px 0 0 var(--gold); background: color-mix(in srgb, var(--gold) 12%, var(--rail-2)); }
+.rail .rivals li .rk { display: grid; justify-items: center; line-height: 1; font-family: var(--f-num); font-size: 12px; font-weight: 500; color: var(--rail-muted); flex: none; }
+.rail .rivals li.you .rk { color: var(--gold); }
+.rail .rivals li .mv { display: block; width: 8px; height: 6px; margin-top: 2px; background: transparent; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.rail .rivals li .mv[data-d="up"] { background: var(--good-lit); animation: mvIn .5s var(--ease-pop); }
+.rail .rivals li .mv[data-d="down"] { background: var(--seal-lit); transform: scaleY(-1); animation: mvIn .5s var(--ease-pop); }
+@keyframes mvIn { 0% { opacity: 0; translate: 0 4px; } 100% { opacity: 1; } }
+.rail .rivals li.moved { animation: moved 1s var(--ease-out); }
+@keyframes moved { 0% { background: color-mix(in srgb, var(--gold) 30%, var(--rail-2)); } 100% { } }
+.rail .rivals li .nm { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail .rivals li.you .nm { font-weight: 600; color: var(--gold); }
+.rail .rivals li .gap { font-size: 13.5px; font-weight: 600; text-align: right; min-width: 52px; }
+.rail .rivals li .gap.ahead { color: var(--seal-lit); }
+.rail .rivals li .gap.behind { color: var(--good-lit); }
+.rail .rivals li .gap.lv { color: var(--rail-muted); font-weight: 500; font-family: var(--f-body); font-size: 12px; letter-spacing: .04em; }
+.rail .rivals li .w { font-size: 12px; color: var(--rail-muted); text-align: right; min-width: 52px; }
+.rail .rivals li.you .w { color: var(--rail-text); font-size: 13.5px; font-weight: 500; grid-column: 3 / 5; }
+.rail .rivals li.you .gap { display: none; }
+
+/* ---------- drawers */
+.rail .drawer summary { gap: 10px; }
+.rail .drawer summary .s-t { margin-right: 0; }
+.rail .drawer summary .pips { margin-right: auto; display: inline-flex; gap: 3px; flex-wrap: wrap; }
+.rail .pips i { width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid var(--rail-muted); display: block; }
+.rail .pips i.on { background: var(--gold); border-color: var(--gold); }
+.rail .drawer .cnt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); margin: 0; }
+.rail .drawer summary { position: relative; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rail .rivals li .mv, .rail .rivals li.moved, .rail .nw-delta .dv, .rail .nw-delta .nw-arr { animation: none !important; }
+}
+
+/* ================= round 3: height budget, day readout, drawers list ================= */
+.rail .daylabel .dn { font-weight: inherit; }
+
+@media (min-width: 900px) {
+  /* day readout: kind in small gold caps, the day in big mono numerals, the rest quiet */
+  .rail .daylabel { display: flex; align-items: baseline; gap: 7px; font-family: var(--f-body); font-size: 14px; font-weight: 500; letter-spacing: 0; color: var(--rail-muted); }
+  .rail .daylabel .dk { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--rail-muted); }
+  .rail .daylabel .dn { font-family: var(--f-num); font-size: 28px; font-weight: 500; line-height: 1; color: var(--rail-text); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .rail .daylabel .dt { font-family: var(--f-num); font-size: 14px; color: var(--rail-muted); }
+  .rail .daylabel .dr { font-size: 12px; letter-spacing: .02em; color: var(--rail-muted); opacity: .85; }
+
+  /* the rail is a column that fits; only the drawers list scrolls */
+  .rail > * { flex: none; }
+  .rail > .rail-more { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+  .rail .rivals { flex: none; }
+  .rail .drawers { flex: 1 1 auto; min-height: 118px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--rail-line) transparent; position: relative; }
+  .rail .drawers.more-below { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); }
+  .rail .drawer summary { position: sticky; top: 0; z-index: 2; background: var(--rail); min-height: 38px; padding: 6px 2px; }
+  .rail .drawer:focus-within summary { z-index: 3; }
+  .rail .rivals li { height: 32px; }
+}
+
+/* ---------- short desktops (1280x800 and the like): certificate becomes a strip */
+@media (min-width: 900px) and (max-height: 999px) {
+  .rail { gap: 9px; }
+  .rail .rail-top { padding: 12px 16px 14px; gap: 7px; }
+  .rail .nw { padding-top: 8px; }
+  .rail .nwv { font-size: 30px; }
+  .rail .rcert {
+    margin-top: 8px; padding: 9px 14px 9px; text-align: left;
+    clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+    filter: drop-shadow(2px 2px 0 var(--gold));
+    background:
+      linear-gradient(var(--gold), var(--gold)) 14px 3px / calc(100% - 28px) 1px no-repeat,
+      linear-gradient(var(--gold), var(--gold)) 14px calc(100% - 4px) / calc(100% - 28px) 1px no-repeat,
+      linear-gradient(165deg, #f6f1e4, var(--paper) 50%, var(--paper-2));
+  }
+  .rail .rcert .cert-border, .rail .rcert .cert-head, .rail .rcert .cert-vig { display: none; }
+  .rail .rcert .cert-in {
+    grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name shares" "seals seals" "sub stamps";
+    gap: 6px 10px; align-items: center; justify-items: stretch;
+  }
+  .rail .rcert .cert-name { grid-area: name; font-size: 13px; letter-spacing: .14em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rail .rcert .cert-shares { grid-area: shares; justify-self: end; gap: 5px; }
+  .rail .rcert .cert-shares .count { font-size: 21px; line-height: 1; }
+  .rail .rcert .cert-shares .u { font-size: 10.5px; letter-spacing: .12em; }
+  .rail .rcert .seals { grid-area: seals; justify-content: flex-start; gap: 5px; margin: 0; flex-wrap: nowrap; }
+  .rail .rcert .seal { width: 22px; height: 22px; flex: none; }
+  .rail .rcert .cert-sub { grid-area: sub; font-size: 11.5px; white-space: nowrap; }
+  .rail .rcert .stamps { grid-area: stamps; justify-content: flex-end; gap: 5px; margin: 0; min-height: 0; flex-wrap: nowrap; }
+  .rail .rcert .stamp { font-size: 9.5px; letter-spacing: .14em; padding: 0 5px; border-width: 1.5px; transform: none; }
+}
