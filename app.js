@@ -97,7 +97,7 @@ async function route(r) {
       const entry = boot.data.cardsIndex.find((c) => c.id === r.cardId);
       if (!entry) { go('/'); return; }
       const engine = await getEngine(); if (my !== gen) return;
-      dispose = (await renderSeat($screen, { entry, engine, onPick: (id, seat) => go(`/play/${id}/${seat}`) })) || null; break;
+      dispose = (await renderSeat($screen, { entry, engine, nextBlind: nextBlindId, onPick: (id, seat) => go(`/play/${id}/${seat}`) })) || null; break;
     }
     case 'play': dispose = await startGame({ cardId: r.cardId, seat: r.seat, watch: false }, my); break;
     case 'watch': dispose = await startGame({ cardId: 'spcx', seat: 'engineer', watch: true }, my); break;
@@ -113,12 +113,14 @@ function titleAction(a) {
   if (d.status !== 'ready') return;
   if (a === 'spcx') go('/seat/spcx');
   else if (a === 'watch') go('/watch');
-  else if (a === 'blind') {
-    const blinds = d.data.cardsIndex.filter((c) => c.blind); if (!blinds.length) return;
-    const n = Number(safeLS.get('ff.blind') || 0);
-    safeLS.set('ff.blind', String(n + 1));
-    go('/seat/' + blinds[n % blinds.length].id);
-  }
+  else if (a === 'blind') { const id = nextBlindId(); if (id) go('/seat/' + id); }
+}
+// The next blind card in this browser's rotation (also where the founder seat goes from a card with no founder schedule).
+function nextBlindId() {
+  const blinds = getState().boot.data.cardsIndex.filter((c) => c.blind); if (!blinds.length) return null;
+  const n = Number(safeLS.get('ff.blind') || 0);
+  safeLS.set('ff.blind', String(n + 1));
+  return blinds[n % blinds.length].id;
 }
 
 async function renderPageRoute(name, my) {
@@ -574,6 +576,7 @@ function handleEvents(events, quiet) {
 
 function finish() {
   const g = G; g.over = true;
+  if (!g.watch && g.seat === 'engineer') safeLS.set('ff.engDone', '1');   // opens the founder seat (ui/seat.js)
   const snap = g.engine.snapshot(g.state);
   let score = null; try { score = g.engine.score ? g.engine.score(g.state) : null; } catch (e) { console.warn(e); }
   lastResult = { cardId: g.cardId, seat: g.seat, watch: g.watch, card: g.card, state: g.state, snap, score, botScores: g.scores, achievements: [...g.achievements], engine: g.engine };

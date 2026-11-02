@@ -59,6 +59,7 @@ async function session(name, viewport, mobile) {
   // seat
   await page.click('text=Play SpaceX (live)'); await page.waitForSelector('.seats'); await wait(300); await shot('02-seat');
   check(await page.locator('.seat.sealed').count() === 1, 'founder card sealed on SpaceX');
+  check(/Unlocks after one Early engineer run/.test(await page.textContent('.seat[data-seat=founder]')), 'founder seal names the engineer run, not a date');
   await noOverflow('seat');
   // intro
   await page.click('[data-seat-go=engineer]'); await page.waitForSelector('.dialog.lesson'); await wait(500); await shot('03-intro');
@@ -117,8 +118,18 @@ async function session(name, viewport, mobile) {
   // blind card path
   await page.goto(`${BASE}/${hasBlind ? Q : '?mock=1'}#/`); await page.waitForSelector('.actions .btn:not([disabled])');
   await page.click('text=Deal a blind IPO'); await page.waitForSelector('.seats'); await wait(300);
-  check(await page.locator('.seat.sealed').count() === 0, 'both seats open on a blind card');
+  check(await page.locator('.seat.sealed').count() === 1, 'before an engineer run, the founder seat is sealed on a blind card too');
+  // after one finished engineer run the founder seat opens; on SpaceX it plays a five-year card
+  await page.evaluate(() => localStorage.setItem('ff.engDone', '1'));
+  await page.goto(`${BASE}/${hasBlind ? Q : '?mock=1'}#/`); await page.waitForSelector('.actions .btn:not([disabled])');
+  await page.click('text=Deal a blind IPO'); await page.waitForSelector('.seats'); await wait(300);
+  check(await page.locator('.seat.sealed').count() === 0, 'both seats open on a blind card after an engineer run');
   await shot('14-seat-blind');
+  await page.goto(`${BASE}/${Q}#/seat/spcx`); await page.waitForSelector('.seats'); await wait(300);
+  check(await page.locator('.seat.sealed').count() === 0 && /five-year card/.test(await page.textContent('.seat[data-seat=founder]')), 'SpaceX founder seat opens and says it plays a five-year card');
+  await shot('14b-seat-spcx-founder');
+  await page.click('[data-seat-go=founder]'); await page.waitForURL(/#\/play\/c\d+\/founder/); await page.waitForSelector('.dialog.lesson');
+  check(/#\/play\/c\d+\/founder/.test(page.url()), `SpaceX founder seat deals a five-year card: ${page.url().split('#')[1]}`);
   // five-year card (mock engine): the house event opens a centered modal with choices
   await page.goto(`${BASE}/?mock=1#/play/c1/engineer`); await page.waitForSelector('.dialog.lesson'); await page.keyboard.press('Escape'); await wait(400);
   await page.evaluate(() => window.__ff.step(400)); await wait(400);

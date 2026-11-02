@@ -46,7 +46,7 @@
 .lock-badge{position:absolute;right:-2px;bottom:-2px;width:46px;height:46px;fill:var(--seal);stroke:var(--paper);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;
   filter:drop-shadow(0 2px 0 #18262f33)}
 .lock-badge path{fill:none;stroke:var(--paper);stroke-width:1.8}
-.unlock-tag{margin-top:auto;align-self:stretch;display:flex;align-items:center;justify-content:center;min-height:48px;padding:8px 14px;
+.unlock-tag{margin-top:auto;align-self:stretch;display:flex;align-items:center;justify-content:center;text-align:center;min-height:48px;padding:8px 14px;
   border:1px dashed var(--gold);background:#fffaf0aa;color:var(--ink);font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:.1em;text-transform:uppercase}
 .seal-note{display:block;padding:0;border:0;background:none;margin:0;font-size:12.5px;font-weight:500;line-height:1.4;color:var(--muted)}
 

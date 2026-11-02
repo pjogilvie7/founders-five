@@ -54,8 +54,13 @@ const EMBLEMS = {
 
 const LOCK_BADGE = '<svg class="lock-badge" viewBox="0 0 28 28" focusable="false"><circle cx="14" cy="14" r="13"/><path d="M10 14v-2a4 4 0 0 1 8 0v2M9 14h10v7H9Z"/></svg>';
 
+// The founder seat opens after one finished Early engineer run, on any card (app.js sets this key when such a run ends).
+export const ENGINEER_DONE_KEY = 'ff.engDone';
+function engineerDone() { try { return localStorage.getItem(ENGINEER_DONE_KEY) === '1'; } catch { return false; } }
+
 /** Short tag for a locked card, read from the gate reason the lockup check already gave; nothing is computed. */
-function unlockTag(reason) {
+function unlockTag(reason, gate) {
+  if (gate === 'run') return 'Unlocks after one Early engineer run';
   const m = /until ([A-Z][a-z]{2})[a-z]* (\d{1,2}), (\d{4})/.exec(reason || '');
   return m ? `Unlocks ${m[1]} ${m[2]}, ${m[3]}` : 'Not playable yet';
 }
@@ -67,7 +72,13 @@ export async function renderSeat(el, ctx) {
   try { card = await loadCard(entry.id); }
   catch { el.innerHTML = `<section class="seat-screen"><div class="alert err" role="alert"><p>This card could not load.</p><a class="btn" href="#/">Back</a></div></section>`; return () => {}; }
   const engine = ctx.engine;
-  const checks = { engineer: seatCheck(card, 'engineer', engine), founder: seatCheck(card, 'founder', engine) };
+  // Founder: first the one-run gate. Then, on a card with no founder schedule in play (SpaceX: every founder share is locked
+  // past today's prices, so the engine refuses the seat), it plays a five-year card instead of showing a far-off date.
+  const here = seatCheck(card, 'founder', engine);
+  const founder = !engineerDone()
+    ? { ok: false, gate: 'run', reason: 'Finish one run as the Early engineer, on any card, to open this seat.' }
+    : here.ok ? here : { ok: true, elsewhere: true, reason: '' };
+  const checks = { engineer: seatCheck(card, 'engineer', engine), founder };
   const live = !!card.live;
   const cardNote = live
     ? `Live card: ${entry.tradingDays} trading days so far. Not comparable with five-year cards.`
@@ -85,8 +96,9 @@ export async function renderSeat(el, ctx) {
             <div class="seat-emblem" aria-hidden="true">${EMBLEMS[k]}${c.ok ? '' : LOCK_BADGE}</div>
             <div class="seat-id"><h2>${s.name}</h2><p class="role">${s.short}</p></div>
             <ul class="chips" aria-label="Rules at this seat">${s.chips.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
-            ${c.ok ? `<button class="btn primary" data-seat-go="${k}">Take this seat</button>`
-              : `<p class="unlock-tag">${esc(unlockTag(c.reason))}</p><p class="seal-note" id="why-${k}">${esc(c.reason)}</p>`}
+            ${c.elsewhere ? `<p class="seal-note" id="why-${k}">The founder’s ${esc(card.name || 'shares')} shares stay locked past today’s prices, so this seat plays a five-year card.</p>` : ''}
+            ${c.ok ? `<button class="btn primary" data-seat-go="${k}">${c.elsewhere ? 'Take this seat on a five-year card' : 'Take this seat'}</button>`
+              : `<p class="unlock-tag">${esc(unlockTag(c.reason, c.gate))}</p><p class="seal-note" id="why-${k}">${esc(c.reason)}</p>`}
             <details class="seat-details"><summary>Details</summary>
               <p class="role-full">${esc(s.role)}</p>
               <ul>${s.rules.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></details>
@@ -95,10 +107,11 @@ export async function renderSeat(el, ctx) {
       </div>
     </section>`;
   el.addEventListener('click', (e) => {
+    const pick = (seat) => ctx.onPick(seat === 'founder' && checks.founder.elsewhere ? ctx.nextBlind() : entry.id, seat);
     const b = e.target.closest('[data-seat-go]');
-    if (b) { ctx.onPick(entry.id, b.dataset.seatGo); return; }
+    if (b) { pick(b.dataset.seatGo); return; }
     const card = e.target.closest('.seat:not(.sealed)');
-    if (card && !e.target.closest('details')) ctx.onPick(entry.id, card.dataset.seat);
+    if (card && !e.target.closest('details')) pick(card.dataset.seat);
   });
   el.querySelector('[data-seat-go]')?.focus({ preventScroll: true });
   return () => {};
