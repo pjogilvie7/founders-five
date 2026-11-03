@@ -13,208 +13,42 @@
 <!-- ============================ PAGE 1 ============================ -->
 <section class="page cover">
   <div class="band"></div>
-  <div class="kicker">FMKT 256 extra credit, Prompt 1</div>
+  <div class="kicker">FMKT 256 AI extra credit &middot; Prompt 1, trading game</div>
   <h1>Founder&rsquo;s Five</h1>
   <div class="sub">A concentrated-stock replay</div>
+  <div class="team"><span>PJ Ogilvie <i>pjo20</i></span><span>Grant Mullen <i>agm99</i></span><span>Griffin Hayward <i>gmh57</i></span></div>
 
   <div class="linkrow">
     <div>
-      <div class="label">Play it in a browser. No login.</div>
+      <div class="label">Play it here. No login.</div>
       <div class="url"><a href="https://pjogilvie7.github.io/founders-five/">https://pjogilvie7.github.io/founders-five/</a></div>
-      <div class="small">Scan the code with a phone, or click the link. Open the link in a private window to see what a first-time visitor sees. Click <b>Watch a finished run</b> to reach a scoreboard in about 15 seconds.</div>
+      <div class="small">Works on a laptop or a phone. For a quick look, click <b>Watch a finished run</b>: a full game plays in about 15 seconds and ends on the scoreboard.</div>
     </div>
     <img src="qr.png" alt="QR code for the live link">
   </div>
 
   <div class="shotbox"><img src="shots/01-title.png" alt="Title screen"></div>
-  <p class="cap">The title screen. The strip under the buttons shows the data-as-of date: prices through {{asOfLong}} close, updated nightly, SpaceX card at {{spcxDays}} trading days.</p>
 
-  <p class="summary">Founder&rsquo;s Five is a browser game in which you hold $100 million of one real stock on its IPO day and cannot sell it yet. You work through the real lockup release dates, trading windows and SEC rules using only a private bank&rsquo;s tools: staged sales, a 10b5-1 plan, a zero-cost collar, a credit line against the shares and an index fund. Each run is scored on Sharpe ratio, max drawdown, after-tax IRR and after-tax family wealth, against three rival bots that play the same card.</p>
+  <h3>The game</h3>
+  <p class="body">You start with $100 million of one stock on its IPO day, and you can&rsquo;t sell any of it yet. Your job is to turn that one position into lasting family wealth using only what a private bank would offer: sales in open trading windows, a 10b5-1 plan, a zero-cost collar, a credit line against the shares and an index fund. Shares unlock on the dates in the company&rsquo;s real prospectus, and the game enforces the SEC rules that go with them.</p>
+  <p class="body">There are seven cards. SpaceX is live: it listed in June 2026, and its card gains a day after every market close. The other six are real 2019 to 2021 IPOs played over five years with the name hidden until the end. Three bots with fixed strategies play the same card next to you.</p>
 
-  <div class="facts">
-    <div><span class="v">1 + {{blindShipped}}</span><span class="l">cards: the live SpaceX card and {{blindShipped}} blind five-year IPOs from 2019 to 2021</span></div>
-    <div><span class="v">{{spcxDays}}</span><span class="l">SpaceX trading days so far; one more is added each trading day</span></div>
-    <div><span class="v">4</span><span class="l">measures: Sharpe, max drawdown, after-tax IRR, after-tax wealth</span></div>
-    <div><span class="v">{{tests}}</span><span class="l">automated tests pass, including 12 numbered golden tests</span></div>
+  <h3>How it fits the prompt</h3>
+  <div class="fit">
+    <div><b>Trading game</b><span>One stock plus its derivatives, a fixed $100M stake and a five-year run, scored on Sharpe ratio, max drawdown and after-tax IRR.</span></div>
+    <div><b>Historical data</b><span>Daily prices, Treasury rates, earnings dates and each prospectus&rsquo;s lockup terms, stored in the repo.</span></div>
+    <div><b>Updates itself</b><span>A GitHub Action runs every weekday night. It pulls new prices, rates, SpaceX option quotes and SEC filings, and republishes the site only if the tests pass (<a href="https://pjogilvie7.github.io/founders-five/#/data">update log</a>, <a href="https://github.com/pjogilvie7/founders-five/actions">run history</a>).</span></div>
   </div>
 
-  <div class="team"><span>PJ Ogilvie</span><span>Grant Mullen</span><span>Griffin Hayward</span></div>
-  <div class="running"><span>Founder&rsquo;s Five &middot; FMKT 256 extra credit</span><span>Page 1 of 5 &middot; built {{built}}</span></div>
+  <div class="running"><span>Founder&rsquo;s Five &middot; FMKT 256</span><span>Page 1 of 2</span></div>
 </section>
 
 <!-- ============================ PAGE 2 ============================ -->
 <section class="page">
   <div class="band"></div>
-  <div class="kicker">How it meets Prompt 1</div>
-  <h2>The assignment, point by point</h2>
-  <p class="lede">Each requirement from the prompt, what was built to meet it, and where you can see it.</p>
-
-  <table class="matrix">
-    <thead><tr><th>Requirement</th><th>How Founder&rsquo;s Five meets it</th><th>Where you see it</th></tr></thead>
-    <tbody>
-      <tr><td class="req">Build a finance app using Claude or ChatGPT</td><td>Built end to end with Claude Code. Claude also read the prospectus lockup terms and wrote the anonymized headlines, and each of those outputs passed a machine check. The finished game calls no AI model.</td><td class="where">&ldquo;How AI was used&rdquo; page; PDF page 4</td></tr>
-      <tr><td class="req">Web browser interface</td><td>A static site on GitHub Pages: plain HTML, JavaScript and JSON, nothing to install. Playable on a phone in portrait.</td><td class="where"><a href="https://pjogilvie7.github.io/founders-five/">The link on page 1</a></td></tr>
-      <tr><td class="req">Project type: trading game</td><td>One stock plus its tools (staged sales, 10b5-1 plan, zero-cost collar, protective put, credit line, exchange fund, index fund). A fixed $100M stake over five years, judged on Sharpe ratio, max drawdown and after-tax IRR, the measures the prompt names. Three rival bots play the same card.</td><td class="where">Scoreboard; PDF page 5</td></tr>
-      <tr><td class="req">Imports historical data</td><td>Daily prices for the SpaceX card and {{blindShipped}} blind IPO cards, the S&amp;P 500 fund (SPY), three Treasury and SOFR rate series, 8-K earnings dates and each prospectus lockup, all committed as JSON.</td><td class="where"><a href="https://pjogilvie7.github.io/founders-five/#/data">Data page</a>; <a href="https://pjogilvie7.github.io/founders-five/#/method">Method page</a></td></tr>
-      <tr><td class="req">Updates when new data arrive</td><td>A GitHub Action runs on weekdays at 23:30 UTC. It appends prices, rates, SpaceX option data and new SEC filings, runs the tests, and commits only if they pass. The SpaceX card grows by one day each trading day.</td><td class="where">Data-as-of strip on every screen; update log on the Data page</td></tr>
-      <tr><td class="req">No login, no email request</td><td>Public site with no accounts and no email prompt. It loads fonts and a chart library from public CDNs and nothing else.</td><td class="where">Open the link in a private window on a phone</td></tr>
-      <tr><td class="req">PDF in Canvas with embedded links</td><td>This 5-page PDF. The live site, the Method and Data pages, the Actions history and the repository are clickable.</td><td class="where">This file</td></tr>
-      <tr><td class="req">Accuracy (&ldquo;no partial credit&rdquo;)</td><td>{{tests}} tests pass under <code>node --test</code>, including 12 numbered golden tests. A spreadsheet with live formulas re-derives 6 of them. Every lockup was read twice by separate agents and reconciled against the prospectus text. Every enforced rule links its source.</td><td class="where">Method page; test badge on the Data page; <code>tests/golden.xlsx</code></td></tr>
-      <tr><td class="req">On time</td><td>Due Tuesday, November 3 at 1 pm. The PDF and the live site go in together.</td><td class="where">Canvas submission</td></tr>
-    </tbody>
-  </table>
-
-  <div class="box gold">
-    <h3 style="margin-top:0">A grader&rsquo;s first minute</h3>
-    <ol class="path">
-      <li>Open the link. The title shows the headline, three buttons and the data-as-of strip.</li>
-      <li>Click <b>Watch a finished run</b>. The SpaceX card plays The Playbook at 8x, about 15 seconds.</li>
-      <li>The scoreboard opens: four measures for The Playbook against The Holder and The Seller.</li>
-      <li>Click <b>Play it yourself</b> or <b>Deal a blind IPO</b>. <a href="https://pjogilvie7.github.io/founders-five/#/method">Method</a> and <a href="https://pjogilvie7.github.io/founders-five/#/data">Data</a> are in the footer.</li>
-    </ol>
-  </div>
-  <div class="strip3">
-    <figure><img class="shot" src="shots/02-play.png" alt="Play screen"><figcaption class="cap">Play screen, SpaceX card, mid-game.</figcaption></figure>
-    <figure><img class="shot" src="shots/03-collar.png" alt="Collar tab"><figcaption class="cap">Collar tab with the Street check.</figcaption></figure>
-    <figure><img class="shot" src="shots/04-scoreboard.png" alt="Scoreboard"><figcaption class="cap">Scoreboard after &ldquo;Watch a finished run&rdquo;.</figcaption></figure>
-  </div>
-  <div class="running"><span>Founder&rsquo;s Five &middot; compliance matrix</span><span>Page 2 of 5</span></div>
-</section>
-
-<!-- ============================ PAGE 3 ============================ -->
-<section class="page">
-  <div class="band"></div>
-  <div class="kicker">How the data updates</div>
-  <h2>Nightly, from the sources to the page</h2>
-  <p class="lede">The browser never calls a data source. A scheduled job fetches everything, tests it and commits plain JSON. The site only reads that JSON, so a visitor needs no key, no login and no server of ours.</p>
-
-  <svg class="diagram" viewBox="0 0 720 318" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram: four data sources feed a nightly GitHub Action, which commits JSON to the repository, which GitHub Pages serves to the browser.">
-    <defs>
-      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#18262F"/></marker>
-      <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9C2A23"/></marker>
-      <style>
-        .t { font-family: "IBM Plex Sans", sans-serif; fill: #18262F; }
-        .tb { font-weight: 600; }
-        .tm { font-family: "IBM Plex Mono", monospace; }
-        .tl { font-family: "Cormorant SC", Georgia, serif; font-weight: 600; letter-spacing: 1.6px; }
-      </style>
-    </defs>
-
-    <text class="t tl" x="0" y="11" font-size="10.5" fill="#5B6870" style="fill:#5B6870">SOURCES (KEYLESS)</text>
-    <g>
-      <rect x="0" y="20" width="170" height="58" fill="#E8E0CC" stroke="#18262F" stroke-width="1"/>
-      <text class="t tb" x="9" y="38" font-size="11.5">Yahoo Finance</text>
-      <text class="t" x="9" y="53" font-size="9.6">Daily bars: SPCX and SPY.</text>
-      <text class="t" x="9" y="66" font-size="9.6">Dividend-adjusted closes.</text>
-
-      <rect x="0" y="88" width="170" height="58" fill="#E8E0CC" stroke="#18262F" stroke-width="1"/>
-      <text class="t tb" x="9" y="106" font-size="11.5">FRED</text>
-      <text class="t" x="9" y="121" font-size="9.6">1-month and 1-year Treasury,</text>
-      <text class="t" x="9" y="134" font-size="9.6">SOFR.</text>
-
-      <rect x="0" y="156" width="170" height="58" fill="#E8E0CC" stroke="#18262F" stroke-width="1"/>
-      <text class="t tb" x="9" y="174" font-size="11.5">CBOE</text>
-      <text class="t" x="9" y="189" font-size="9.6">Delayed SPCX option quotes:</text>
-      <text class="t" x="9" y="202" font-size="9.6">the Street check.</text>
-
-      <rect x="0" y="224" width="170" height="58" fill="#E8E0CC" stroke="#18262F" stroke-width="1"/>
-      <text class="t tb" x="9" y="242" font-size="11.5">SEC EDGAR</text>
-      <text class="t" x="9" y="257" font-size="9.6">New 8-K earnings dates, 10-Q</text>
-      <text class="t" x="9" y="270" font-size="9.6">and 10-K dates, prospectus.</text>
-    </g>
-
-    <!-- arrows from sources to the Action -->
-    <g stroke="#18262F" stroke-width="1.1" fill="none" marker-end="url(#ah)">
-      <path d="M170 49 H196 V120 H228"/>
-      <path d="M170 117 H212 V128 H228"/>
-      <path d="M170 185 H212 V176 H228"/>
-      <path d="M170 253 H196 V184 H228"/>
-    </g>
-
-    <text class="t tl" x="232" y="11" font-size="10.5" style="fill:#5B6870">GITHUB ACTION</text>
-    <rect x="232" y="20" width="200" height="190" fill="#18262F"/>
-    <rect x="236" y="24" width="192" height="182" fill="none" stroke="#B08A3E" stroke-width="0.8"/>
-    <text class="t tb" x="246" y="44" font-size="12.5" style="fill:#F1ECDF">Nightly job</text>
-    <text class="t tm" x="246" y="59" font-size="9.2" style="fill:#D9CEB4">weekdays 23:30 UTC</text>
-    <g style="fill:#F1ECDF" class="t" font-size="10">
-      <text class="t" x="246" y="82" style="fill:#F1ECDF"><tspan style="fill:#B08A3E" class="tm">1</tspan>  Fetch and append new rows</text>
-      <text class="t" x="246" y="102" style="fill:#F1ECDF"><tspan style="fill:#B08A3E" class="tm">2</tspan>  Rebuild the card files</text>
-      <text class="t" x="246" y="122" style="fill:#F1ECDF"><tspan style="fill:#B08A3E" class="tm">3</tspan>  Run <tspan class="tm" font-size="9.2">node --test</tspan></text>
-      <text class="t" x="246" y="142" style="fill:#F1ECDF"><tspan style="fill:#B08A3E" class="tm">4</tspan>  Commit only if tests pass</text>
-      <text class="t" x="246" y="162" style="fill:#F1ECDF"><tspan style="fill:#B08A3E" class="tm">5</tspan>  Redeploy the site</text>
-    </g>
-    <text class="t" x="246" y="187" font-size="8.8" style="fill:#D9CEB4">Also runs on demand (workflow_dispatch).</text>
-
-    <!-- failure branch -->
-    <path d="M332 210 V246" stroke="#9C2A23" stroke-width="1.1" stroke-dasharray="4 3" fill="none" marker-end="url(#ahr)"/>
-    <rect x="232" y="250" width="200" height="56" fill="none" stroke="#9C2A23" stroke-width="1" stroke-dasharray="4 3"/>
-    <text class="t tb" x="241" y="267" font-size="10.4" style="fill:#9C2A23">A source or a test fails</text>
-    <text class="t" x="241" y="281" font-size="9.2" style="fill:#9C2A23">The last good data stays live.</text>
-    <text class="t" x="241" y="294" font-size="9.2" style="fill:#9C2A23">The error goes in the update log.</text>
-
-    <!-- JSON and Pages -->
-    <path d="M432 115 H470" stroke="#18262F" stroke-width="1.1" fill="none" marker-end="url(#ah)"/>
-    <text class="t tm" x="435" y="107" font-size="8.6" style="fill:#5B6870">commit</text>
-    <text class="t tl" x="470" y="11" font-size="10.5" style="fill:#5B6870">JSON IN THE REPO</text>
-    <rect x="470" y="60" width="104" height="110" fill="#F1ECDF" stroke="#18262F" stroke-width="1.4"/>
-    <text class="t tm" x="479" y="80" font-size="9.4" style="font-weight:500">data/</text>
-    <g class="t tm" font-size="8.6" style="fill:#18262F">
-      <text x="479" y="97" class="tm">meta.json</text>
-      <text x="479" y="110" class="tm">market.json</text>
-      <text x="479" y="123" class="tm">cards/*.json</text>
-      <text x="479" y="136" class="tm">spcx-options</text>
-      <text x="479" y="149" class="tm">update-log.json</text>
-      <text x="479" y="162" class="tm">test-status.json</text>
-    </g>
-    <path d="M574 115 H612" stroke="#18262F" stroke-width="1.1" fill="none" marker-end="url(#ah)"/>
-    <text class="t tm" x="577" y="107" font-size="8.6" style="fill:#5B6870">deploy</text>
-    <text class="t tl" x="612" y="11" font-size="10.5" style="fill:#5B6870">THE SITE</text>
-    <rect x="612" y="60" width="106" height="110" fill="#E8E0CC" stroke="#18262F" stroke-width="1.4"/>
-    <rect x="616" y="64" width="98" height="102" fill="none" stroke="#B08A3E" stroke-width="0.8"/>
-    <text class="t tb" x="622" y="84" font-size="10.8">GitHub Pages</text>
-    <text class="t" x="622" y="100" font-size="9">Reads the JSON.</text>
-    <text class="t" x="622" y="113" font-size="9">Shows the date</text>
-    <text class="t" x="622" y="126" font-size="9">in the strip on</text>
-    <text class="t" x="622" y="139" font-size="9">every screen.</text>
-    <text class="t tm" x="622" y="157" font-size="8.2" style="fill:#5B6870">no server of ours</text>
-
-    <text class="t" x="470" y="206" font-size="9.4">A stale banner shows if the last close</text>
-    <text class="t" x="470" y="219" font-size="9.4">is more than 4 calendar days old.</text>
-    <text class="t" x="470" y="242" font-size="9.4">Historical blind cards are frozen and</text>
-    <text class="t" x="470" y="255" font-size="9.4">never refetched. Only the SpaceX card,</text>
-    <text class="t" x="470" y="268" font-size="9.4">the rates and the SPY series move.</text>
-  </svg>
-
-  <div class="three">
-    <div><b>Fetch</b><p>Prices, rates, option quotes and filing dates come from free public endpoints with no key. SEC requests carry a contact user agent and stay under ten a second.</p></div>
-    <div><b>Test</b><p>The job runs the full test suite ({{tests}} tests now) before it commits. If a source fails or a test fails, nothing new goes live and the error is written to the update log.</p></div>
-    <div><b>Show</b><p>Every screen carries the data-as-of date. The copy says &ldquo;nightly&rdquo;, never an exact time, because GitHub&rsquo;s scheduler can run late.</p></div>
-  </div>
-
-  <div class="cols" style="margin-top:6pt; align-items:start">
-    <div>
-      <h3 style="margin-top:2pt">Check it yourself</h3>
-      <ul class="links">
-        <li><a href="https://pjogilvie7.github.io/founders-five/#/data">The Data page</a>: data-as-of date, last 20 job runs, test status, links to every JSON file.</li>
-        <li><a href="https://github.com/pjogilvie7/founders-five/actions">The Actions history on GitHub</a>: every run, its log and the commit it made.</li>
-        <li><a href="https://github.com/pjogilvie7/founders-five">The repository</a>: the workflow files in <code>.github/workflows</code> and the data scripts in <code>scripts</code>.</li>
-      </ul>
-      <p class="small" style="margin-top:7pt">The screenshot shows the update log as it stood when this PDF was built, {{built}}: data as of {{asOfLong}}, SpaceX card at {{spcxDays}} trading days.</p>
-    </div>
-    <div>
-      <div class="crop"><img src="shots/05-data.png" alt="Data page: last job runs and test status"></div>
-      <p class="cap">The Data page: the update log and the test status.</p>
-    </div>
-  </div>
-  <div class="running"><span>Founder&rsquo;s Five &middot; data updates</span><span>Page 3 of 5</span></div>
-</section>
-
-<!-- ============================ PAGE 4 ============================ -->
-<section class="page">
-  <div class="band"></div>
   <div class="kicker">How we used Claude</div>
   <h2>What Claude did and how we checked it</h2>
-  <p class="lede">All AI work ran inside the build sessions. Counts come from the files named under each heading.</p>
+  <p class="lede">I started by writing a PRD: what the game is, the rules it has to enforce, where the data comes from, what each screen shows and the tests it has to pass. Claude Code built the app from that document. One session broke the PRD into tasks, handed them to agents working in parallel (data job, game engine, screens, art, tests) and checked each piece before marking it done. The finished site makes no AI calls. Everything Claude produced is saved in the repo as plain files.</p>
 
   <div class="stats">
     <div><span class="v">{{readTotal}}</span><span class="l">prospectuses read twice by separate agents (18 reads)</span></div>
@@ -225,110 +59,36 @@
   </div>
 
   <div class="job">
-    <div><h3>The build</h3><span class="tag">PROGRESS.md</span></div>
-    <div>
-      <p>Claude Code ran the build from a written spec. One orchestrating session split the work into waves and gave pieces to parallel subagents: the data job, the card universe, the engine, the screens, the pages, the art and the tests. A progress file records each task, its owner, its check and its result, and every overnight decision is logged with its reason and what it costs if wrong.</p>
-    </div>
+    <div><h3>Lockups, read twice</h3></div>
+    <div><p>The lockup dates decide when you can sell, so they had to be right. Two agents read each of the {{readTotal}} prospectuses separately, and each wrote down every release date with the sentence and page it came from. A third agent compared the two reads and settled the 4 places they disagreed by quoting the filing.</p></div>
   </div>
 
   <div class="job">
-    <div><h3>Lockups, read twice</h3><span class="tag">data/src/*/lockup*.json</span></div>
-    <div>
-      <p>The SpaceX prospectus and {{blindRead}} blind-card prospectuses ({{readTotal}} filings) were each read by two agents with no shared context. Each wrote the tranches with a quoted sentence and a page number. A reconciler then compared the two reads and settled every difference against the filing text. Code checks that percentages add to 100 per group and that dates resolve. The two reads differed on 4 items: two date conventions on SpaceX, one release group on Card 4 and one failed price test on Card 6. Each was settled by quoting the filing. In two further cases the reconciler overruled a reading on a more specific source: SpaceX day 180 stays December 8, and one unshipped blind card&rsquo;s lockup end follows the company&rsquo;s own 8-K. All {{blindRead}} blind cards reconciled and {{blindShipped}} shipped.</p>
-    </div>
+    <div><h3>Hiding the names</h3></div>
+    <div><p>On the six blind cards, Claude wrote a headline for each of the biggest price moves without naming the company. A script rejects any line with the company&rsquo;s name, ticker, products or executives, and then a separate agent tried to guess the company. Four of the six were never identified.</p></div>
   </div>
 
   <div class="job">
-    <div><h3>Headlines without names</h3><span class="tag">scripts/check-headlines.mjs</span></div>
-    <div>
-      <p>Each blind card shows 8 headlines taken from its 8 largest one-day moves. Claude wrote them from the 8-K text with no company, product, person, place or ticker. A name filter built from the company name, ticker and the executive and product names in the prospectus rejects any line that contains a banned term. A second agent was then asked to name the company, over 4 identification rounds. Four of the {{blindShipped}} shipped cards ended up unidentified. An expert reader can still name Card 2 (85% confidence) and weakly Card 4 (60%); both are logged, and a swap candidate is ready.</p>
-    </div>
+    <div><h3>Checking the math</h3></div>
+    <div><p>{{tests}} automated tests run before any change goes live. Twelve of them have known answers: Black-Scholes, XIRR, Sharpe ratio, max drawdown and the SpaceX unlock schedule, among others. A spreadsheet with live Excel formulas recomputes six of those on its own. Two more agents, one acting as a private banker and one as a quant, tried to break the rules and the numbers. They found 17 problems, such as a 10b5-1 cooling-off period counted from the wrong quarterly report, and each one was fixed or written into the rules as a stated game term.</p></div>
   </div>
 
-  <div class="job">
-    <div><h3>Reveal paragraphs</h3><span class="tag">data/src/*/reveal.json</span></div>
-    <div>
-      <p>Each blind card ends with a short paragraph about what happened. A script checks that every number in it appears in the card&rsquo;s own data, or is a rounding of a value derived from it.</p>
-    </div>
+  <div class="strip3">
+    <figure><img class="shot" src="shots/02-play.png" alt="Play screen"><figcaption class="cap">Playing the SpaceX card.</figcaption></figure>
+    <figure><img class="shot" src="shots/03-collar.png" alt="Collar tab"><figcaption class="cap">Pricing a collar, checked against listed options.</figcaption></figure>
+    <figure><img class="shot" src="shots/04-scoreboard.png" alt="Scoreboard"><figcaption class="cap">The scoreboard against the three bots.</figcaption></figure>
   </div>
 
-  <div class="job">
-    <div><h3>Accuracy critics</h3><span class="tag">research/critic-banker, critic-quant</span></div>
-    <div>
-      <p>Two separate agents tried to break the build: a banker critic on the rules (9 findings) and a quant critic on the numbers (8). The quant critic found the core clean: net worth recomputed from its parts, Sharpe, drawdown and IRR recomputed for every bot, card and seat, no look-ahead, identical results over 39 repeat runs. What they caught, now fixed or logged as stated game terms:</p>
-      <ul class="caught">
-        <li>The founder&rsquo;s 10b5-1 cooling-off used the wrong quarterly report; it now follows 17 CFR 240.10b5-1(c)(1)(ii)(B).</li>
-        <li>The game allowed a new hedge while a 10b5-1 plan was active, which the rule forbids.</li>
-        <li>The margin-call deadline could not be met on its stated date; a forced sale was sized on after-tax proceeds.</li>
-        <li>Skipping the $10M house payment changed scores, so the skip option was removed.</li>
-        <li>Terminal tax ignored realized losses, and collars could open before 20 days of price history.</li>
-        <li>The Method page said returns used adjusted closes while the engine dropped dividends; dividends are now credited and taxed.</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="job">
-    <div><h3>Golden tests and the spreadsheet</h3><span class="tag">engine/*.test.js, tests/golden.xlsx</span></div>
-    <div>
-      <p>{{tests}} tests pass under <code>node --test</code>. Twelve are numbered golden tests with known answers: Black-Scholes and the zero-cost call, put-call parity, XIRR, Sharpe, max drawdown, the SpaceX ladder, both cooling-off rules, the loan call, tax, the trading window, determinism and daily invariants. Claude also built <code>tests/golden.xlsx</code>, which re-derives six of them with live Excel formulas; its summary sheet compares each cell with the JavaScript value. The nightly job runs the suite and commits only if it passes. The Method page shows each tranche&rsquo;s human sign-off status next to its prospectus quote and page.</p>
-    </div>
-  </div>
-  <div class="running"><span>Founder&rsquo;s Five &middot; how we used Claude &middot; <a href="https://pjogilvie7.github.io/founders-five/#/ai">the page in the app</a></span><span>Page 4 of 5</span></div>
-</section>
-
-<!-- ============================ PAGE 5 ============================ -->
-<section class="page">
-  <div class="band"></div>
-  <div class="kicker">Method</div>
-  <h2>How the replay is scored, and what binds it</h2>
-
-  <div class="cols" style="grid-template-columns: 1fr 1.95in; align-items:start">
-    <div>
-      <h3 style="margin-top:2pt">Four measures</h3>
-      <div class="formulas">
-        <div><b>Net worth</b><span class="m">W = shares x close + collar and put marks + index fund + exchange fund + cash &minus; loan &minus; overdraft &minus; tax owed</span></div>
-        <div><b>Sharpe ratio</b><span class="m">mean(R &minus; rf) / stdev(R &minus; rf) x &radic;252, daily return R adjusted for spending, rf from the 1-month Treasury. One decimal.</span></div>
-        <div><b>Max drawdown</b><span class="m">Largest peak-to-trough fall of the spending-adjusted wealth index, with both dates.</span></div>
-        <div><b>After-tax IRR</b><span class="m">XIRR on day-0 wealth, each spending date and final wealth less the tax still to come (23.8% on gains). Day 0 is also taken after tax, so the tax already inside the stake is not charged to your choices.</span></div>
-        <div><b>After-tax family wealth</b><span class="m">The final flow plus total spending. It is the big number; there is no composite grade.</span></div>
-      </div>
-    </div>
-    <div>
-      <div class="crop"><img src="shots/06-method.png" alt="Method page"></div>
-      <p class="cap">The <a href="https://pjogilvie7.github.io/founders-five/#/method">Method page</a> carries every formula verbatim and a source for every rule.</p>
-    </div>
-  </div>
-
-  <h3>Rules the engine enforces</h3>
-  <table class="rules">
-    <thead><tr><th>Rule</th><th>What the game does</th><th>Source</th></tr></thead>
-    <tbody>
-      <tr><td>Lockup</td><td>Shares release only on resolved tranche dates; locked shares cannot be sold, hedged or pledged.</td><td>Each card&rsquo;s 424B4, quoted with page; <a href="https://www.sec.gov/Archives/edgar/data/1181412/000162828026042639/spaceexplorationtechnologi.htm">SpaceX 424B4</a></td></tr>
-      <tr><td>Trading window</td><td>Closed from 30 days before an earnings release until the second trading day after it.</td><td>Game term; real 8-K Item 2.02 dates</td></tr>
-      <tr><td>10b5-1 cooling-off</td><td>Engineer 30 days. Founder: the later of 90 days or 2 business days after the quarter&rsquo;s report, at most 120.</td><td><a href="https://www.ecfr.gov/current/title-17/section-240.10b5-1">17 CFR 240.10b5-1(c)(1)(ii)(B)</a></td></tr>
-      <tr><td>No hedge under a plan; one plan</td><td>No new collar or put while a plan is adopted; a second plan is blocked.</td><td>240.10b5-1(c)(1)(i)(C) and (c)(1)(ii)(D)</td></tr>
-      <tr><td>Rule 144 (founder)</td><td>Volume cap per rolling 3 months; no sales before IPO day 91.</td><td><a href="https://www.ecfr.gov/current/title-17/section-230.144">17 CFR 230.144</a>(c), (d), (e)</td></tr>
-      <tr><td>Single-stock lending</td><td>25% advance, 35% call, deadline on the third trading day, then a taxable forced sale.</td><td>Game terms; <a href="https://www.finra.org/investors/insights/securities-backed-lines-credit">FINRA</a></td></tr>
-      <tr><td>Collar band</td><td>Put at most 90%, call at least 110% of the price.</td><td>Game term; <a href="https://www.law.cornell.edu/uscode/text/26/1259">IRC 1259</a> has no safe harbor</td></tr>
-      <tr><td>Exchange fund</td><td>Seven-year hold.</td><td><a href="https://www.law.cornell.edu/uscode/text/26/704">IRC 704</a>, <a href="https://www.law.cornell.edu/uscode/text/26/737">737</a> (secondary sources)</td></tr>
-    </tbody>
-  </table>
-  <p class="small" style="margin-top:4pt">Pricing: Black-Scholes with the 1-year Treasury rate. SpaceX&rsquo;s Street check compares the model&rsquo;s zero-cost cap with listed options. Elsewhere volatility is 60-day realized volatility times 1.10, floored at 30%, with a 1.5 point skew. Each Method-page term is tagged verified, session, assumption or unconfirmed.</p>
-
-  <h3>What the replay leaves out</h3>
-  <ul class="leaves">
-    <li>Pre-IPO GRATs, gifts to trusts and charitable remainder trusts</li>
-    <li>Donor-advised funds</li>
-    <li>QSBS (Section 1202)</li>
-    <li>State tax</li>
-    <li>Straddle rules; collar settlements are taxed at 23.8% when they settle</li>
-    <li>Real dealer spreads; options are struck at the model mid price</li>
-    <li>Leaving an exchange fund early</li>
-    <li>Any view on what to do with SpaceX or any stock today</li>
+  <h3>Links</h3>
+  <ul class="links">
+    <li><a href="https://pjogilvie7.github.io/founders-five/">The game</a></li>
+    <li><a href="https://pjogilvie7.github.io/founders-five/#/method">Method and sources</a>: every formula, and the SEC rule or filing behind each game rule</li>
+    <li><a href="https://pjogilvie7.github.io/founders-five/#/ai">How AI was used</a>: the longer version of this page</li>
+    <li><a href="https://github.com/pjogilvie7/founders-five">The code on GitHub</a></li>
   </ul>
 
-  <div class="disclaimer">A historical replay for education. Not investment, tax or legal advice, and not a view on any stock today.</div>
-  <div class="running"><span>Founder&rsquo;s Five &middot; method summary &middot; <a href="https://pjogilvie7.github.io/founders-five/#/method">full Method and Sources</a></span><span>Page 5 of 5</span></div>
+  <p class="small" style="margin-top:12pt">A historical replay for education. Not investment, tax or legal advice, and not a view on any stock today.</p>
+  <div class="running"><span>Founder&rsquo;s Five &middot; FMKT 256</span><span>Page 2 of 2</span></div>
 </section>
 
 </body>
