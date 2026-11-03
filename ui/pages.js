@@ -756,8 +756,8 @@ function aiCardHtml(card, entry, finished) {
 }
 
 const AI_JOBS = [
-  ["Lockup reader", "424B4 text of \"Shares Eligible for Future Sale\" and \"Underwriting: Lock-up\"", "Tranche JSON with quote and page", "Two independent reads (separate agents, no shared context) plus a reconciler; code checks percentages sum to 100 per group and dates resolve", "A teammate signs each tranche on Monday"],
-  ["Headline anonymizer", "8-K text near the card's 8 largest absolute one-day moves", "One line each: no names, products, people, places or tickers", "A name filter (company name, ticker, product names, executive names from the 424B4) plus a second agent asked \"can you identify the company?\"", "A teammate reads all of them on Monday"],
+  ["Lockup reader", "424B4 text of \"Shares Eligible for Future Sale\" and \"Underwriting: Lock-up\"", "Tranche JSON with quote and page", "Two independent reads (separate agents, no shared context) plus a reconciler; code checks percentages sum to 100 per group and dates resolve", "A teammate signs off each tranche; status shown on the Method page"],
+  ["Headline anonymizer", "8-K text near the card's 8 largest absolute one-day moves", "One line each: no names, products, people, places or tickers", "A name filter (company name, ticker, product names, executive names from the 424B4) plus a second agent asked \"can you identify the company?\"", "A teammate reads all of them"],
   ["Reveal writer", "The card JSON", "About 80 words", "Every number in the text must appear in the card JSON", "A teammate reads them"],
   ["Universe compiler", "Public IPO lists, 424B4s", "universe.json", "Each included row links its 424B4 and proceeds", "A teammate spot-checks 3"]
 ];
@@ -806,7 +806,7 @@ async function renderAI(ctx) {
       html: section(
         "pg-ai-humans",
         "What humans check",
-        `<p>Teammates check these on Monday, and the sign-off status of each tranche is shown below:</p>` +
+        `<p>These checks are left to people. The sign-off status of each tranche is shown on the Method page:</p>` +
           `<ul class="pg-list"><li>Every tranche on every card against its 424B4 page.</li><li>All headlines.</li><li>The offer prices.</li><li>The street check numbers against the CBOE file.</li><li>The phone check: the live site in a private window on a phone.</li></ul>` +
           `<h3>Automated checks</h3><p>Twelve golden tests run with <code>node --test</code> and must pass before the nightly job commits:</p>` +
           `<ol class="pg-list">${GOLDEN.map((g) => `<li>${esc(g)}.</li>`).join("")}</ol>`

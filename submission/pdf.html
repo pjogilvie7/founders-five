@@ -38,7 +38,7 @@
     <div><span class="v">{{tests}}</span><span class="l">automated tests pass, including 12 numbered golden tests</span></div>
   </div>
 
-  <div class="team"><span>[Team member 1]</span><span>[Team member 2]</span><span>[Team member 3]</span></div>
+  <div class="team"><span>PJ Ogilvie</span><span>Grant Mullen</span><span>Griffin Hayward</span></div>
   <div class="running"><span>Founder&rsquo;s Five &middot; FMKT 256 extra credit</span><span>Page 1 of 5 &middot; built {{built}}</span></div>
 </section>
 
@@ -60,7 +60,7 @@
       <tr><td class="req">No login, no email request</td><td>Public site with no accounts and no email prompt. It loads fonts and a chart library from public CDNs and nothing else.</td><td class="where">Open the link in a private window on a phone</td></tr>
       <tr><td class="req">PDF in Canvas with embedded links</td><td>This 5-page PDF. The live site, the Method and Data pages, the Actions history and the repository are clickable.</td><td class="where">This file</td></tr>
       <tr><td class="req">Accuracy (&ldquo;no partial credit&rdquo;)</td><td>{{tests}} tests pass under <code>node --test</code>, including 12 numbered golden tests. A spreadsheet with live formulas re-derives 6 of them. Every lockup was read twice by separate agents and reconciled against the prospectus text. Every enforced rule links its source.</td><td class="where">Method page; test badge on the Data page; <code>tests/golden.xlsx</code></td></tr>
-      <tr><td class="req">On time</td><td>Due Monday, November 2 at 11:59 pm. The PDF and the live site go in together.</td><td class="where">Canvas submission</td></tr>
+      <tr><td class="req">On time</td><td>Due Tuesday, November 3 at 1 pm. The PDF and the live site go in together.</td><td class="where">Canvas submission</td></tr>
     </tbody>
   </table>
 
@@ -270,7 +270,7 @@
   <div class="job">
     <div><h3>Golden tests and the spreadsheet</h3><span class="tag">engine/*.test.js, tests/golden.xlsx</span></div>
     <div>
-      <p>{{tests}} tests pass under <code>node --test</code>. Twelve are numbered golden tests with known answers: Black-Scholes and the zero-cost call, put-call parity, XIRR, Sharpe, max drawdown, the SpaceX ladder, both cooling-off rules, the loan call, tax, the trading window, determinism and daily invariants. Claude also built <code>tests/golden.xlsx</code>, which re-derives six of them with live Excel formulas; its summary sheet compares each cell with the JavaScript value. The nightly job runs the suite and commits only if it passes. A teammate still checks every tranche against its prospectus page; the app shows each tranche&rsquo;s sign-off status.</p>
+      <p>{{tests}} tests pass under <code>node --test</code>. Twelve are numbered golden tests with known answers: Black-Scholes and the zero-cost call, put-call parity, XIRR, Sharpe, max drawdown, the SpaceX ladder, both cooling-off rules, the loan call, tax, the trading window, determinism and daily invariants. Claude also built <code>tests/golden.xlsx</code>, which re-derives six of them with live Excel formulas; its summary sheet compares each cell with the JavaScript value. The nightly job runs the suite and commits only if it passes. The Method page shows each tranche&rsquo;s human sign-off status next to its prospectus quote and page.</p>
     </div>
   </div>
   <div class="running"><span>Founder&rsquo;s Five &middot; how we used Claude &middot; <a href="https://pjogilvie7.github.io/founders-five/#/ai">the page in the app</a></span><span>Page 4 of 5</span></div>
