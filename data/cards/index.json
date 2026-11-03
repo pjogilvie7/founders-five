@@ -1,5 +1,5 @@
 [
-  {"id":"spcx","blind":false,"label":"SpaceX (SPCX)","vignette":"assets/vignettes/rocket.png","revealVignette":"assets/vignettes/rocket-orbit.png","tradingDays":98},
+  {"id":"spcx","blind":false,"label":"SpaceX (SPCX)","vignette":"assets/vignettes/rocket.png","revealVignette":"assets/vignettes/rocket-orbit.png","tradingDays":99},
   {"id":"c1","blind":true,"label":"Card 1","vignette":"assets/vignettes/neutral-key.png","revealVignette":"assets/vignettes/reveal-travel.png","tradingDays":1261},
   {"id":"c2","blind":true,"label":"Card 2","vignette":"assets/vignettes/neutral-ship.png","revealVignette":"assets/vignettes/reveal-consumer.png","tradingDays":1261},
   {"id":"c3","blind":true,"label":"Card 3","vignette":"assets/vignettes/neutral-bridge.png","revealVignette":"assets/vignettes/reveal-other.png","tradingDays":1261},
