@@ -1,5 +1,11 @@
 [
   {
+    "run": "2026-11-13T03:29:39.172Z",
+    "ok": false,
+    "changed": ["SPY +1 day","DGS1MO","DGS1","SOFR","SPCX +1 day"],
+    "error": "cboe: no market cap (expiries bracketing one year not usable)"
+  },
+  {
     "run": "2026-11-12T03:59:00.706Z",
     "ok": true,
     "changed": ["SPY +1 day","SPCX +1 day","SPCX options"],
