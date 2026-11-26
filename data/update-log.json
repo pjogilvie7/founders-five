@@ -1,5 +1,11 @@
 [
   {
+    "run": "2026-11-26T05:15:47.000Z",
+    "ok": false,
+    "changed": ["SPY +1 day","DGS1MO","DGS1","SOFR","SPCX +1 day"],
+    "error": "cboe: HTTP 403 for https://cdn.cboe.com/api/global/delayed_quotes/options/SPCX.json"
+  },
+  {
     "run": "2026-11-25T05:34:01.057Z",
     "ok": false,
     "changed": ["SPY +1 day","DGS1MO","DGS1","SOFR","SPCX +1 day"],
